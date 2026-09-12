@@ -29,7 +29,7 @@ public struct SubtitlesLayer: View {
                 HStack(spacing: 8) {
                     OutlinedText(
                         player.currentSecondarySubText,
-                        font: style.font(size: max(16, CGFloat(player.subFontSize * 0.7)), weight: .medium),
+                        font: style.font(size: max(12, primaryFontSize * CGFloat(style.translationScale)), weight: .medium),
                         color: style.textColor,
                         outlineColor: style.outlineColor,
                         outlineWidth: CGFloat(style.outlineWidth)
@@ -39,14 +39,8 @@ public struct SubtitlesLayer: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
-                .background(
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(Color(red: 0.1, green: 0.1, blue: 0.12).opacity(0.85 * boxOpacity))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(Color.yellow.opacity(0.4 * boxOpacity), lineWidth: 1)
-                        )
-                )
+                .background(subtitleBox)
+                .shadow(color: .black.opacity(0.5 * boxOpacity), radius: 6, x: 0, y: 3)
                 .transition(.opacity.combined(with: .scale(scale: 0.96)))
                 .animation(.easeInOut(duration: 0.15), value: player.isPeekingTranslation)
             }
@@ -68,14 +62,7 @@ public struct SubtitlesLayer: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.black.opacity(boxOpacity))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color.white.opacity(0.15 * boxOpacity), lineWidth: 0.5)
-                        )
-                )
+                .background(subtitleBox)
                 .shadow(color: .black.opacity(0.5 * boxOpacity), radius: 6, x: 0, y: 3)
                 // Quick Explain badge: floats over the pill's top-right corner
                 // and only appears on hover, so it neither shifts the centred
@@ -123,13 +110,25 @@ public struct SubtitlesLayer: View {
         .help("Объяснить эту фразу через Gemini AI (Cmd + G)")
     }
 
+    private var primaryFontSize: CGFloat { CGFloat(player.subFontSize) }
+
+    /// Shared box behind the primary subtitles and the translation line.
+    private var subtitleBox: some View {
+        RoundedRectangle(cornerRadius: 12)
+            .fill(Color.black.opacity(boxOpacity))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color.white.opacity(0.15 * boxOpacity), lineWidth: 0.5)
+            )
+    }
+
     @ViewBuilder
     private func subtitleWordView(for word: String) -> some View {
         let cleanWord = word.trimmingCharacters(in: .punctuationCharacters)
         let isHovered = hoveredWord == cleanWord
         OutlinedText(
             word,
-            font: style.font(size: max(18, CGFloat(player.subFontSize * 0.65))),
+            font: style.font(size: primaryFontSize),
             color: isHovered ? .yellow : style.textColor,
             outlineColor: style.outlineColor,
             outlineWidth: CGFloat(style.outlineWidth)

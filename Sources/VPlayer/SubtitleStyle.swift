@@ -30,6 +30,11 @@ public final class SubtitleStyle: ObservableObject {
     @Published public var bottomInset: Double {
         didSet { defaults.set(bottomInset, forKey: Keys.bottomInset) }
     }
+    /// Size of the TAB translation line relative to the primary subtitles
+    /// (1 = the same size).
+    @Published public var translationScale: Double {
+        didSet { defaults.set(translationScale, forKey: Keys.translationScale) }
+    }
 
     public static let defaultTextColor = Color.white
     public static let defaultOutlineColor = Color.black
@@ -37,6 +42,8 @@ public final class SubtitleStyle: ObservableObject {
     public static let defaultBackgroundOpacity = 0.65
     public static let defaultBottomInset = 0.08
     public static let bottomInsetRange = 0.03...0.4
+    public static let defaultTranslationScale = 1.0
+    public static let translationScaleRange = 0.5...1.5
 
     private let defaults = UserDefaults.standard
     private enum Keys {
@@ -46,6 +53,7 @@ public final class SubtitleStyle: ObservableObject {
         static let outlineColor = "VPlayer.subOutlineColor"
         static let backgroundOpacity = "VPlayer.subBackgroundOpacity"
         static let bottomInset = "VPlayer.subBottomInset"
+        static let translationScale = "VPlayer.subTranslationScale"
     }
 
     private init() {
@@ -55,6 +63,7 @@ public final class SubtitleStyle: ObservableObject {
         outlineColor = Color(hexString: defaults.string(forKey: Keys.outlineColor)) ?? Self.defaultOutlineColor
         backgroundOpacity = defaults.object(forKey: Keys.backgroundOpacity) as? Double ?? Self.defaultBackgroundOpacity
         bottomInset = defaults.object(forKey: Keys.bottomInset) as? Double ?? Self.defaultBottomInset
+        translationScale = defaults.object(forKey: Keys.translationScale) as? Double ?? Self.defaultTranslationScale
     }
 
     public func reset() {
@@ -64,6 +73,7 @@ public final class SubtitleStyle: ObservableObject {
         outlineColor = Self.defaultOutlineColor
         backgroundOpacity = Self.defaultBackgroundOpacity
         bottomInset = Self.defaultBottomInset
+        translationScale = Self.defaultTranslationScale
     }
 
     /// Font families installed on this Mac that can actually render

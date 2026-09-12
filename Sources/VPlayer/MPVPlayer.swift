@@ -26,12 +26,18 @@ public final class MPVPlayer: ObservableObject {
     @Published public var isPeekingTranslation: Bool = false
     @Published public var showSubtitles: Bool = true
     
-    @Published public var subFontSize: Double = 46 {
+    /// Rendered point size of the primary subtitle words.
+    @Published public var subFontSize: Double = MPVPlayer.defaultSubFontSize {
         didSet {
-            UserDefaults.standard.set(subFontSize, forKey: "VPlayer.subFontSize")
+            UserDefaults.standard.set(subFontSize, forKey: MPVPlayer.subFontSizeKey)
             applySubtitleStyle()
         }
     }
+    public static let defaultSubFontSize = 30.0
+    public static let subFontSizeRange = 16.0...60.0
+    private static let subFontSizeKey = "VPlayer.subFontSizePt"
+    /// Pre-1.x key that stored a nominal mpv size; the words were drawn at 65 % of it.
+    private static let legacySubFontSizeKey = "VPlayer.subFontSize"
     
     @Published public var subtitleHistory: [String] = []
     /// Hold-to-peek pauses playback so the translation can actually be read
@@ -88,8 +94,14 @@ public final class MPVPlayer: ObservableObject {
     )
     
     public init() {
-        if let savedSize = UserDefaults.standard.value(forKey: "VPlayer.subFontSize") as? Double, savedSize > 15 {
-            self.subFontSize = savedSize
+        let defaults = UserDefaults.standard
+        if let saved = defaults.object(forKey: Self.subFontSizeKey) as? Double {
+            self.subFontSize = saved
+        } else if let legacy = defaults.object(forKey: Self.legacySubFontSizeKey) as? Double, legacy > 15 {
+            // Convert the old nominal value to the size that was actually drawn.
+            self.subFontSize = min(max((legacy * 0.65).rounded(), Self.subFontSizeRange.lowerBound), Self.subFontSizeRange.upperBound)
+            defaults.set(self.subFontSize, forKey: Self.subFontSizeKey)
+            defaults.removeObject(forKey: Self.legacySubFontSizeKey)
         }
         if let saved = UserDefaults.standard.object(forKey: "VPlayer.pauseWhilePeeking") as? Bool {
             self.pauseWhilePeeking = saved

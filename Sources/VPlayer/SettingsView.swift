@@ -216,7 +216,21 @@ public struct SettingsView: View {
                                     .foregroundColor(.yellow)
                             }
                             
-                            Slider(value: $player.subFontSize, in: 24...80, step: 2)
+                            Slider(value: $player.subFontSize, in: MPVPlayer.subFontSizeRange, step: 1)
+                                .accentColor(.yellow)
+                        }
+
+                        // Translation Size
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Text("Размер перевода (TAB):")
+                                    .font(.system(size: 12, weight: .medium))
+                                Spacer()
+                                Text("\(Int((style.translationScale * 100).rounded())) % от основных")
+                                    .font(.system(size: 12, weight: .bold, design: .monospaced))
+                                    .foregroundColor(.yellow)
+                            }
+                            Slider(value: $style.translationScale, in: SubtitleStyle.translationScaleRange, step: 0.05)
                                 .accentColor(.yellow)
                         }
 
@@ -312,7 +326,7 @@ public struct SettingsView: View {
                             
                             OutlinedText(
                                 "Hey John, are you feeling under the weather?",
-                                font: style.font(size: max(14, CGFloat(player.subFontSize * 0.5))),
+                                font: style.font(size: max(14, CGFloat(player.subFontSize * 0.75))),
                                 color: style.textColor,
                                 outlineColor: style.outlineColor,
                                 outlineWidth: CGFloat(style.outlineWidth)
@@ -369,7 +383,7 @@ public struct SettingsView: View {
             }
         }
         .padding(20)
-        .frame(width: 520, height: 920)
+        .frame(width: 520, height: 980)
     }
     
     private var systemLanguageLabel: String {
