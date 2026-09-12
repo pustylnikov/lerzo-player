@@ -97,16 +97,15 @@ public struct SettingsView: View {
                     .background(Color.white.opacity(0.04))
                     .cornerRadius(12)
                     
-                    // SECTION 2: SUBTITLES CUSTOMIZATION
-                    VStack(alignment: .leading, spacing: 14) {
+                    // SECTION 2: PLAYBACK BEHAVIOUR
+                    VStack(alignment: .leading, spacing: 10) {
                         HStack {
-                            Image(systemName: "textformat.size")
+                            Image(systemName: "play.circle")
                                 .foregroundColor(.yellow)
-                            Text("Отображение субтитров")
+                            Text("Поведение при просмотре")
                                 .font(.system(size: 14, weight: .bold))
                         }
-                        
-                        // Pause while peeking the translation
+
                         Toggle(isOn: $player.pauseWhilePeeking) {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Пауза при подглядывании перевода (TAB)")
@@ -118,7 +117,20 @@ public struct SettingsView: View {
                         }
                         .toggleStyle(.switch)
                         .controlSize(.small)
+                    }
+                    .padding(14)
+                    .background(Color.white.opacity(0.04))
+                    .cornerRadius(12)
 
+                    // SECTION 3: SUBTITLES CUSTOMIZATION
+                    VStack(alignment: .leading, spacing: 14) {
+                        HStack {
+                            Image(systemName: "textformat.size")
+                                .foregroundColor(.yellow)
+                            Text("Отображение субтитров")
+                                .font(.system(size: 14, weight: .bold))
+                        }
+                        
                         // Font Size Slider
                         VStack(alignment: .leading, spacing: 6) {
                             HStack {
@@ -235,7 +247,7 @@ public struct SettingsView: View {
                     .background(Color.white.opacity(0.04))
                     .cornerRadius(12)
                     
-                    // SECTION 3: SHORTCUTS CHEATSHEET
+                    // SECTION 4: SHORTCUTS CHEATSHEET
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
                             Image(systemName: "keyboard")
