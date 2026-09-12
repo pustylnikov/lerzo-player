@@ -9,7 +9,11 @@ public final class KeyboardMonitor: ObservableObject {
     public var onOpenFileRequested: (() -> Void)?
     public var onOpenSettingsRequested: (() -> Void)?
     public var onDismissExplanationRequested: (() -> Void)?
+    public var onDismissSettingsRequested: (() -> Void)?
     public var isExplanationOpen: Bool = false
+    /// While the settings sheet is up, player shortcuts must not fire from
+    /// its sliders and pickers; only Escape (close) and Cmd+, are handled.
+    public var isSettingsOpen: Bool = false
     
     public init() {
         startMonitoring()
@@ -41,6 +45,16 @@ public final class KeyboardMonitor: ObservableObject {
             return event
         }
         
+        if isSettingsOpen {
+            guard event.type == .keyDown else { return event }
+            let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+            if event.keyCode == 53 || (flags.contains(.command) && event.charactersIgnoringModifiers == ",") {
+                onDismissSettingsRequested?()
+                return nil
+            }
+            return event
+        }
+
         let player = MPVPlayer.shared
         
         if event.type == .keyDown {

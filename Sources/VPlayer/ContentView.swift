@@ -96,6 +96,7 @@ public struct ContentView: View {
         .onAppear {
             setupKeyboardBindings()
             keyboardMonitor.isExplanationOpen = isExplanationOpen
+            keyboardMonitor.isSettingsOpen = isSettingsOpen
         }
         .onChange(of: player.playbackState) { _, state in
             // Playback can start without a mouse event (for example after opening
@@ -112,6 +113,9 @@ public struct ContentView: View {
             if !isOpen {
                 selectedWordToExplain = nil
             }
+        }
+        .onChange(of: isSettingsOpen) { _, isOpen in
+            keyboardMonitor.isSettingsOpen = isOpen
         }
         .sheet(isPresented: $isSettingsOpen) {
             SettingsView(isOpen: $isSettingsOpen)
@@ -250,6 +254,9 @@ public struct ContentView: View {
         }
         keyboardMonitor.onOpenSettingsRequested = {
             self.isSettingsOpen = true
+        }
+        keyboardMonitor.onDismissSettingsRequested = {
+            self.isSettingsOpen = false
         }
     }
     
