@@ -54,10 +54,8 @@ public struct SubtitlesLayer: View {
                     VStack(alignment: .center, spacing: 4) {
                         ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
                             let words = line.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
-                            HStack(spacing: 5) {
-                                ForEach(Array(words.enumerated()), id: \.offset) { _, word in
-                                    subtitleWordView(for: word)
-                                }
+                            WrappingHStack(words: words) { word in
+                                subtitleWordView(for: word)
                             }
                         }
                     }
@@ -105,6 +103,8 @@ public struct SubtitlesLayer: View {
         let cleanWord = word.trimmingCharacters(in: .punctuationCharacters)
         Text(word)
             .font(.system(size: max(18, CGFloat(player.subFontSize * 0.65)), weight: .semibold, design: .rounded))
+            .lineLimit(1)
+            .fixedSize()
             .foregroundColor(hoveredWord == cleanWord ? .yellow : .white)
             .underline(hoveredWord == cleanWord, color: .yellow)
             .onHover { isHover in
@@ -116,21 +116,85 @@ public struct SubtitlesLayer: View {
     }
 }
 
-// Helper view for flowing words horizontally
+// Flows words left to right and wraps whole words onto new rows when the
+// available width runs out. A plain HStack would instead squeeze each Text
+// and break words mid-way.
 struct WrappingHStack<Content: View>: View {
     let words: [String]
     let content: (String) -> Content
-    
+    var horizontalSpacing: CGFloat = 5
+    var verticalSpacing: CGFloat = 2
+
     init(words: [String], @ViewBuilder content: @escaping (String) -> Content) {
         self.words = words
         self.content = content
     }
-    
+
     var body: some View {
-        HStack(spacing: 4) {
+        FlowLayout(horizontalSpacing: horizontalSpacing, verticalSpacing: verticalSpacing) {
             ForEach(Array(words.enumerated()), id: \.offset) { _, word in
                 content(word)
             }
+        }
+    }
+}
+
+/// Wraps whole subviews onto new rows when the available width runs out.
+struct FlowLayout: Layout {
+    var horizontalSpacing: CGFloat = 5
+    var verticalSpacing: CGFloat = 2
+    var alignment: HorizontalAlignment = .center
+
+    private struct Row {
+        var items: [(index: Int, size: CGSize)] = []
+        var width: CGFloat = 0
+        var height: CGFloat = 0
+    }
+
+    private func rows(for subviews: Subviews, in maxWidth: CGFloat) -> [Row] {
+        var rows: [Row] = []
+        var current = Row()
+        for (index, subview) in subviews.enumerated() {
+            let size = subview.sizeThatFits(.unspecified)
+            let extra = current.items.isEmpty ? 0 : horizontalSpacing
+            if !current.items.isEmpty && current.width + extra + size.width > maxWidth {
+                rows.append(current)
+                current = Row()
+            }
+            let spacing = current.items.isEmpty ? 0 : horizontalSpacing
+            current.items.append((index, size))
+            current.width += spacing + size.width
+            current.height = max(current.height, size.height)
+        }
+        if !current.items.isEmpty { rows.append(current) }
+        return rows
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let maxWidth = proposal.width ?? .infinity
+        let rows = rows(for: subviews, in: maxWidth)
+        let width = rows.map(\.width).max() ?? 0
+        let height = rows.reduce(0) { $0 + $1.height } + CGFloat(max(0, rows.count - 1)) * verticalSpacing
+        return CGSize(width: width, height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let rows = rows(for: subviews, in: bounds.width)
+        var y = bounds.minY
+        for row in rows {
+            let slack = bounds.width - row.width
+            var x: CGFloat
+            switch alignment {
+            case .leading: x = bounds.minX
+            case .trailing: x = bounds.minX + slack
+            default: x = bounds.minX + slack / 2
+            }
+            for item in row.items {
+                let origin = CGPoint(x: x, y: y + (row.height - item.size.height) / 2)
+                subviews[item.index].place(at: origin, proposal: ProposedViewSize(item.size))
+                x += item.size.width + horizontalSpacing
+            }
+            y += row.height + verticalSpacing
         }
     }
 }

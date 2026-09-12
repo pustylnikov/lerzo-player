@@ -275,7 +275,7 @@ public struct ExplanationPopoverView: View {
                             .font(.system(size: 12, weight: .bold))
                             .foregroundColor(.white.opacity(0.8))
                         
-                        FlowLayout(spacing: 8) {
+                        FlowLayout(horizontalSpacing: 8, verticalSpacing: 8, alignment: .leading) {
                             ForEach(expl.difficultWords) { word in
                                 HStack(spacing: 4) {
                                     Text(word.word)
@@ -348,24 +348,6 @@ public struct ExplanationPopoverView: View {
                     self.isFetching = false
                 }
             }
-        }
-    }
-}
-
-// Simple flowing container for word chips
-struct FlowLayout<Content: View>: View {
-    let spacing: CGFloat
-    let content: () -> Content
-    
-    init(spacing: CGFloat = 8, @ViewBuilder content: @escaping () -> Content) {
-        self.spacing = spacing
-        self.content = content
-    }
-    
-    var body: some View {
-        // Wrapping display
-        VStack(alignment: .leading, spacing: spacing) {
-            content()
         }
     }
 }
