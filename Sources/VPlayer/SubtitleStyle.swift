@@ -19,10 +19,16 @@ public final class SubtitleStyle: ObservableObject {
     @Published public var outlineColor: Color {
         didSet { defaults.set(outlineColor.hexString, forKey: Keys.outlineColor) }
     }
+    /// Opacity of the box behind the subtitles, 0...1. Zero removes the box
+    /// (and its border and shadow) entirely, leaving bare text on the video.
+    @Published public var backgroundOpacity: Double {
+        didSet { defaults.set(backgroundOpacity, forKey: Keys.backgroundOpacity) }
+    }
 
     public static let defaultTextColor = Color.white
     public static let defaultOutlineColor = Color.black
     public static let defaultOutlineWidth = 0.0
+    public static let defaultBackgroundOpacity = 0.65
 
     private let defaults = UserDefaults.standard
     private enum Keys {
@@ -30,6 +36,7 @@ public final class SubtitleStyle: ObservableObject {
         static let textColor = "VPlayer.subTextColor"
         static let outlineWidth = "VPlayer.subOutlineWidth"
         static let outlineColor = "VPlayer.subOutlineColor"
+        static let backgroundOpacity = "VPlayer.subBackgroundOpacity"
     }
 
     private init() {
@@ -37,6 +44,7 @@ public final class SubtitleStyle: ObservableObject {
         textColor = Color(hexString: defaults.string(forKey: Keys.textColor)) ?? Self.defaultTextColor
         outlineWidth = defaults.object(forKey: Keys.outlineWidth) as? Double ?? Self.defaultOutlineWidth
         outlineColor = Color(hexString: defaults.string(forKey: Keys.outlineColor)) ?? Self.defaultOutlineColor
+        backgroundOpacity = defaults.object(forKey: Keys.backgroundOpacity) as? Double ?? Self.defaultBackgroundOpacity
     }
 
     public func reset() {
@@ -44,6 +52,7 @@ public final class SubtitleStyle: ObservableObject {
         textColor = Self.defaultTextColor
         outlineWidth = Self.defaultOutlineWidth
         outlineColor = Self.defaultOutlineColor
+        backgroundOpacity = Self.defaultBackgroundOpacity
     }
 
     /// Font families installed on this Mac that can actually render

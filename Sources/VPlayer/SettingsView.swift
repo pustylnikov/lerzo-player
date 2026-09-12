@@ -170,6 +170,20 @@ public struct SettingsView: View {
                                 .disabled(style.outlineWidth == 0)
                         }
                         
+                        // Background Opacity
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Text("Прозрачность подложки:")
+                                    .font(.system(size: 12, weight: .medium))
+                                Spacer()
+                                Text(style.backgroundOpacity == 0 ? "без подложки" : "\(Int(style.backgroundOpacity * 100)) %")
+                                    .font(.system(size: 12, weight: .bold, design: .monospaced))
+                                    .foregroundColor(.yellow)
+                            }
+                            Slider(value: $style.backgroundOpacity, in: 0...1, step: 0.05)
+                                .accentColor(.yellow)
+                        }
+
                         // Live Preview Box
                         VStack(alignment: .center, spacing: 4) {
                             HStack {
@@ -193,12 +207,15 @@ public struct SettingsView: View {
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 8)
                                 .frame(maxWidth: .infinity)
-                                .background(Color.black.opacity(0.7))
+                                .background(Color.black.opacity(style.backgroundOpacity))
                                 .cornerRadius(8)
                         }
                         .frame(maxWidth: .infinity)
                         .padding(10)
-                        .background(Color.black.opacity(0.3))
+                        .background(
+                            LinearGradient(colors: [Color(red: 0.25, green: 0.3, blue: 0.45), Color(red: 0.45, green: 0.3, blue: 0.35)],
+                                           startPoint: .topLeading, endPoint: .bottomTrailing)
+                        )
                         .cornerRadius(8)
                     }
                     .padding(14)
@@ -239,7 +256,7 @@ public struct SettingsView: View {
             }
         }
         .padding(20)
-        .frame(width: 520, height: 720)
+        .frame(width: 520, height: 760)
     }
     
     private func shortcutRow(keys: String, desc: String) -> some View {

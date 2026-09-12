@@ -38,10 +38,10 @@ public struct SubtitlesLayer: View {
                 .padding(.vertical, 8)
                 .background(
                     RoundedRectangle(cornerRadius: 10)
-                        .fill(Color(red: 0.1, green: 0.1, blue: 0.12).opacity(0.85))
+                        .fill(Color(red: 0.1, green: 0.1, blue: 0.12).opacity(0.85 * boxOpacity))
                         .overlay(
                             RoundedRectangle(cornerRadius: 10)
-                                .stroke(Color.yellow.opacity(0.4), lineWidth: 1)
+                                .stroke(Color.yellow.opacity(0.4 * boxOpacity), lineWidth: 1)
                         )
                 )
                 .transition(.opacity.combined(with: .scale(scale: 0.96)))
@@ -90,19 +90,21 @@ public struct SubtitlesLayer: View {
                 .padding(.vertical, 8)
                 .background(
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.black.opacity(0.65))
+                        .fill(Color.black.opacity(boxOpacity))
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color.white.opacity(0.15), lineWidth: 0.5)
+                                .stroke(Color.white.opacity(0.15 * boxOpacity), lineWidth: 0.5)
                         )
                 )
-                .shadow(color: .black.opacity(0.5), radius: 6, x: 0, y: 3)
+                .shadow(color: .black.opacity(0.5 * boxOpacity), radius: 6, x: 0, y: 3)
             }
         }
         .padding(.bottom, 80)
         .frame(maxWidth: .infinity)
     }
     
+    private var boxOpacity: Double { style.backgroundOpacity }
+
     @ViewBuilder
     private func subtitleWordView(for word: String) -> some View {
         let cleanWord = word.trimmingCharacters(in: .punctuationCharacters)
