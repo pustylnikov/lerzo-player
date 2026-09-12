@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 public struct SettingsView: View {
     @ObservedObject var gemini = GeminiService.shared
@@ -15,6 +16,15 @@ public struct SettingsView: View {
         self._isOpen = isOpen
     }
     
+    /// Tall enough to show everything without scrolling on a big display,
+    /// but never taller than the screen the sheet is on (menu bar and Dock
+    /// excluded), otherwise the header and the Done button get clipped.
+    private var sheetHeight: CGFloat {
+        let screen = NSApp.keyWindow?.screen ?? NSScreen.main
+        let available = (screen?.visibleFrame.height ?? 900) - 48
+        return min(1020, max(480, available))
+    }
+
     public var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             // Header
@@ -387,7 +397,7 @@ public struct SettingsView: View {
             }
         }
         .padding(20)
-        .frame(width: 520, height: 1020)
+        .frame(width: 520, height: sheetHeight)
     }
     
     private var systemLanguageLabel: String {
