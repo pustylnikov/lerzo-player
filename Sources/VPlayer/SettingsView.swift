@@ -124,7 +124,7 @@ public struct SettingsView: View {
                                 Text("Не выбирать автоматически").tag(LanguagePreferences.none)
                             }
                             .labelsHidden()
-                            .frame(maxWidth: 260)
+                            .frame(maxWidth: 260, alignment: .trailing)
                         }
 
                         HStack {
@@ -141,7 +141,7 @@ public struct SettingsView: View {
                                 Text("Не выбирать автоматически").tag(LanguagePreferences.none)
                             }
                             .labelsHidden()
-                            .frame(maxWidth: 260)
+                            .frame(maxWidth: 260, alignment: .trailing)
                         }
 
                         if languages.nativeLanguage != LanguagePreferences.none,
@@ -173,6 +173,7 @@ public struct SettingsView: View {
                                     .font(.system(size: 11))
                                     .foregroundColor(.secondary)
                             }
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         .toggleStyle(.switch)
                         .controlSize(.small)
@@ -188,6 +189,7 @@ public struct SettingsView: View {
                                     .foregroundColor(.secondary)
                                     .fixedSize(horizontal: false, vertical: true)
                             }
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         .toggleStyle(.switch)
                         .controlSize(.small)
@@ -247,7 +249,7 @@ public struct SettingsView: View {
                                 }
                             }
                             .labelsHidden()
-                            .frame(maxWidth: 260)
+                            .frame(maxWidth: 260, alignment: .trailing)
                         }
 
                         // Text Color
