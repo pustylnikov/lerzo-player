@@ -84,6 +84,8 @@ public final class MPVPlayer: ObservableObject {
         mpv_set_option_string(handle, "load-scripts", "no")
         mpv_set_option_string(handle, "input-media-keys", "no")
         mpv_set_option_string(handle, "input-default-bindings", "no")
+        mpv_set_option_string(handle, "input-cursor", "no")
+        mpv_set_option_string(handle, "input-vo-keyboard", "no")
         mpv_set_option_string(handle, "macos-app-activation-policy", "regular")
         
         mpv_set_option_string(handle, "border", "no")
@@ -179,8 +181,8 @@ public final class MPVPlayer: ObservableObject {
         DispatchQueue.main.async { [weak self] in
             guard let self = self, let target = self.targetView, let parentWindow = target.window else { return }
             
-            if let child = self.mpvChildWindow {
-                child.setFrame(parentWindow.frame, display: true)
+            if self.mpvChildWindow != nil {
+                self.updateChildWindowFrame()
                 return
             }
             
@@ -193,9 +195,27 @@ public final class MPVPlayer: ObservableObject {
                 }) ?? false
                 
                 if typeName == "Window" || hasMpvView {
+                    parentWindow.collectionBehavior = [.fullScreenPrimary]
+                    window.styleMask = [.borderless]
                     window.hasShadow = false
-                    window.setFrame(parentWindow.frame, display: true)
-                    parentWindow.addChildWindow(window, ordered: .below)
+                    window.ignoresMouseEvents = true
+                    window.collectionBehavior = [.fullScreenAuxiliary, .canJoinAllSpaces]
+                    
+                    let targetFrame: NSRect
+                    if parentWindow.styleMask.contains(.fullScreen) {
+                        targetFrame = parentWindow.frame
+                    } else if let target = self.targetView {
+                        let rectInWindow = target.convert(target.bounds, to: nil)
+                        let screenRect = parentWindow.convertToScreen(rectInWindow)
+                        targetFrame = (screenRect.width > 0 && screenRect.height > 0) ? screenRect : parentWindow.frame
+                    } else {
+                        targetFrame = parentWindow.frame
+                    }
+                    window.setFrame(targetFrame, display: true)
+                    
+                    if !(parentWindow.childWindows?.contains(window) ?? false) {
+                        parentWindow.addChildWindow(window, ordered: .below)
+                    }
                     self.mpvChildWindow = window
                     self.embedTimer?.invalidate()
                     self.embedTimer = nil
@@ -207,9 +227,50 @@ public final class MPVPlayer: ObservableObject {
     
     public func updateChildWindowFrame() {
         DispatchQueue.main.async { [weak self] in
-            guard let parent = self?.targetView?.window, let child = self?.mpvChildWindow else { return }
-            child.setFrame(parent.frame, display: true)
+            guard let self = self,
+                  let target = self.targetView,
+                  let parent = target.window,
+                  let child = self.mpvChildWindow else { return }
+            
+            // Ensure child is borderless, participates in fullscreen space, and doesn't intercept clicks
+            if child.styleMask != [.borderless] {
+                child.styleMask = [.borderless]
+            }
+            if !child.collectionBehavior.contains(.fullScreenAuxiliary) {
+                child.collectionBehavior = [.fullScreenAuxiliary, .canJoinAllSpaces]
+            }
+            child.ignoresMouseEvents = true
+            child.hasShadow = false
+            
+            // Re-attach if detached by AppKit during fullscreen or space transition
+            if !(parent.childWindows?.contains(child) ?? false) {
+                parent.addChildWindow(child, ordered: .below)
+            }
+            
+            let targetFrame: NSRect
+            if parent.styleMask.contains(.fullScreen) {
+                targetFrame = parent.frame
+            } else {
+                let rectInWindow = target.convert(target.bounds, to: nil)
+                let screenRect = parent.convertToScreen(rectInWindow)
+                targetFrame = (screenRect.width > 0 && screenRect.height > 0) ? screenRect : parent.frame
+            }
+            
+            if child.frame != targetFrame {
+                child.setFrame(targetFrame, display: true)
+            }
         }
+    }
+    
+    public func toggleFullscreen() {
+        DispatchQueue.main.async { [weak self] in
+            guard let win = self?.targetView?.window else { return }
+            win.toggleFullScreen(nil)
+        }
+    }
+    
+    public var isFullscreen: Bool {
+        return targetView?.window?.styleMask.contains(.fullScreen) ?? false
     }
     
     public func startEmbeddingPolling() {

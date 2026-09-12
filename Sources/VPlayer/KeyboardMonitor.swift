@@ -49,8 +49,8 @@ public final class KeyboardMonitor: ObservableObject {
                 if isExplanationOpen {
                     onDismissExplanationRequested?()
                     return nil
-                } else if NSApp.keyWindow?.styleMask.contains(.fullScreen) == true {
-                    NSApp.keyWindow?.toggleFullScreen(nil)
+                } else if player.isFullscreen {
+                    player.toggleFullscreen()
                     return nil
                 }
             }
@@ -130,7 +130,7 @@ public final class KeyboardMonitor: ObservableObject {
             
             // F KEY (keyCode 3) -> Fullscreen
             if event.keyCode == 3 {
-                NSApp.keyWindow?.toggleFullScreen(nil)
+                player.toggleFullscreen()
                 return nil
             }
             

@@ -17,8 +17,10 @@ public struct ContentView: View {
     public var body: some View {
         ZStack {
             // LAYER 1: Native mpv video surface
-            PlayerSurfaceView()
-                .ignoresSafeArea()
+            PlayerSurfaceView(onMouseMove: {
+                wakeControls()
+            })
+            .ignoresSafeArea()
             
             // LAYER 2: Empty State / Dropzone when no file is playing
             if player.playbackState == .idle && player.currentFileURL == nil {
@@ -75,7 +77,7 @@ public struct ContentView: View {
                 .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isExplanationOpen)
             }
         }
-        .frame(minWidth: 800, minHeight: 480)
+        .frame(minWidth: 800, maxWidth: .infinity, minHeight: 480, maxHeight: .infinity)
         .background(player.playbackState == .idle && player.currentFileURL == nil ? Color(red: 0.08, green: 0.08, blue: 0.1) : Color.clear)
         .onContinuousHover { phase in
             switch phase {

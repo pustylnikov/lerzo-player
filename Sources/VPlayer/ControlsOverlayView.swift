@@ -50,6 +50,7 @@ public struct ControlsOverlayView: View {
                 .padding(.horizontal, 16)
                 .padding(.bottom, 12)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
             // Subtle gradient darkening at edges for contrast
             LinearGradient(
@@ -359,9 +360,7 @@ public struct ControlsOverlayView: View {
                 
                 // Fullscreen Toggle
                 Button(action: {
-                    if let window = NSApp.keyWindow {
-                        window.toggleFullScreen(nil)
-                    }
+                    player.toggleFullscreen()
                 }) {
                     Image(systemName: "arrow.up.left.and.arrow.down.right")
                         .font(.system(size: 13))
@@ -371,6 +370,7 @@ public struct ControlsOverlayView: View {
                 .help("Полноэкранный режим (F)")
             }
         }
+        .frame(maxWidth: .infinity)
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
         .background(

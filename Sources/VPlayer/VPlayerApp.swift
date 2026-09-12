@@ -7,14 +7,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
         
         let args = CommandLine.arguments
-        if args.count > 1 {
-            let path = args[1]
-            if !path.starts(with: "-") {
-                let url = URL(fileURLWithPath: path)
+        for arg in args.dropFirst() {
+            if !arg.starts(with: "-") {
+                let url = URL(fileURLWithPath: arg)
                 if FileManager.default.fileExists(atPath: url.path) {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                         MPVPlayer.shared.loadFile(url: url)
                     }
+                    break
                 }
             }
         }
@@ -44,7 +44,7 @@ struct VPlayerApp: App {
     var body: some Scene {
         Window("VPlayer", id: "main") {
             ContentView()
-                .frame(minWidth: 800, minHeight: 480)
+                .frame(minWidth: 800, maxWidth: .infinity, minHeight: 480, maxHeight: .infinity)
                 .preferredColorScheme(.dark)
                 .onOpenURL { url in
                     MPVPlayer.shared.loadFile(url: url)
