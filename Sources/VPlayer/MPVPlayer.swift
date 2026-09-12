@@ -34,6 +34,18 @@ public final class MPVPlayer: ObservableObject {
     }
     
     @Published public var subtitleHistory: [String] = []
+    /// Hold-to-peek pauses playback so the translation can actually be read
+    /// before the next line or scene arrives; playback resumes on release.
+    @Published public var pauseWhilePeeking: Bool = true {
+        didSet { UserDefaults.standard.set(pauseWhilePeeking, forKey: "VPlayer.pauseWhilePeeking") }
+    }
+    private var didPauseForPeek = false
+    /// True from releasing Tab until mpv confirms playback resumed. The UI
+    /// keeps the controls hidden during this gap so they do not flash.
+    @Published public private(set) var isResumingAfterPeek = false
+    /// When playback last resumed because Tab was released. Lets the UI tell
+    /// this resume apart from one that should reveal the controls.
+    public private(set) var lastPeekResumeDate: Date = .distantPast
     /// True once mpv's window is embedded under the transparent SwiftUI window.
     /// Until then the UI must paint its own background, or the desktop shows through.
     @Published public var hasVideoSurface: Bool = false
@@ -66,6 +78,9 @@ public final class MPVPlayer: ObservableObject {
     public init() {
         if let savedSize = UserDefaults.standard.value(forKey: "VPlayer.subFontSize") as? Double, savedSize > 15 {
             self.subFontSize = savedSize
+        }
+        if let saved = UserDefaults.standard.object(forKey: "VPlayer.pauseWhilePeeking") as? Bool {
+            self.pauseWhilePeeking = saved
         }
     }
     
@@ -504,9 +519,30 @@ public final class MPVPlayer: ObservableObject {
     
     // MARK: - Language Learning & Subtitle Methods
     public func setPeekingRussian(_ isPeeking: Bool) {
+        // Tab auto-repeats while held; only react to actual transitions.
+        guard isPeeking != isPeekingRussian else { return }
         self.isPeekingRussian = isPeeking
         let val = isPeeking ? "yes" : "no"
         setPropertyAsync("secondary-sub-visibility", val)
+
+        if isPeeking {
+            if pauseWhilePeeking && playbackState == .playing {
+                didPauseForPeek = true
+                pause()
+            }
+        } else if didPauseForPeek {
+            didPauseForPeek = false
+            // Only resume what we paused; leave a manual pause made meanwhile alone.
+            if playbackState == .paused {
+                isResumingAfterPeek = true
+                lastPeekResumeDate = Date()
+                play()
+                // Safety net in case mpv never reports the unpause.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+                    self?.isResumingAfterPeek = false
+                }
+            }
+        }
     }
     
     public func setPrimarySubtitle(trackId: Int?) {
@@ -617,6 +653,9 @@ public final class MPVPlayer: ObservableObject {
                     self.isMpvPaused = isPaused
                     if self.playbackState != .idle && self.playbackState != .finished {
                         self.playbackState = isPaused ? .paused : .playing
+                    }
+                    if !isPaused {
+                        self.isResumingAfterPeek = false
                     }
                 }
             }

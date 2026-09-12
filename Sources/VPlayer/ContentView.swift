@@ -57,7 +57,10 @@ public struct ContentView: View {
             .allowsHitTesting(true)
             
             // LAYER 5: Floating Controls Overlay
-            if showControls || player.playbackState == .paused || player.playbackState == .finished || player.playbackState == .idle {
+            // Hidden while peeking the translation: the peek pause would
+            // otherwise pop the controls and the big play button over the text.
+            let controlsWanted = showControls || player.playbackState == .paused || player.playbackState == .finished || player.playbackState == .idle
+            if controlsWanted && !player.isPeekingRussian && !player.isResumingAfterPeek {
                 ControlsOverlayView(
                     isSettingsOpen: $isSettingsOpen,
                     isExplanationOpen: $isExplanationOpen,
@@ -98,7 +101,9 @@ public struct ContentView: View {
             // Playback can start without a mouse event (for example after opening
             // a file from Finder). Start the same timer so controls do not remain
             // pinned over a fullscreen video.
-            if case .playing = state {
+            // Resuming after a Tab peek is not such a case: the user was
+            // reading, not reaching for the controls.
+            if case .playing = state, Date().timeIntervalSince(player.lastPeekResumeDate) > 1.0 {
                 wakeControls()
             }
         }

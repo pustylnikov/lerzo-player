@@ -106,6 +106,19 @@ public struct SettingsView: View {
                                 .font(.system(size: 14, weight: .bold))
                         }
                         
+                        // Pause while peeking the translation
+                        Toggle(isOn: $player.pauseWhilePeeking) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Пауза при подглядывании перевода (TAB)")
+                                    .font(.system(size: 12, weight: .medium))
+                                Text("Пока TAB зажат, видео стоит; после отпускания продолжает играть.")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        .toggleStyle(.switch)
+                        .controlSize(.small)
+
                         // Font Size Slider
                         VStack(alignment: .leading, spacing: 6) {
                             HStack {
@@ -256,7 +269,7 @@ public struct SettingsView: View {
             }
         }
         .padding(20)
-        .frame(width: 520, height: 760)
+        .frame(width: 520, height: 800)
     }
     
     private func shortcutRow(keys: String, desc: String) -> some View {

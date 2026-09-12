@@ -21,10 +21,6 @@ public struct SubtitlesLayer: View {
             // Secondary (Russian) Subtitle Peek Badge
             if player.isPeekingRussian && !player.currentSecondarySubText.isEmpty {
                 HStack(spacing: 8) {
-                    Image(systemName: "character.book.closed.fill")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.yellow)
-                    
                     OutlinedText(
                         player.currentSecondarySubText,
                         font: style.font(size: max(16, CGFloat(player.subFontSize * 0.7)), weight: .medium),
