@@ -93,6 +93,11 @@ struct VPlayerApp: App {
                     MPVPlayer.shared.seekRelative(seconds: 5)
                 }
                 .keyboardShortcut(.rightArrow, modifiers: [])
+
+                Button("Вкл/выкл звук") {
+                    MPVPlayer.shared.toggleMute()
+                }
+                .keyboardShortcut("m", modifiers: [])
             }
             
             CommandMenu("Изучение языка (ИИ)") {

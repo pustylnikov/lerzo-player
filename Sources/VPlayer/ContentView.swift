@@ -91,6 +91,14 @@ public struct ContentView: View {
             setupKeyboardBindings()
             keyboardMonitor.isExplanationOpen = isExplanationOpen
         }
+        .onChange(of: player.playbackState) { _, state in
+            // Playback can start without a mouse event (for example after opening
+            // a file from Finder). Start the same timer so controls do not remain
+            // pinned over a fullscreen video.
+            if case .playing = state {
+                wakeControls()
+            }
+        }
         .onChange(of: isExplanationOpen) { _, isOpen in
             keyboardMonitor.isExplanationOpen = isOpen
             if !isOpen {

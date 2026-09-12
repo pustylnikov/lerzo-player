@@ -42,6 +42,14 @@ public final class MPVPlayer: ObservableObject {
     private var targetView: NSView?
     private var embedTimer: Timer?
     private var mpvChildWindow: NSWindow?
+    private var isExitingFullscreen = false
+
+    /// AppKit rounds normal windows, while mpv renders into a separate child window.
+    /// Keep the two surfaces visually identical outside fullscreen.
+    private let embeddedWindowCornerRadius: CGFloat = 10
+    private let fullscreenVideoWindowLevel = NSWindow.Level(
+        rawValue: NSWindow.Level.normal.rawValue - 1
+    )
     
     public init() {
         if let savedSize = UserDefaults.standard.value(forKey: "VPlayer.subFontSize") as? Double, savedSize > 15 {
@@ -87,6 +95,11 @@ public final class MPVPlayer: ObservableObject {
         mpv_set_option_string(handle, "input-cursor", "no")
         mpv_set_option_string(handle, "input-vo-keyboard", "no")
         mpv_set_option_string(handle, "macos-app-activation-policy", "regular")
+        mpv_set_option_string(handle, "macos-geometry-calculation", "whole")
+        // mpv owns a separate NSWindow here. It must not resize that window to
+        // the video's aspect ratio, because AppKit owns its geometry instead.
+        mpv_set_option_string(handle, "auto-window-resize", "no")
+        mpv_set_option_string(handle, "keepaspect-window", "no")
         
         mpv_set_option_string(handle, "border", "no")
         mpv_set_option_string(handle, "osc", "no")
@@ -149,6 +162,9 @@ public final class MPVPlayer: ObservableObject {
         mpv_observe_property(handle, 6, "sub-text", MPV_FORMAT_STRING)
         mpv_observe_property(handle, 7, "secondary-sub-text", MPV_FORMAT_STRING)
         mpv_observe_property(handle, 9, "media-title", MPV_FORMAT_STRING)
+        mpv_observe_property(handle, 10, "current-tracks/audio/id", MPV_FORMAT_INT64)
+        mpv_observe_property(handle, 11, "current-tracks/sub/id", MPV_FORMAT_INT64)
+        mpv_observe_property(handle, 12, "current-tracks/sub2/id", MPV_FORMAT_INT64)
     }
     
     // MARK: - Asynchronous Command Helper (Deadlock-free!)
@@ -200,22 +216,10 @@ public final class MPVPlayer: ObservableObject {
                     window.hasShadow = false
                     window.ignoresMouseEvents = true
                     window.collectionBehavior = [.fullScreenAuxiliary, .canJoinAllSpaces]
-                    
-                    let targetFrame: NSRect
-                    if parentWindow.styleMask.contains(.fullScreen) {
-                        targetFrame = parentWindow.frame
-                    } else if let target = self.targetView {
-                        let rectInWindow = target.convert(target.bounds, to: nil)
-                        let screenRect = parentWindow.convertToScreen(rectInWindow)
-                        targetFrame = (screenRect.width > 0 && screenRect.height > 0) ? screenRect : parentWindow.frame
-                    } else {
-                        targetFrame = parentWindow.frame
-                    }
-                    window.setFrame(targetFrame, display: true)
-                    
-                    if !(parentWindow.childWindows?.contains(window) ?? false) {
-                        parentWindow.addChildWindow(window, ordered: .below)
-                    }
+
+                    self.configureEmbeddedWindow(window, in: parentWindow)
+                    window.setFrame(self.embeddedWindowFrame(for: parentWindow), display: true)
+                    self.updateEmbeddedWindowOrdering(window, in: parentWindow)
                     self.mpvChildWindow = window
                     self.embedTimer?.invalidate()
                     self.embedTimer = nil
@@ -231,8 +235,12 @@ public final class MPVPlayer: ObservableObject {
                   let target = self.targetView,
                   let parent = target.window,
                   let child = self.mpvChildWindow else { return }
+
+            // Do not reorder or resize either window while AppKit is restoring
+            // the pre-fullscreen frame. didExitFullScreen performs the final sync.
+            guard !self.isExitingFullscreen else { return }
             
-            // Ensure child is borderless, participates in fullscreen space, and doesn't intercept clicks
+            // Ensure child is borderless, participates in fullscreen space, and doesn't intercept clicks.
             if child.styleMask != [.borderless] {
                 child.styleMask = [.borderless]
             }
@@ -242,22 +250,94 @@ public final class MPVPlayer: ObservableObject {
             child.ignoresMouseEvents = true
             child.hasShadow = false
             
-            // Re-attach if detached by AppKit during fullscreen or space transition
+            self.configureEmbeddedWindow(child, in: parent)
+            let targetFrame = self.embeddedWindowFrame(for: parent)
+
+            // A child NSWindow is constrained to the parent's content layout rect
+            // in native fullscreen, which is 30 pt below the top of this display.
+            // Detach it there and keep it directly below the transparent overlay.
+            self.updateEmbeddedWindowOrdering(child, in: parent)
+
+            if child.frame != targetFrame {
+                child.setFrame(targetFrame, display: true)
+            }
+
+            if parent.styleMask.contains(.fullScreen) {
+                // mpv's window can adjust a full frame back to visibleFrame. A
+                // direct origin update after resizing avoids that 30 pt shift.
+                child.setFrameOrigin(targetFrame.origin)
+                child.order(.below, relativeTo: parent.windowNumber)
+            }
+        }
+    }
+
+    public func prepareForFullscreenExit() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self,
+                  let parent = self.targetView?.window,
+                  let child = self.mpvChildWindow else { return }
+
+            self.isExitingFullscreen = true
+            NSApp.presentationOptions = []
+
+            // Restore the child relationship before AppKit animates the parent
+            // back to its saved windowed frame.
             if !(parent.childWindows?.contains(child) ?? false) {
                 parent.addChildWindow(child, ordered: .below)
             }
-            
-            let targetFrame: NSRect
-            if parent.styleMask.contains(.fullScreen) {
-                targetFrame = parent.frame
-            } else {
-                let rectInWindow = target.convert(target.bounds, to: nil)
-                let screenRect = parent.convertToScreen(rectInWindow)
-                targetFrame = (screenRect.width > 0 && screenRect.height > 0) ? screenRect : parent.frame
+        }
+    }
+
+    public func finishFullscreenTransition() {
+        DispatchQueue.main.async { [weak self] in
+            self?.isExitingFullscreen = false
+            self?.updateChildWindowFrame()
+        }
+    }
+
+    /// During the native fullscreen animation the parent frame can briefly retain
+    /// a title-bar-sized inset. The physical screen frame never has that inset.
+    private func embeddedWindowFrame(for parent: NSWindow) -> NSRect {
+        if parent.styleMask.contains(.fullScreen), let screenFrame = parent.screen?.frame {
+            return screenFrame
+        }
+
+        guard let target = targetView else { return parent.frame }
+        let rectInWindow = target.convert(target.bounds, to: nil)
+        let screenRect = parent.convertToScreen(rectInWindow)
+        return screenRect.width > 0 && screenRect.height > 0 ? screenRect : parent.frame
+    }
+
+    private func configureEmbeddedWindow(_ child: NSWindow, in parent: NSWindow) {
+        child.isOpaque = false
+        child.backgroundColor = .clear
+
+        guard let contentView = child.contentView else { return }
+        contentView.wantsLayer = true
+        contentView.layer?.masksToBounds = true
+        contentView.layer?.cornerRadius = parent.styleMask.contains(.fullScreen) ? 0 : embeddedWindowCornerRadius
+    }
+
+    private func updateEmbeddedWindowOrdering(_ child: NSWindow, in parent: NSWindow) {
+        let isAttached = parent.childWindows?.contains(child) ?? false
+
+        if parent.styleMask.contains(.fullScreen) {
+            NSApp.presentationOptions = [.hideDock, .hideMenuBar]
+            // mpv may bring its own window forward after rendering starts. Keep
+            // it on a stable lower level so the transparent SwiftUI window with
+            // subtitles and controls always stays above it.
+            child.level = fullscreenVideoWindowLevel
+            parent.level = .normal
+            if isAttached {
+                parent.removeChildWindow(child)
             }
-            
-            if child.frame != targetFrame {
-                child.setFrame(targetFrame, display: true)
+            child.order(.below, relativeTo: parent.windowNumber)
+        } else {
+            NSApp.presentationOptions = []
+            child.level = .normal
+            parent.level = .normal
+            if !isAttached {
+                parent.addChildWindow(child, ordered: .below)
             }
         }
     }
@@ -477,6 +557,30 @@ public final class MPVPlayer: ObservableObject {
                     self?.mediaTitle = title
                 }
             }
+
+        case "current-tracks/audio/id":
+            if let data = prop.data {
+                let trackID = Int(data.assumingMemoryBound(to: Int64.self).pointee)
+                DispatchQueue.main.async { [weak self] in
+                    self?.currentAudioTrackId = trackID > 0 ? trackID : nil
+                }
+            }
+
+        case "current-tracks/sub/id":
+            if let data = prop.data {
+                let trackID = Int(data.assumingMemoryBound(to: Int64.self).pointee)
+                DispatchQueue.main.async { [weak self] in
+                    self?.currentPrimarySubId = trackID > 0 ? trackID : nil
+                }
+            }
+
+        case "current-tracks/sub2/id":
+            if let data = prop.data {
+                let trackID = Int(data.assumingMemoryBound(to: Int64.self).pointee)
+                DispatchQueue.main.async { [weak self] in
+                    self?.currentSecondarySubId = trackID > 0 ? trackID : nil
+                }
+            }
             
         case "sub-text":
             var text = ""
@@ -519,38 +623,45 @@ public final class MPVPlayer: ObservableObject {
         
         var newAudios: [MediaTrack] = []
         var newSubs: [MediaTrack] = []
+        let selectedAudioID = currentTrackID(handle, property: "current-tracks/audio/id")
+        let selectedPrimarySubID = currentTrackID(handle, property: "current-tracks/sub/id")
+        let selectedSecondarySubID = currentTrackID(handle, property: "current-tracks/sub2/id")
         
         for i in 0..<count {
             guard let typeStr = getTrackProp(handle, idx: i, prop: "type") else { continue }
             let idVal: Int64 = getTrackInt(handle, idx: i, prop: "id") ?? Int64(i + 1)
             let title = getTrackProp(handle, idx: i, prop: "title") ?? ""
             let lang = getTrackProp(handle, idx: i, prop: "lang")
-            let isSel = (getTrackInt(handle, idx: i, prop: "selected") ?? 0) != 0
-            let isDef = (getTrackInt(handle, idx: i, prop: "default") ?? 0) != 0
-            let isExt = (getTrackInt(handle, idx: i, prop: "external") ?? 0) != 0
+            let isSel = getTrackFlag(handle, idx: i, prop: "selected")
+            let isDef = getTrackFlag(handle, idx: i, prop: "default")
+            let isExt = getTrackFlag(handle, idx: i, prop: "external")
             
             if typeStr == "audio" {
+                let isCurrent = selectedAudioID == Int(idVal) || isSel
                 newAudios.append(MediaTrack(id: Int(idVal),
                                             type: .audio,
                                             title: title,
                                             lang: lang,
                                             isDefault: isDef,
-                                            isSelected: isSel,
+                                            isSelected: isCurrent,
                                             isExternal: isExt))
-                if isSel { self.currentAudioTrackId = Int(idVal) }
             } else if typeStr == "sub" {
+                let isCurrent = selectedPrimarySubID == Int(idVal) || selectedSecondarySubID == Int(idVal) || isSel
                 newSubs.append(MediaTrack(id: Int(idVal),
                                           type: .sub,
                                           title: title,
                                           lang: lang,
                                           isDefault: isDef,
-                                          isSelected: isSel,
+                                          isSelected: isCurrent,
                                           isExternal: isExt))
             }
         }
         
         self.audioTracks = newAudios
         self.subtitleTracks = newSubs
+        self.currentAudioTrackId = selectedAudioID ?? newAudios.first(where: \.isSelected)?.id
+        self.currentPrimarySubId = selectedPrimarySubID
+        self.currentSecondarySubId = selectedSecondarySubID
     }
     
     public func autoSelectDualSubtitles() {
@@ -587,5 +698,18 @@ public final class MPVPlayer: ObservableObject {
         var val: Int64 = 0
         let status = mpv_get_property(handle, key, MPV_FORMAT_INT64, &val)
         return status >= 0 ? val : nil
+    }
+
+    private func getTrackFlag(_ handle: OpaquePointer, idx: Int64, prop: String) -> Bool {
+        let key = "track-list/\(idx)/\(prop)"
+        var value: Int32 = 0
+        let status = mpv_get_property(handle, key, MPV_FORMAT_FLAG, &value)
+        return status >= 0 && value != 0
+    }
+
+    private func currentTrackID(_ handle: OpaquePointer, property: String) -> Int? {
+        var value: Int64 = 0
+        let status = mpv_get_property(handle, property, MPV_FORMAT_INT64, &value)
+        return status >= 0 && value > 0 ? Int(value) : nil
     }
 }

@@ -84,6 +84,9 @@ public class DroppableNSView: NSView {
         guard let win = self.window else { return }
         win.isOpaque = false
         win.backgroundColor = .clear
+        win.styleMask.insert(.fullSizeContentView)
+        win.titleVisibility = .hidden
+        win.titlebarAppearsTransparent = true
         win.collectionBehavior = [.fullScreenPrimary]
         
         NotificationCenter.default.removeObserver(self)
@@ -107,15 +110,28 @@ public class DroppableNSView: NSView {
     }
     
     @objc private func windowGeometryChanged(_ notification: Notification) {
+        if notification.name == NSWindow.willExitFullScreenNotification {
+            MPVPlayer.shared.prepareForFullscreenExit()
+            return
+        }
+
+        if notification.name == NSWindow.didExitFullScreenNotification {
+            MPVPlayer.shared.finishFullscreenTransition()
+        }
+
         MPVPlayer.shared.updateChildWindowFrame()
         
-        // When entering or exiting fullscreen, macOS animates over 0.3s.
-        // Schedule minor delayed frame syncs to guarantee lock at the end of the transition.
+        // AppKit and mpv can both change their window geometry during this animation.
+        // Repeat the sync after the transition has settled so the video has no
+        // title-bar-sized gap at the top of the fullscreen screen.
         if notification.name == NSWindow.didEnterFullScreenNotification || notification.name == NSWindow.didExitFullScreenNotification {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 MPVPlayer.shared.updateChildWindowFrame()
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                MPVPlayer.shared.updateChildWindowFrame()
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                 MPVPlayer.shared.updateChildWindowFrame()
             }
         }

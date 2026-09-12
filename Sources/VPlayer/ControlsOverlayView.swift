@@ -8,6 +8,10 @@ public struct ControlsOverlayView: View {
     
     @State private var isHoveringSeeker: Bool = false
     @State private var seekDraggingValue: Double? = nil
+
+    private var canControlPlayback: Bool {
+        player.currentFileURL != nil && player.playbackState != .idle && player.playbackState != .loading
+    }
     
     public init(isSettingsOpen: Binding<Bool>,
                 isExplanationOpen: Binding<Bool>,
@@ -49,6 +53,8 @@ public struct ControlsOverlayView: View {
             bottomBar
                 .padding(.horizontal, 16)
                 .padding(.bottom, 12)
+                .disabled(!canControlPlayback)
+                .opacity(canControlPlayback ? 1 : 0.42)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
@@ -143,6 +149,8 @@ public struct ControlsOverlayView: View {
                 .cornerRadius(8)
             }
             .menuStyle(.borderlessButton)
+            .disabled(player.subtitleTracks.isEmpty)
+            .help(player.subtitleTracks.isEmpty ? "Субтитры станут доступны после загрузки видео с дорожками" : "Выбрать дорожку субтитров")
             
             // Audio Track Selection Menu
             Menu {
@@ -168,6 +176,8 @@ public struct ControlsOverlayView: View {
                 .cornerRadius(8)
             }
             .menuStyle(.borderlessButton)
+            .disabled(player.audioTracks.isEmpty)
+            .help(player.audioTracks.isEmpty ? "Аудиодорожки станут доступны после загрузки видео" : "Выбрать аудиодорожку")
             
             // Gemini AI Explain Action Button
             Button(action: {
@@ -193,6 +203,7 @@ public struct ControlsOverlayView: View {
             .buttonStyle(.plain)
             .keyboardShortcut("g", modifiers: .command)
             .help("Разобрать текущую реплику и идиомы через Gemini (Cmd + G)")
+            .disabled(!canControlPlayback)
             
             // Settings Button
             Button(action: { isSettingsOpen.toggle() }) {

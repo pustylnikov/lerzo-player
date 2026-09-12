@@ -62,6 +62,12 @@ public final class KeyboardMonitor: ObservableObject {
             }
             
             let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+
+            // M is the conventional mute toggle in desktop video players.
+            if flags.isEmpty && event.charactersIgnoringModifiers?.lowercased() == "m" {
+                player.toggleMute()
+                return nil
+            }
             
             // CMD + G -> Trigger Gemini Explanation
             if flags.contains(.command) && event.charactersIgnoringModifiers?.lowercased() == "g" {

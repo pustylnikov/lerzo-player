@@ -20,14 +20,11 @@ public struct MediaTrack: Identifiable, Hashable {
         if let lang = lang, !title.isEmpty {
             name += " (\(lang.uppercased()))"
         }
-        if isSelected {
-            name += " ✓"
-        }
         return name
     }
 }
 
-public enum PlaybackState {
+public enum PlaybackState: Equatable {
     case idle
     case loading
     case playing
