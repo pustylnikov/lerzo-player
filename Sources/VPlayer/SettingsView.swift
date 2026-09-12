@@ -176,6 +176,21 @@ public struct SettingsView: View {
                         }
                         .toggleStyle(.switch)
                         .controlSize(.small)
+
+                        Toggle(isOn: $player.hdrOutputEnabled) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Выводить HDR-видео в HDR")
+                                    .font(.system(size: 12, weight: .medium))
+                                Text(player.displaySupportsHDR
+                                     ? "Текущий дисплей поддерживает HDR. Если выключить, HDR-видео будет преобразовано в SDR."
+                                     : "Текущий дисплей не поддерживает HDR — видео преобразуется в SDR. Настройка применится на HDR-дисплее.")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                        .toggleStyle(.switch)
+                        .controlSize(.small)
                     }
                     .padding(14)
                     .background(Color.white.opacity(0.04))
@@ -340,7 +355,7 @@ public struct SettingsView: View {
             }
         }
         .padding(20)
-        .frame(width: 520, height: 820)
+        .frame(width: 520, height: 860)
     }
     
     private var systemLanguageLabel: String {

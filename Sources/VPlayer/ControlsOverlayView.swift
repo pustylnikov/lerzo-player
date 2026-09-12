@@ -102,6 +102,20 @@ public struct ControlsOverlayView: View {
                     .truncationMode(.middle)
                     .frame(maxWidth: 350, alignment: .leading)
             }
+
+            if player.isHDRContent {
+                let passthrough = player.hdrOutputEnabled && player.displaySupportsHDR
+                Text("HDR")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(passthrough ? .black : .white.opacity(0.7))
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 2)
+                    .background(
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(passthrough ? Color.yellow : Color.white.opacity(0.15))
+                    )
+                    .help(passthrough ? "HDR-видео выводится в HDR" : "HDR-видео преобразуется в SDR (дисплей не поддерживает HDR или вывод отключён в настройках)")
+            }
             
             Spacer()
             

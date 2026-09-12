@@ -40,6 +40,18 @@ public final class MPVPlayer: ObservableObject {
         didSet { UserDefaults.standard.set(pauseWhilePeeking, forKey: "VPlayer.pauseWhilePeeking") }
     }
     private var didPauseForPeek = false
+    /// Pass HDR video through to the display as HDR (EDR) instead of
+    /// tone-mapping it to SDR. Only takes effect on displays that support EDR.
+    @Published public var hdrOutputEnabled: Bool = true {
+        didSet {
+            UserDefaults.standard.set(hdrOutputEnabled, forKey: "VPlayer.hdrOutputEnabled")
+            updateHDROutput()
+        }
+    }
+    /// Whether the screen the player window is on can show EDR/HDR content.
+    @Published public private(set) var displaySupportsHDR: Bool = false
+    /// True while the current video is HDR (PQ or HLG transfer).
+    @Published public private(set) var isHDRContent: Bool = false
     /// True from releasing Tab until mpv confirms playback resumed. The UI
     /// keeps the controls hidden during this gap so they do not flash.
     @Published public private(set) var isResumingAfterPeek = false
@@ -82,6 +94,9 @@ public final class MPVPlayer: ObservableObject {
         if let saved = UserDefaults.standard.object(forKey: "VPlayer.pauseWhilePeeking") as? Bool {
             self.pauseWhilePeeking = saved
         }
+        if let saved = UserDefaults.standard.object(forKey: "VPlayer.hdrOutputEnabled") as? Bool {
+            self.hdrOutputEnabled = saved
+        }
     }
     
     deinit {
@@ -94,6 +109,8 @@ public final class MPVPlayer: ObservableObject {
             return
         }
         self.targetView = view
+        let screen = view.window?.screen ?? NSScreen.main
+        self.displaySupportsHDR = (screen?.maximumPotentialExtendedDynamicRangeColorComponentValue ?? 1) > 1
         if self.mpv == nil {
             setupMPV()
         } else {
@@ -112,6 +129,12 @@ public final class MPVPlayer: ObservableObject {
             return
         }
         self.mpv = handle
+        
+        // Debugging aid: VPLAYER_MPV_LOG=/path/to/file writes mpv's verbose log.
+        if let logPath = ProcessInfo.processInfo.environment["VPLAYER_MPV_LOG"], !logPath.isEmpty {
+            mpv_set_option_string(handle, "log-file", logPath)
+            mpv_set_option_string(handle, "msg-level", "all=v")
+        }
         
         // 1. Embedded options to prevent hook hanging and detached separate window
         mpv_set_option_string(handle, "hwdec", "auto")
@@ -136,6 +159,13 @@ public final class MPVPlayer: ObservableObject {
         mpv_set_option_string(handle, "sub-color", "1.0/1.0/1.0/0.0")
         mpv_set_option_string(handle, "sub-border-color", "0.0/0.0/0.0/0.0")
         mpv_set_option_string(handle, "sub-shadow-color", "0.0/0.0/0.0/0.0")
+        
+        // HDR passthrough: with the hint enabled, gpu-next/macvk switches the
+        // Metal layer to BT.2100 PQ (EDR) for HDR sources and keeps SDR
+        // sources in BT.709, so it is safe to leave on whenever the display
+        // supports EDR. Without it every HDR file is tone-mapped to SDR.
+        mpv_set_option_string(handle, "vo", "gpu-next")
+        mpv_set_option_string(handle, "target-colorspace-hint", shouldOutputHDR ? "yes" : "no")
         
         // 2. High quality video & audio defaults
         mpv_set_option_string(handle, "keep-open", "yes")
@@ -194,6 +224,7 @@ public final class MPVPlayer: ObservableObject {
         mpv_observe_property(handle, 11, "current-tracks/sub/id", MPV_FORMAT_INT64)
         mpv_observe_property(handle, 12, "current-tracks/sub2/id", MPV_FORMAT_INT64)
         mpv_observe_property(handle, 13, "eof-reached", MPV_FORMAT_FLAG)
+        mpv_observe_property(handle, 14, "video-params/gamma", MPV_FORMAT_STRING)
     }
     
     // MARK: - Asynchronous Command Helper (Deadlock-free!)
@@ -251,6 +282,7 @@ public final class MPVPlayer: ObservableObject {
                     self.updateEmbeddedWindowOrdering(window, in: parentWindow)
                     self.mpvChildWindow = window
                     self.hasVideoSurface = true
+                    self.updateOverlayEDRFlag()
                     self.embedTimer?.invalidate()
                     self.embedTimer = nil
                     break
@@ -281,6 +313,10 @@ public final class MPVPlayer: ObservableObject {
             child.hasShadow = false
             
             self.configureEmbeddedWindow(child, in: parent)
+            // SwiftUI can rebuild the overlay's layer tree (e.g. when the
+            // background switches to clear once video appears), dropping the
+            // EDR flag; re-assert it on every geometry pass.
+            self.updateOverlayEDRFlag()
             let targetFrame = self.embeddedWindowFrame(for: parent)
 
             // A child NSWindow is constrained to the parent's content layout rect
@@ -389,6 +425,43 @@ public final class MPVPlayer: ObservableObject {
         }
     }
     
+    // MARK: - HDR Output
+    private var shouldOutputHDR: Bool {
+        hdrOutputEnabled && displaySupportsHDR
+    }
+
+    /// Re-evaluates EDR support for the screen the window is on and pushes
+    /// the resulting hint to mpv. Call when the window changes screens.
+    public func updateHDROutput() {
+        let apply = { [weak self] in
+            guard let self else { return }
+            let screen = self.targetView?.window?.screen ?? NSScreen.main
+            let supports = (screen?.maximumPotentialExtendedDynamicRangeColorComponentValue ?? 1) > 1
+            if self.displaySupportsHDR != supports {
+                self.displaySupportsHDR = supports
+            }
+            self.setPropertyAsync("target-colorspace-hint", self.shouldOutputHDR ? "yes" : "no")
+            self.updateOverlayEDRFlag()
+        }
+        if Thread.isMainThread { apply() } else { DispatchQueue.main.async(execute: apply) }
+    }
+
+    /// The video lives in mpv's own window underneath the transparent SwiftUI
+    /// window. The compositor only engages EDR for a window that is not
+    /// covered by another one, and it counts that overlay as cover, so HDR
+    /// content stayed tone-mapped. Declaring EDR on the overlay's own layer
+    /// lifts that — but only while HDR is actually being shown, so SDR
+    /// playback never pushes the display into HDR mode.
+    private func updateOverlayEDRFlag() {
+        guard let window = targetView?.window else { return }
+        let wantsEDR = isHDRContent && shouldOutputHDR
+        window.contentView?.wantsLayer = true
+        for layer in [window.contentView?.layer, targetView?.layer].compactMap({ $0 })
+        where layer.wantsExtendedDynamicRangeContent != wantsEDR {
+            layer.wantsExtendedDynamicRangeContent = wantsEDR
+        }
+    }
+
     public func toggleFullscreen() {
         DispatchQueue.main.async { [weak self] in
             guard let win = self?.targetView?.window else { return }
@@ -691,6 +764,17 @@ public final class MPVPlayer: ObservableObject {
                 }
             }
             
+        case "video-params/gamma":
+            var gamma = ""
+            if let data = prop.data {
+                gamma = String(cString: data.assumingMemoryBound(to: UnsafePointer<CChar>.self).pointee)
+            }
+            let isHDR = gamma == "pq" || gamma == "hlg"
+            DispatchQueue.main.async { [weak self] in
+                self?.isHDRContent = isHDR
+                self?.updateOverlayEDRFlag()
+            }
+
         case "media-title":
             if let data = prop.data {
                 let cStr = data.assumingMemoryBound(to: UnsafePointer<CChar>.self).pointee

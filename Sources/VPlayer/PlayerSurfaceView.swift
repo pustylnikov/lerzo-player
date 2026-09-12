@@ -88,6 +88,9 @@ public class DroppableNSView: NSView {
         win.titleVisibility = .hidden
         win.titlebarAppearsTransparent = true
         win.collectionBehavior = [.fullScreenPrimary]
+        // Layer-back the content view up front so the EDR flag that
+        // MPVPlayer toggles for HDR playback has a layer to land on.
+        win.contentView?.wantsLayer = true
         
         NotificationCenter.default.removeObserver(self)
         
@@ -105,11 +108,21 @@ public class DroppableNSView: NSView {
         for name in notifs {
             NotificationCenter.default.addObserver(self, selector: #selector(windowGeometryChanged), name: name, object: win)
         }
+        // Fires when display settings change, e.g. HDR toggled in System Settings.
+        NotificationCenter.default.addObserver(self, selector: #selector(screenParametersChanged),
+                                               name: NSApplication.didChangeScreenParametersNotification, object: nil)
         
         MPVPlayer.shared.attach(view: self)
     }
     
+    @objc private func screenParametersChanged(_ notification: Notification) {
+        MPVPlayer.shared.updateHDROutput()
+    }
+
     @objc private func windowGeometryChanged(_ notification: Notification) {
+        if notification.name == NSWindow.didChangeScreenNotification {
+            MPVPlayer.shared.updateHDROutput()
+        }
         if notification.name == NSWindow.willExitFullScreenNotification {
             MPVPlayer.shared.prepareForFullscreenExit()
             return
