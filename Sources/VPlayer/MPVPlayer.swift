@@ -43,6 +43,14 @@ public final class MPVPlayer: ObservableObject {
     private var embedTimer: Timer?
     private var mpvChildWindow: NSWindow?
     private var isExitingFullscreen = false
+    /// Last value of mpv's `pause` property, needed to pick the right state
+    /// when playback leaves EOF (a seek back while paused must stay paused).
+    private var isMpvPaused = false
+    /// True between issuing a seek and mpv's PLAYBACK_RESTART. While set,
+    /// stale `time-pos` updates are dropped so the timeline does not jump back
+    /// to the old position before the seek completes.
+    private var isSeekInFlight = false
+    private var seekSettleWorkItem: DispatchWorkItem?
 
     /// AppKit rounds normal windows, while mpv renders into a separate child window.
     /// Keep the two surfaces visually identical outside fullscreen. Used only when
@@ -166,6 +174,7 @@ public final class MPVPlayer: ObservableObject {
         mpv_observe_property(handle, 10, "current-tracks/audio/id", MPV_FORMAT_INT64)
         mpv_observe_property(handle, 11, "current-tracks/sub/id", MPV_FORMAT_INT64)
         mpv_observe_property(handle, 12, "current-tracks/sub2/id", MPV_FORMAT_INT64)
+        mpv_observe_property(handle, 13, "eof-reached", MPV_FORMAT_FLAG)
     }
     
     // MARK: - Asynchronous Command Helper (Deadlock-free!)
@@ -406,10 +415,26 @@ public final class MPVPlayer: ObservableObject {
     }
     
     public func togglePlayPause() {
+        if playbackState == .finished {
+            restartFromBeginning()
+            return
+        }
         executeCommand(["cycle", "pause"])
     }
     
     public func play() {
+        if playbackState == .finished {
+            restartFromBeginning()
+            return
+        }
+        setPropertyAsync("pause", "no")
+    }
+
+    /// With `keep-open=yes` mpv holds the last frame at EOF, so unpausing
+    /// there would just flip the icon. Behave like every other player: start over.
+    private func restartFromBeginning() {
+        beginSeek(optimisticTime: 0)
+        executeCommand(["seek", "0", "absolute"])
         setPropertyAsync("pause", "no")
     }
     
@@ -419,15 +444,48 @@ public final class MPVPlayer: ObservableObject {
     
     public func seek(to seconds: Double) {
         let sec = max(0, min(seconds, duration))
-        executeCommand(["seek", "\(sec)", "absolute"])
+        beginSeek(optimisticTime: sec)
+        executeCommand(["seek", "\(sec)", "absolute+exact"])
     }
     
     public func seekRelative(seconds: Double) {
+        beginSeek(optimisticTime: max(0, min(currentTime + seconds, duration)))
         executeCommand(["seek", "\(seconds)", "relative"])
     }
     
     public func seekSubtitle(direction: Int) {
+        beginSeek(optimisticTime: nil)
         executeCommand(["sub-seek", "\(direction)"])
+    }
+
+    private func beginSeek(optimisticTime: Double?) {
+        // Must apply synchronously when called from the UI: the caller's next
+        // state change (e.g. dropping the scrub value) renders in the same
+        // frame, and an async update would let a stale currentTime flash first.
+        let apply = { [weak self] in
+            guard let self else { return }
+            self.isSeekInFlight = true
+            if let optimisticTime {
+                self.currentTime = optimisticTime
+            }
+            // Safety net: a seek to the current position may not emit
+            // PLAYBACK_RESTART, so never stay deaf to time-pos for long.
+            self.seekSettleWorkItem?.cancel()
+            let item = DispatchWorkItem { [weak self] in self?.isSeekInFlight = false }
+            self.seekSettleWorkItem = item
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: item)
+        }
+        if Thread.isMainThread {
+            apply()
+        } else {
+            DispatchQueue.main.async(execute: apply)
+        }
+    }
+
+    private func endSeek() {
+        seekSettleWorkItem?.cancel()
+        seekSettleWorkItem = nil
+        isSeekInFlight = false
     }
     
     public func setVolume(_ val: Double) {
@@ -488,8 +546,13 @@ public final class MPVPlayer: ObservableObject {
                 
             case MPV_EVENT_FILE_LOADED, MPV_EVENT_PLAYBACK_RESTART:
                 attachMpvChildWindowIfNeeded()
+                // PLAYBACK_RESTART also fires after every seek, so honour the
+                // actual pause flag instead of assuming playback resumed.
                 DispatchQueue.main.async { [weak self] in
-                    self?.playbackState = .playing
+                    guard let self else { return }
+                    self.endSeek()
+                    guard self.playbackState != .finished else { return }
+                    self.playbackState = self.isMpvPaused ? .paused : .playing
                 }
                 // Delay track queries slightly to allow video reconfig without any mutex contention
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
@@ -525,9 +588,10 @@ public final class MPVPlayer: ObservableObject {
             if let data = prop.data {
                 let time = data.assumingMemoryBound(to: Double.self).pointee
                 DispatchQueue.main.async { [weak self] in
-                    self?.currentTime = time
-                    if self?.playbackState == .loading {
-                        self?.playbackState = .playing
+                    guard let self, !self.isSeekInFlight else { return }
+                    self.currentTime = time
+                    if self.playbackState == .loading {
+                        self.playbackState = .playing
                     }
                 }
             }
@@ -545,8 +609,24 @@ public final class MPVPlayer: ObservableObject {
                 let isPaused = data.assumingMemoryBound(to: Int32.self).pointee != 0
                 DispatchQueue.main.async { [weak self] in
                     guard let self = self else { return }
+                    self.isMpvPaused = isPaused
                     if self.playbackState != .idle && self.playbackState != .finished {
                         self.playbackState = isPaused ? .paused : .playing
+                    }
+                }
+            }
+
+        case "eof-reached":
+            // keep-open=yes means END_FILE never fires at the end of a file;
+            // this property is the reliable signal that playback has finished.
+            if let data = prop.data {
+                let atEOF = data.assumingMemoryBound(to: Int32.self).pointee != 0
+                DispatchQueue.main.async { [weak self] in
+                    guard let self = self, self.playbackState != .idle else { return }
+                    if atEOF {
+                        self.playbackState = .finished
+                    } else if self.playbackState == .finished {
+                        self.playbackState = self.isMpvPaused ? .paused : .playing
                     }
                 }
             }

@@ -30,8 +30,8 @@ public struct ControlsOverlayView: View {
             
             Spacer()
             
-            // CENTER PLAY/PAUSE BIG ICON (when paused)
-            if player.playbackState == .paused {
+            // CENTER PLAY BIG ICON (when paused or finished)
+            if player.playbackState == .paused || player.playbackState == .finished {
                 Button(action: { player.togglePlayPause() }) {
                     ZStack {
                         Circle()
@@ -263,6 +263,11 @@ public struct ControlsOverlayView: View {
                     .gesture(
                         DragGesture(minimumDistance: 0)
                             .onChanged { value in
+                                // Scrubbing pauses playback; the user presses
+                                // play to continue from the new position.
+                                if seekDraggingValue == nil {
+                                    player.pause()
+                                }
                                 let fraction = max(0, min(1, value.location.x / geo.size.width))
                                 seekDraggingValue = fraction * player.duration
                             }
@@ -285,10 +290,13 @@ public struct ControlsOverlayView: View {
             // Buttons Row
             HStack(spacing: 16) {
                 // Play / Pause
+                // Fixed frame: play.fill and pause.fill have different widths,
+                // so without it the whole row shifts on every toggle.
                 Button(action: { player.togglePlayPause() }) {
                     Image(systemName: player.playbackState == .playing ? "pause.fill" : "play.fill")
                         .font(.system(size: 18))
                         .foregroundColor(.white)
+                        .frame(width: 22, height: 22)
                 }
                 .buttonStyle(.plain)
                 .help("Воспроизведение / Пауза (Пробел)")
@@ -338,6 +346,7 @@ public struct ControlsOverlayView: View {
                         Image(systemName: player.isMuted || player.volume == 0 ? "speaker.slash.fill" : "speaker.wave.2.fill")
                             .font(.system(size: 13))
                             .foregroundColor(.white.opacity(0.85))
+                            .frame(width: 20, height: 20)
                     }
                     .buttonStyle(.plain)
                     

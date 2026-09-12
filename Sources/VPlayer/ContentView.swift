@@ -57,7 +57,7 @@ public struct ContentView: View {
             .allowsHitTesting(true)
             
             // LAYER 5: Floating Controls Overlay
-            if showControls || player.playbackState == .paused || player.playbackState == .idle {
+            if showControls || player.playbackState == .paused || player.playbackState == .finished || player.playbackState == .idle {
                 ControlsOverlayView(
                     isSettingsOpen: $isSettingsOpen,
                     isExplanationOpen: $isExplanationOpen,
