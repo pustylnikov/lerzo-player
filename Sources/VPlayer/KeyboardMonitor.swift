@@ -55,9 +55,9 @@ public final class KeyboardMonitor: ObservableObject {
                 }
             }
             
-            // TAB KEY (keyCode 48) - Peek Russian Subtitles
+            // TAB KEY (keyCode 48) - Peek translation (secondary subtitle track)
             if event.keyCode == 48 {
-                player.setPeekingRussian(true)
+                player.setPeekingTranslation(true)
                 return nil
             }
             
@@ -141,9 +141,9 @@ public final class KeyboardMonitor: ObservableObject {
             }
             
         } else if event.type == .keyUp {
-            // TAB KEY UP -> Hide Russian Subtitles Peek
+            // TAB KEY UP -> Hide translation peek
             if event.keyCode == 48 {
-                player.setPeekingRussian(false)
+                player.setPeekingTranslation(false)
                 return nil
             }
         }

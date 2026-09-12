@@ -60,7 +60,7 @@ public struct ContentView: View {
             // Hidden while peeking the translation: the peek pause would
             // otherwise pop the controls and the big play button over the text.
             let controlsWanted = showControls || player.playbackState == .paused || player.playbackState == .finished || player.playbackState == .idle
-            if controlsWanted && !player.isPeekingRussian && !player.isResumingAfterPeek {
+            if controlsWanted && !player.isPeekingTranslation && !player.isResumingAfterPeek {
                 ControlsOverlayView(
                     isSettingsOpen: $isSettingsOpen,
                     isExplanationOpen: $isExplanationOpen,
@@ -188,7 +188,7 @@ public struct ContentView: View {
             
             // Feature Highlights
             HStack(spacing: 24) {
-                featureBadge(icon: "character.book.closed.fill", text: "TAB: Быстрый русский перевод")
+                featureBadge(icon: "character.book.closed.fill", text: "TAB: Быстро подглядеть перевод")
                 featureBadge(icon: "sparkles", text: "Gemini: Разбор идиом и сленга")
                 featureBadge(icon: "arrow.counterclockwise.circle", text: "R: Повтор текущей реплики")
             }

@@ -256,7 +256,7 @@ public struct SettingsView: View {
                                 .font(.system(size: 14, weight: .bold))
                         }
                         
-                        shortcutRow(keys: "TAB", desc: "Зажать: мгновенно подглядеть русский перевод")
+                        shortcutRow(keys: "TAB", desc: "Зажать: мгновенно подглядеть перевод (вторая дорожка субтитров)")
                         shortcutRow(keys: "R", desc: "Повторить текущую реплику сначала (sub-seek 0)")
                         shortcutRow(keys: "E", desc: "Перейти к следующей реплике диалога")
                         shortcutRow(keys: "⌘ + G", desc: "ИИ разбор текущей фразы через Gemini")

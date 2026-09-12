@@ -107,7 +107,7 @@ public struct ControlsOverlayView: View {
             
             // Subtitle Selection Menu
             Menu {
-                Text("Основная дорожка (English):").font(.caption)
+                Text("Основная дорожка (язык оригинала):").font(.caption)
                 Button(player.currentPrimarySubId == nil ? "✓ Без субтитров" : "Отключить") {
                     player.setPrimarySubtitle(trackId: nil)
                 }
@@ -123,7 +123,7 @@ public struct ControlsOverlayView: View {
                 
                 Divider()
                 
-                Text("Вторичная дорожка (Русский для подглядывания):").font(.caption)
+                Text("Вторая дорожка (перевод для подглядывания по TAB):").font(.caption)
                 Button(player.currentSecondarySubId == nil ? "✓ Без вторичных" : "Отключить") {
                     player.setSecondarySubtitle(trackId: nil)
                 }
@@ -376,7 +376,7 @@ public struct ControlsOverlayView: View {
                 .padding(.vertical, 4)
                 .background(Color.white.opacity(0.1))
                 .cornerRadius(6)
-                .help("Зажмите и удерживайте TAB, чтобы быстро увидеть русские субтитры")
+                .help("Зажмите и удерживайте TAB, чтобы быстро увидеть перевод со второй дорожки субтитров")
                 
                 // Fullscreen Toggle
                 Button(action: {

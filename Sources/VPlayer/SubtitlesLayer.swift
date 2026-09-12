@@ -18,8 +18,8 @@ public struct SubtitlesLayer: View {
         VStack(spacing: 8) {
             Spacer()
             
-            // Secondary (Russian) Subtitle Peek Badge
-            if player.isPeekingRussian && !player.currentSecondarySubText.isEmpty {
+            // Secondary (translation) Subtitle Peek Badge
+            if player.isPeekingTranslation && !player.currentSecondarySubText.isEmpty {
                 HStack(spacing: 8) {
                     OutlinedText(
                         player.currentSecondarySubText,
@@ -42,10 +42,10 @@ public struct SubtitlesLayer: View {
                         )
                 )
                 .transition(.opacity.combined(with: .scale(scale: 0.96)))
-                .animation(.easeInOut(duration: 0.15), value: player.isPeekingRussian)
+                .animation(.easeInOut(duration: 0.15), value: player.isPeekingTranslation)
             }
             
-            // Interactive English Subtitle Pill (active when paused or hovered)
+            // Interactive primary subtitle pill (active when paused or hovered)
             if !player.currentSubText.isEmpty && player.showSubtitles {
                 let lines = player.currentSubText
                     .components(separatedBy: .newlines)

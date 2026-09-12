@@ -23,7 +23,7 @@ public final class MPVPlayer: ObservableObject {
     
     @Published public var currentSubText: String = ""
     @Published public var currentSecondarySubText: String = ""
-    @Published public var isPeekingRussian: Bool = false
+    @Published public var isPeekingTranslation: Bool = false
     @Published public var showSubtitles: Bool = true
     
     @Published public var subFontSize: Double = 46 {
@@ -518,10 +518,10 @@ public final class MPVPlayer: ObservableObject {
     }
     
     // MARK: - Language Learning & Subtitle Methods
-    public func setPeekingRussian(_ isPeeking: Bool) {
+    public func setPeekingTranslation(_ isPeeking: Bool) {
         // Tab auto-repeats while held; only react to actual transitions.
-        guard isPeeking != isPeekingRussian else { return }
-        self.isPeekingRussian = isPeeking
+        guard isPeeking != isPeekingTranslation else { return }
+        self.isPeekingTranslation = isPeeking
         let val = isPeeking ? "yes" : "no"
         setPropertyAsync("secondary-sub-visibility", val)
 
