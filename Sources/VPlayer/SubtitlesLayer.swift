@@ -2,6 +2,7 @@ import SwiftUI
 
 public struct SubtitlesLayer: View {
     @ObservedObject var player = MPVPlayer.shared
+    @ObservedObject var style = SubtitleStyle.shared
     @Binding var showExplanation: Bool
     var onExplainWord: ((String) -> Void)?
     
@@ -23,11 +24,15 @@ public struct SubtitlesLayer: View {
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.yellow)
                     
-                    Text(player.currentSecondarySubText)
-                        .font(.system(size: max(16, CGFloat(player.subFontSize * 0.7)), weight: .medium))
-                        .foregroundColor(.white)
-                        .multilineTextAlignment(.center)
-                        .shadow(color: .black.opacity(0.8), radius: 3, x: 0, y: 1)
+                    OutlinedText(
+                        player.currentSecondarySubText,
+                        font: style.font(size: max(16, CGFloat(player.subFontSize * 0.7)), weight: .medium),
+                        color: style.textColor,
+                        outlineColor: style.outlineColor,
+                        outlineWidth: CGFloat(style.outlineWidth)
+                    )
+                    .multilineTextAlignment(.center)
+                    .shadow(color: .black.opacity(0.8), radius: 3, x: 0, y: 1)
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
@@ -101,12 +106,21 @@ public struct SubtitlesLayer: View {
     @ViewBuilder
     private func subtitleWordView(for word: String) -> some View {
         let cleanWord = word.trimmingCharacters(in: .punctuationCharacters)
-        Text(word)
-            .font(.system(size: max(18, CGFloat(player.subFontSize * 0.65)), weight: .semibold, design: .rounded))
+        let isHovered = hoveredWord == cleanWord
+        OutlinedText(
+            word,
+            font: style.font(size: max(18, CGFloat(player.subFontSize * 0.65))),
+            color: isHovered ? .yellow : style.textColor,
+            outlineColor: style.outlineColor,
+            outlineWidth: CGFloat(style.outlineWidth)
+        )
             .lineLimit(1)
             .fixedSize()
-            .foregroundColor(hoveredWord == cleanWord ? .yellow : .white)
-            .underline(hoveredWord == cleanWord, color: .yellow)
+            .overlay(alignment: .bottom) {
+                if isHovered {
+                    Rectangle().fill(Color.yellow).frame(height: 2)
+                }
+            }
             .onHover { isHover in
                 hoveredWord = isHover ? cleanWord : nil
             }

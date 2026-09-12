@@ -3,7 +3,10 @@ import SwiftUI
 public struct SettingsView: View {
     @ObservedObject var gemini = GeminiService.shared
     @ObservedObject var player = MPVPlayer.shared
+    @ObservedObject var style = SubtitleStyle.shared
     @Binding var isOpen: Bool
+
+    private let fontFamilies = SubtitleStyle.availableFontFamilies
     
     @State private var showApiKey: Bool = false
     
@@ -117,19 +120,79 @@ public struct SettingsView: View {
                             Slider(value: $player.subFontSize, in: 24...80, step: 2)
                                 .accentColor(.yellow)
                         }
+
+                        // Font Family
+                        HStack {
+                            Text("Шрифт:")
+                                .font(.system(size: 12, weight: .medium))
+                            Spacer()
+                            Picker("", selection: $style.fontFamily) {
+                                Text("Системный").tag("")
+                                Divider()
+                                ForEach(fontFamilies, id: \.self) { family in
+                                    Text(family).tag(family)
+                                }
+                            }
+                            .labelsHidden()
+                            .frame(maxWidth: 260)
+                        }
+
+                        // Text Color
+                        HStack {
+                            Text("Цвет текста:")
+                                .font(.system(size: 12, weight: .medium))
+                            Spacer()
+                            ColorPicker("", selection: $style.textColor, supportsOpacity: false)
+                                .labelsHidden()
+                        }
+
+                        // Outline Width
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Text("Толщина обводки:")
+                                    .font(.system(size: 12, weight: .medium))
+                                Spacer()
+                                Text(style.outlineWidth == 0 ? "нет" : String(format: "%.1f pt", style.outlineWidth))
+                                    .font(.system(size: 12, weight: .bold, design: .monospaced))
+                                    .foregroundColor(.yellow)
+                            }
+                            Slider(value: $style.outlineWidth, in: 0...6, step: 0.5)
+                                .accentColor(.yellow)
+                        }
+
+                        // Outline Color
+                        HStack {
+                            Text("Цвет обводки:")
+                                .font(.system(size: 12, weight: .medium))
+                            Spacer()
+                            ColorPicker("", selection: $style.outlineColor, supportsOpacity: false)
+                                .labelsHidden()
+                                .disabled(style.outlineWidth == 0)
+                        }
                         
                         // Live Preview Box
                         VStack(alignment: .center, spacing: 4) {
-                            Text("Предпросмотр на экране:")
-                                .font(.system(size: 10))
-                                .foregroundColor(.secondary)
+                            HStack {
+                                Text("Предпросмотр на экране:")
+                                    .font(.system(size: 10))
+                                    .foregroundColor(.secondary)
+                                Spacer()
+                                Button("Сбросить стиль") { style.reset() }
+                                    .buttonStyle(.plain)
+                                    .font(.system(size: 10))
+                                    .foregroundColor(.yellow)
+                            }
                             
-                            Text("Hey John, are you feeling under the weather?")
-                                .font(.system(size: max(14, CGFloat(player.subFontSize * 0.5)), weight: .bold))
-                                .foregroundColor(.white)
-                                .shadow(color: .black, radius: 2, x: 0, y: 1)
+                            OutlinedText(
+                                "Hey John, are you feeling under the weather?",
+                                font: style.font(size: max(14, CGFloat(player.subFontSize * 0.5))),
+                                color: style.textColor,
+                                outlineColor: style.outlineColor,
+                                outlineWidth: CGFloat(style.outlineWidth)
+                            )
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 8)
+                                .frame(maxWidth: .infinity)
                                 .background(Color.black.opacity(0.7))
                                 .cornerRadius(8)
                         }
@@ -176,7 +239,7 @@ public struct SettingsView: View {
             }
         }
         .padding(20)
-        .frame(width: 520, height: 600)
+        .frame(width: 520, height: 720)
     }
     
     private func shortcutRow(keys: String, desc: String) -> some View {
