@@ -45,8 +45,9 @@ public final class MPVPlayer: ObservableObject {
     private var isExitingFullscreen = false
 
     /// AppKit rounds normal windows, while mpv renders into a separate child window.
-    /// Keep the two surfaces visually identical outside fullscreen.
-    private let embeddedWindowCornerRadius: CGFloat = 10
+    /// Keep the two surfaces visually identical outside fullscreen. Used only when
+    /// the actual radius cannot be read from the parent window (pre-Tahoe value).
+    private let fallbackEmbeddedWindowCornerRadius: CGFloat = 10
     private let fullscreenVideoWindowLevel = NSWindow.Level(
         rawValue: NSWindow.Level.normal.rawValue - 1
     )
@@ -315,7 +316,21 @@ public final class MPVPlayer: ObservableObject {
         guard let contentView = child.contentView else { return }
         contentView.wantsLayer = true
         contentView.layer?.masksToBounds = true
-        contentView.layer?.cornerRadius = parent.styleMask.contains(.fullScreen) ? 0 : embeddedWindowCornerRadius
+        contentView.layer?.cornerRadius = parent.styleMask.contains(.fullScreen) ? 0 : windowCornerRadius(of: parent)
+    }
+
+    /// The radius AppKit applies to the parent window's corners. It differs
+    /// between macOS releases (10 pt before Tahoe, 16 pt on Tahoe), so a
+    /// hardcoded value lets the video surface poke out at the corners.
+    private func windowCornerRadius(of window: NSWindow) -> CGFloat {
+        let key = "cornerRadius"
+        if let themeFrame = window.contentView?.superview,
+           themeFrame.responds(to: NSSelectorFromString(key)),
+           let radius = themeFrame.value(forKey: key) as? CGFloat,
+           radius > 0 {
+            return radius
+        }
+        return fallbackEmbeddedWindowCornerRadius
     }
 
     private func updateEmbeddedWindowOrdering(_ child: NSWindow, in parent: NSWindow) {
