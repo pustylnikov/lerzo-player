@@ -143,6 +143,7 @@ public final class MPVPlayer: ObservableObject {
     private func setupMPV() {
         guard self.mpv == nil, let view = targetView, view.window != nil else { return }
         
+        Self.pointVulkanLoaderAtBundledMoltenVK()
         guard let handle = mpv_create() else {
             return
         }
@@ -158,6 +159,12 @@ public final class MPVPlayer: ObservableObject {
         mpv_set_option_string(handle, "hwdec", "auto")
         mpv_set_option_string(handle, "ytdl", "no")
         mpv_set_option_string(handle, "load-scripts", "no")
+        // Builtin Lua scripts ignore load-scripts. They are useless here (the UI
+        // is ours) and LuaJIT's generated code gets the process killed under
+        // the hardened runtime of a signed release build.
+        for script in ["osd-console", "select", "positioning", "context-menu", "commands", "stats-overlay", "auto-profiles"] {
+            mpv_set_option_string(handle, "load-\(script)", "no")
+        }
         mpv_set_option_string(handle, "input-media-keys", "no")
         mpv_set_option_string(handle, "input-default-bindings", "no")
         mpv_set_option_string(handle, "input-cursor", "no")
@@ -261,6 +268,17 @@ public final class MPVPlayer: ObservableObject {
         executeCommand(["set", name, val])
     }
     
+    /// A release bundle ships MoltenVK in Contents/Frameworks with an ICD
+    /// manifest in Resources; the Vulkan loader only finds it through these
+    /// variables. Dev builds have no manifest and keep using Homebrew's.
+    private static func pointVulkanLoaderAtBundledMoltenVK() {
+        guard let manifest = Bundle.main.resourceURL?
+                .appendingPathComponent("vulkan/icd.d/MoltenVK_icd.json"),
+              FileManager.default.fileExists(atPath: manifest.path) else { return }
+        setenv("VK_DRIVER_FILES", manifest.path, 1)   // loader ≥ 1.3.207
+        setenv("VK_ICD_FILENAMES", manifest.path, 1)  // older loaders
+    }
+
     // MARK: - Subtitle Styling
     public func applySubtitleStyle() {
         let sizeStr = "\(Int(subFontSize))"
