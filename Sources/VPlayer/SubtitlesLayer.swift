@@ -7,6 +7,7 @@ public struct SubtitlesLayer: View {
     var onExplainWord: ((String) -> Void)?
     
     @State private var hoveredWord: String? = nil
+    @State private var isHoveringPill: Bool = false
     
     public init(showExplanation: Binding<Bool>, onExplainWord: ((String) -> Void)? = nil) {
         self._showExplanation = showExplanation
@@ -55,36 +56,13 @@ public struct SubtitlesLayer: View {
                     .map { $0.trimmingCharacters(in: .whitespaces) }
                     .filter { !$0.isEmpty }
                 
-                HStack(alignment: .bottom, spacing: 8) {
-                    VStack(alignment: .center, spacing: 4) {
-                        ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
-                            let words = line.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
-                            WrappingHStack(words: words) { word in
-                                subtitleWordView(for: word)
-                            }
+                VStack(alignment: .center, spacing: 4) {
+                    ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
+                        let words = line.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
+                        WrappingHStack(words: words) { word in
+                            subtitleWordView(for: word)
                         }
                     }
-                    
-                    // Quick Explain Button
-                    Button(action: {
-                        player.pause()
-                        showExplanation = true
-                    }) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "sparkles")
-                                .font(.system(size: 12, weight: .bold))
-                            Text("ИИ")
-                                .font(.system(size: 11, weight: .bold))
-                        }
-                        .foregroundColor(.black)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(
-                            Capsule().fill(Color.yellow)
-                        )
-                    }
-                    .buttonStyle(.plain)
-                    .help("Объяснить эту фразу через Gemini AI (Cmd + G)")
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
@@ -97,6 +75,23 @@ public struct SubtitlesLayer: View {
                         )
                 )
                 .shadow(color: .black.opacity(0.5 * boxOpacity), radius: 6, x: 0, y: 3)
+                // Quick Explain badge: floats over the pill's top-right corner
+                // and only appears on hover, so it neither shifts the centred
+                // text nor sits on screen the whole time.
+                .overlay(alignment: .topTrailing) {
+                    explainBadge
+                        .offset(x: 10, y: -10)
+                        .opacity(isHoveringPill ? 1 : 0)
+                        .allowsHitTesting(isHoveringPill)
+                }
+                // Extra room so the hover region also covers the floating badge.
+                .padding(.horizontal, 10)
+                .padding(.top, 10)
+                .onHover { isHover in
+                    withAnimation(.easeInOut(duration: 0.15)) {
+                        isHoveringPill = isHover
+                    }
+                }
             }
         }
         .padding(.bottom, 80)
@@ -104,6 +99,27 @@ public struct SubtitlesLayer: View {
     }
     
     private var boxOpacity: Double { style.backgroundOpacity }
+
+    private var explainBadge: some View {
+        Button(action: {
+            player.pause()
+            showExplanation = true
+        }) {
+            HStack(spacing: 4) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 12, weight: .bold))
+                Text("ИИ")
+                    .font(.system(size: 11, weight: .bold))
+            }
+            .foregroundColor(.black)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(Capsule().fill(Color.yellow))
+            .shadow(color: .black.opacity(0.35), radius: 3, x: 0, y: 1)
+        }
+        .buttonStyle(.plain)
+        .help("Объяснить эту фразу через Gemini AI (Cmd + G)")
+    }
 
     @ViewBuilder
     private func subtitleWordView(for word: String) -> some View {
