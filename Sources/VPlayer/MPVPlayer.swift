@@ -12,6 +12,12 @@ public final class MPVPlayer: ObservableObject {
     @Published public var duration: Double = 0
     @Published public var volume: Double = 80
     @Published public var isMuted: Bool = false
+    /// Playback speed multiplier. Not persisted: slowing down is tied to a
+    /// hard passage, not a preference, so every file starts at 1x.
+    @Published public var playbackSpeed: Double = 1.0
+    public static let speedRange = 0.5...3.0
+    public static let speedStep = 0.1
+    public static let speedPresets: [Double] = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0]
     @Published public var mediaTitle: String = ""
     @Published public var currentFileURL: URL? = nil
     
@@ -237,6 +243,7 @@ public final class MPVPlayer: ObservableObject {
         mpv_observe_property(handle, 12, "current-tracks/sub2/id", MPV_FORMAT_INT64)
         mpv_observe_property(handle, 13, "eof-reached", MPV_FORMAT_FLAG)
         mpv_observe_property(handle, 14, "video-params/gamma", MPV_FORMAT_STRING)
+        mpv_observe_property(handle, 15, "speed", MPV_FORMAT_DOUBLE)
     }
     
     // MARK: - Asynchronous Command Helper (Deadlock-free!)
@@ -516,6 +523,7 @@ public final class MPVPlayer: ObservableObject {
         startEmbeddingPolling()
         
         setPropertyAsync("pause", "no")
+        setPropertyAsync("speed", "1")
         executeCommand(["loadfile", url.path, "replace"])
     }
     
@@ -600,6 +608,22 @@ public final class MPVPlayer: ObservableObject {
     
     public func toggleMute() {
         executeCommand(["cycle", "mute"])
+    }
+
+    // MARK: - Playback Speed
+    public func setSpeed(_ value: Double) {
+        let clamped = min(max(value, Self.speedRange.lowerBound), Self.speedRange.upperBound)
+        // Snap to the 0.1 grid so repeated +/- steps do not drift (0.7000001).
+        let snapped = (clamped / Self.speedStep).rounded() * Self.speedStep
+        setPropertyAsync("speed", String(format: "%.2f", snapped))
+    }
+
+    public func adjustSpeed(by delta: Double) {
+        setSpeed(playbackSpeed + delta)
+    }
+
+    public func resetSpeed() {
+        setSpeed(1.0)
     }
     
     // MARK: - Language Learning & Subtitle Methods
@@ -765,6 +789,14 @@ public final class MPVPlayer: ObservableObject {
                 let vol = data.assumingMemoryBound(to: Double.self).pointee
                 DispatchQueue.main.async { [weak self] in
                     self?.volume = vol
+                }
+            }
+
+        case "speed":
+            if let data = prop.data {
+                let speed = data.assumingMemoryBound(to: Double.self).pointee
+                DispatchQueue.main.async { [weak self] in
+                    self?.playbackSpeed = speed
                 }
             }
             

@@ -366,6 +366,8 @@ public struct SettingsView: View {
                         shortcutRow(keys: "⌘ + G", desc: "ИИ разбор текущей фразы через Gemini")
                         shortcutRow(keys: "Пробел", desc: "Пауза / Воспроизведение")
                         shortcutRow(keys: "←  /  →", desc: "Перемотка на 5 секунд назад / вперед")
+                        shortcutRow(keys: "[  /  ]", desc: "Скорость: медленнее / быстрее на 0.1×")
+                        shortcutRow(keys: "⌫", desc: "Вернуть скорость 1×")
                         shortcutRow(keys: "F", desc: "Полноэкранный режим")
                         shortcutRow(keys: "⌘ + O", desc: "Открыть видео или внешний файл субтитров")
                     }
@@ -385,7 +387,7 @@ public struct SettingsView: View {
             }
         }
         .padding(20)
-        .frame(width: 520, height: 980)
+        .frame(width: 520, height: 1020)
     }
     
     private var systemLanguageLabel: String {

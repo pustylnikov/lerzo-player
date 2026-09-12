@@ -235,6 +235,16 @@ public struct ControlsOverlayView: View {
     }
     
     // MARK: - Bottom Bar
+    private var isCustomSpeed: Bool { abs(player.playbackSpeed - 1) > 0.01 }
+
+    /// "1×", "0.75×", "1.5×" — trailing zeros dropped.
+    private static func speedLabel(_ speed: Double) -> String {
+        var text = String(format: "%.2f", speed)
+        while text.hasSuffix("0") { text.removeLast() }
+        if text.hasSuffix(".") { text.removeLast() }
+        return text + "×"
+    }
+
     private var bottomBar: some View {
         VStack(spacing: 8) {
             // Seek bar + Time labels
@@ -371,6 +381,30 @@ public struct ControlsOverlayView: View {
                     .frame(width: 70)
                     .accentColor(.yellow)
                 }
+
+                // Playback Speed
+                Menu {
+                    ForEach(MPVPlayer.speedPresets, id: \.self) { preset in
+                        Button(action: { player.setSpeed(preset) }) {
+                            if abs(player.playbackSpeed - preset) < 0.01 {
+                                Label(Self.speedLabel(preset), systemImage: "checkmark")
+                            } else {
+                                Text(Self.speedLabel(preset))
+                            }
+                        }
+                    }
+                } label: {
+                    Text(Self.speedLabel(player.playbackSpeed))
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .foregroundColor(isCustomSpeed ? .yellow : .white.opacity(0.85))
+                        .frame(width: 44, height: 20)
+                        .background(Color.white.opacity(isCustomSpeed ? 0.18 : 0.1))
+                        .cornerRadius(5)
+                }
+                .menuStyle(.borderlessButton)
+                .menuIndicator(.hidden)
+                .fixedSize()
+                .help("Скорость воспроизведения ([ медленнее, ] быстрее, Backspace — 1×)")
                 
                 Spacer()
                 

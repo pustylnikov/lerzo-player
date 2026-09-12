@@ -77,6 +77,19 @@ public final class KeyboardMonitor: ObservableObject {
             
             let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
 
+            // [ / ] step the speed, Backspace resets it (mpv/IINA convention).
+            if flags.isEmpty, let ch = event.charactersIgnoringModifiers {
+                switch ch {
+                case "[": player.adjustSpeed(by: -MPVPlayer.speedStep); return nil
+                case "]": player.adjustSpeed(by: MPVPlayer.speedStep); return nil
+                default: break
+                }
+            }
+            if flags.isEmpty && event.keyCode == 51 { // Backspace
+                player.resetSpeed()
+                return nil
+            }
+
             // M is the conventional mute toggle in desktop video players.
             if flags.isEmpty && event.charactersIgnoringModifiers?.lowercased() == "m" {
                 player.toggleMute()
