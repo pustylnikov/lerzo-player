@@ -91,23 +91,20 @@ public final class KeyboardMonitor: ObservableObject {
             }
 
 
-            // [ / ] step the speed, Backspace resets it (mpv/IINA convention).
-            if flags.isEmpty, let ch = event.charactersIgnoringModifiers {
-                switch ch {
-                case "[": player.adjustSpeed(by: -MPVPlayer.speedStep); return nil
-                case "]": player.adjustSpeed(by: MPVPlayer.speedStep); return nil
+            // Bare keys are matched by physical key code so they work in any
+            // keyboard layout (on a Russian layout "[" types "х").
+            if flags.isEmpty {
+                switch event.keyCode {
+                case 33: // [  -> slower (mpv/IINA convention)
+                    player.adjustSpeed(by: -MPVPlayer.speedStep); return nil
+                case 30: // ]  -> faster
+                    player.adjustSpeed(by: MPVPlayer.speedStep); return nil
+                case 51: // Backspace -> 1x
+                    player.resetSpeed(); return nil
+                case 46: // M -> mute, the desktop video player convention
+                    player.toggleMute(); return nil
                 default: break
                 }
-            }
-            if flags.isEmpty && event.keyCode == 51 { // Backspace
-                player.resetSpeed()
-                return nil
-            }
-
-            // M is the conventional mute toggle in desktop video players.
-            if flags.isEmpty && event.charactersIgnoringModifiers?.lowercased() == "m" {
-                player.toggleMute()
-                return nil
             }
             
             // CMD + G -> Trigger Gemini Explanation
