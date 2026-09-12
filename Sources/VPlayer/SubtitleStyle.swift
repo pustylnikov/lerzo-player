@@ -24,11 +24,19 @@ public final class SubtitleStyle: ObservableObject {
     @Published public var backgroundOpacity: Double {
         didSet { defaults.set(backgroundOpacity, forKey: Keys.backgroundOpacity) }
     }
+    /// Distance from the bottom of the video area to the subtitle box, as a
+    /// fraction of the area's height (0.03...0.4), so it looks the same in a
+    /// window and in fullscreen.
+    @Published public var bottomInset: Double {
+        didSet { defaults.set(bottomInset, forKey: Keys.bottomInset) }
+    }
 
     public static let defaultTextColor = Color.white
     public static let defaultOutlineColor = Color.black
     public static let defaultOutlineWidth = 0.0
     public static let defaultBackgroundOpacity = 0.65
+    public static let defaultBottomInset = 0.08
+    public static let bottomInsetRange = 0.03...0.4
 
     private let defaults = UserDefaults.standard
     private enum Keys {
@@ -37,6 +45,7 @@ public final class SubtitleStyle: ObservableObject {
         static let outlineWidth = "VPlayer.subOutlineWidth"
         static let outlineColor = "VPlayer.subOutlineColor"
         static let backgroundOpacity = "VPlayer.subBackgroundOpacity"
+        static let bottomInset = "VPlayer.subBottomInset"
     }
 
     private init() {
@@ -45,6 +54,7 @@ public final class SubtitleStyle: ObservableObject {
         outlineWidth = defaults.object(forKey: Keys.outlineWidth) as? Double ?? Self.defaultOutlineWidth
         outlineColor = Color(hexString: defaults.string(forKey: Keys.outlineColor)) ?? Self.defaultOutlineColor
         backgroundOpacity = defaults.object(forKey: Keys.backgroundOpacity) as? Double ?? Self.defaultBackgroundOpacity
+        bottomInset = defaults.object(forKey: Keys.bottomInset) as? Double ?? Self.defaultBottomInset
     }
 
     public func reset() {
@@ -53,6 +63,7 @@ public final class SubtitleStyle: ObservableObject {
         outlineWidth = Self.defaultOutlineWidth
         outlineColor = Self.defaultOutlineColor
         backgroundOpacity = Self.defaultBackgroundOpacity
+        bottomInset = Self.defaultBottomInset
     }
 
     /// Font families installed on this Mac that can actually render

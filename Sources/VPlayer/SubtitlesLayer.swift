@@ -15,6 +15,12 @@ public struct SubtitlesLayer: View {
     }
     
     public var body: some View {
+        GeometryReader { geo in
+            content(bottomInset: geo.size.height * style.bottomInset)
+        }
+    }
+
+    private func content(bottomInset: CGFloat) -> some View {
         VStack(spacing: 8) {
             Spacer()
             
@@ -90,7 +96,7 @@ public struct SubtitlesLayer: View {
                 }
             }
         }
-        .padding(.bottom, 80)
+        .padding(.bottom, bottomInset)
         .frame(maxWidth: .infinity)
     }
     

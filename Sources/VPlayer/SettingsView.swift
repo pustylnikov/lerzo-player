@@ -283,6 +283,20 @@ public struct SettingsView: View {
                                 .accentColor(.yellow)
                         }
 
+                        // Bottom Inset
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Text("Отступ снизу:")
+                                    .font(.system(size: 12, weight: .medium))
+                                Spacer()
+                                Text("\(Int((style.bottomInset * 100).rounded())) % высоты")
+                                    .font(.system(size: 12, weight: .bold, design: .monospaced))
+                                    .foregroundColor(.yellow)
+                            }
+                            Slider(value: $style.bottomInset, in: SubtitleStyle.bottomInsetRange, step: 0.01)
+                                .accentColor(.yellow)
+                        }
+
                         // Live Preview Box
                         VStack(alignment: .center, spacing: 4) {
                             HStack {
@@ -355,7 +369,7 @@ public struct SettingsView: View {
             }
         }
         .padding(20)
-        .frame(width: 520, height: 860)
+        .frame(width: 520, height: 920)
     }
     
     private var systemLanguageLabel: String {
