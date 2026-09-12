@@ -29,7 +29,7 @@ public final class GeminiService: ObservableObject {
     /// Explain the current movie subtitle in context using Gemini
     public func explain(subText: String,
                         contextHistory: [String] = [],
-                        russianPeekText: String? = nil,
+                        translationPeekText: String? = nil,
                         focusedWord: String? = nil) async throws -> SubtitleExplanation {
         let cleanKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !cleanKey.isEmpty else {
@@ -50,40 +50,47 @@ public final class GeminiService: ObservableObject {
         }
         
         let contextBlock = contextHistory.isEmpty ? "" : "Previous lines for dialogue context:\n" + contextHistory.joined(separator: "\n") + "\n\n"
-        let ruHint = (russianPeekText != nil && !russianPeekText!.isEmpty) ? "Official movie subtitle translation for reference: \"\(russianPeekText!)\"\n\n" : ""
+        let translationHint = (translationPeekText != nil && !translationPeekText!.isEmpty) ? "Official movie subtitle translation for reference: \"\(translationPeekText!)\"\n\n" : ""
         let wordFocusHint = (focusedWord != nil && !focusedWord!.isEmpty) ? "User focused word: \"\(focusedWord!)\". In addition to analyzing the sentence, make sure to include this word in difficultWords or idioms with detailed contextual meaning.\n\n" : ""
         
+        // The tutor speaks the learner's native language and explains the
+        // language being studied; both come from the language preferences.
+        let prefs = LanguagePreferences.shared
+        let learning = LanguagePreferences.englishName(for: prefs.resolvedLearningCode ?? "en")
+        let native = LanguagePreferences.englishName(for: prefs.resolvedNativeCode ?? LanguagePreferences.systemLanguageCode ?? "en")
+
         let prompt = """
-        You are an expert English-Russian language tutor helping an ESL learner watch an English movie.
+        You are an expert \(learning) language tutor helping a native \(native) speaker learn \(learning) by watching a movie in \(learning).
+        Write all translations and explanations in \(native).
         
-        \(contextBlock)\(ruHint)\(wordFocusHint)Current English dialogue line to explain:
+        \(contextBlock)\(translationHint)\(wordFocusHint)Current \(learning) dialogue line to explain:
         "\(subText)"
         
         Please provide:
-        1. Natural, conversational Russian translation fitting the movie scene.
+        1. Natural, conversational \(native) translation fitting the movie scene.
         2. Breakdown of all idioms, phrasal verbs, slang, or figurative expressions in this sentence.
-        3. 1 to 4 useful vocabulary words or collocations with part of speech and clear translation (including the focused word if applicable).
-        4. A brief contextual note explaining the tone, nuance, cultural reference, or sarcasm.
+        3. 1 to 4 useful vocabulary words or collocations with part of speech and clear translation into \(native) (including the focused word if applicable).
+        4. A brief contextual note in \(native) explaining the tone, nuance, cultural reference, or sarcasm.
         
         Respond with ONLY a raw JSON object (no markdown, no quotes outside JSON) conforming to:
         {
           "sentence": "\(subText.replacingOccurrences(of: "\"", with: "\\\""))",
-          "translation": "перевод на русский",
+          "translation": "translation into \(native)",
           "idioms": [
             {
               "idiom": "idiom or phrasal verb",
-              "literalMeaning": "дословный перевод",
-              "actualMeaning": "что значит в данном контексте"
+              "literalMeaning": "literal meaning in \(native)",
+              "actualMeaning": "what it means in this context, in \(native)"
             }
           ],
           "difficultWords": [
             {
               "word": "word",
-              "translation": "перевод",
+              "translation": "translation into \(native)",
               "partOfSpeech": "verb/noun/adj"
             }
           ],
-          "contextNote": "краткое объяснение подтекста, юмора или контекста ситуации"
+          "contextNote": "short note in \(native) about subtext, humour or the situation"
         }
         """
         

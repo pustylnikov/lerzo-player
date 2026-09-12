@@ -335,7 +335,7 @@ public struct ExplanationPopoverView: View {
                 let res = try await gemini.explain(
                     subText: sub,
                     contextHistory: player.subtitleHistory.dropLast(),
-                    russianPeekText: player.currentSecondarySubText,
+                    translationPeekText: player.currentSecondarySubText,
                     focusedWord: focusedWord
                 )
                 await MainActor.run {

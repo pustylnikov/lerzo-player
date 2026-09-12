@@ -598,7 +598,7 @@ public final class MPVPlayer: ObservableObject {
                 // Delay track queries slightly to allow video reconfig without any mutex contention
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
                     self?.refreshTrackList()
-                    self?.autoSelectDualSubtitles()
+                    self?.autoSelectTracksForLanguages()
                 }
                 
             case MPV_EVENT_END_FILE:
@@ -777,6 +777,7 @@ public final class MPVPlayer: ObservableObject {
             let isSel = getTrackFlag(handle, idx: i, prop: "selected")
             let isDef = getTrackFlag(handle, idx: i, prop: "default")
             let isExt = getTrackFlag(handle, idx: i, prop: "external")
+            let isForced = getTrackFlag(handle, idx: i, prop: "forced")
             
             if typeStr == "audio" {
                 let isCurrent = selectedAudioID == Int(idVal) || isSel
@@ -795,7 +796,8 @@ public final class MPVPlayer: ObservableObject {
                                           lang: lang,
                                           isDefault: isDef,
                                           isSelected: isCurrent,
-                                          isExternal: isExt))
+                                          isExternal: isExt,
+                                          isForced: isForced))
             }
         }
         
@@ -806,24 +808,26 @@ public final class MPVPlayer: ObservableObject {
         self.currentSecondarySubId = selectedSecondarySubID
     }
     
-    public func autoSelectDualSubtitles() {
-        let enSub = subtitleTracks.first { track in
-            let l = track.lang?.lowercased() ?? ""
-            let t = track.title.lowercased()
-            return l.contains("en") || t.contains("english") || t.contains("англ")
-        } ?? subtitleTracks.first
-        
-        let ruSub = subtitleTracks.first { track in
-            let l = track.lang?.lowercased() ?? ""
-            let t = track.title.lowercased()
-            return (l.contains("ru") || t.contains("russian") || t.contains("рус")) && track.id != enSub?.id
+    /// Applies the language preferences to the freshly loaded file: audio and
+    /// primary subtitles in the learning language, secondary subtitles in the
+    /// native language. Roles without a matching track keep mpv's defaults.
+    public func autoSelectTracksForLanguages() {
+        let prefs = LanguagePreferences.shared
+
+        var primary: MediaTrack?
+        if let learning = prefs.resolvedLearningCode {
+            if let audio = LanguagePreferences.bestTrack(in: audioTracks, matching: learning) {
+                setAudioTrack(trackId: audio.id)
+            }
+            primary = LanguagePreferences.bestTrack(in: subtitleTracks, matching: learning)
+            if let primary {
+                setPrimarySubtitle(trackId: primary.id)
+            }
         }
-        
-        if let en = enSub {
-            setPrimarySubtitle(trackId: en.id)
-        }
-        if let ru = ruSub {
-            setSecondarySubtitle(trackId: ru.id)
+
+        if let native = prefs.resolvedNativeCode,
+           let secondary = LanguagePreferences.bestTrack(in: subtitleTracks.filter { $0.id != primary?.id }, matching: native) {
+            setSecondarySubtitle(trackId: secondary.id)
             setPropertyAsync("secondary-sub-visibility", "no")
         }
     }

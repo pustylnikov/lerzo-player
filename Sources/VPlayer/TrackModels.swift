@@ -14,6 +14,9 @@ public struct MediaTrack: Identifiable, Hashable {
     public let isDefault: Bool
     public let isSelected: Bool
     public let isExternal: Bool
+    /// "Forced" subtitle tracks only carry a few lines (foreign speech, signs)
+    /// and must not be picked as the main track for the language.
+    public var isForced: Bool = false
     
     public var displayName: String {
         var name = title.isEmpty ? (lang?.uppercased() ?? "Track \(id)") : title

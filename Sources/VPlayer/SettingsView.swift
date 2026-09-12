@@ -4,6 +4,7 @@ public struct SettingsView: View {
     @ObservedObject var gemini = GeminiService.shared
     @ObservedObject var player = MPVPlayer.shared
     @ObservedObject var style = SubtitleStyle.shared
+    @ObservedObject var languages = LanguagePreferences.shared
     @Binding var isOpen: Bool
 
     private let fontFamilies = SubtitleStyle.availableFontFamilies
@@ -97,7 +98,65 @@ public struct SettingsView: View {
                     .background(Color.white.opacity(0.04))
                     .cornerRadius(12)
                     
-                    // SECTION 2: PLAYBACK BEHAVIOUR
+                    // SECTION 2: LANGUAGES
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            Image(systemName: "globe")
+                                .foregroundColor(.yellow)
+                            Text("Языки")
+                                .font(.system(size: 14, weight: .bold))
+                        }
+
+                        Text("При открытии файла плеер сам выберет аудио и субтитры на изучаемом языке, а для подглядывания по TAB — субтитры на родном. ИИ-разбор тоже будет на родном языке.")
+                            .font(.system(size: 12))
+                            .foregroundColor(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        HStack {
+                            Text("Изучаю:")
+                                .font(.system(size: 12, weight: .medium))
+                            Spacer()
+                            Picker("", selection: $languages.learningLanguage) {
+                                ForEach(LanguagePreferences.pickerLanguages, id: \.self) { code in
+                                    Text(LanguagePreferences.displayName(for: code)).tag(code)
+                                }
+                                Divider()
+                                Text("Не выбирать автоматически").tag(LanguagePreferences.none)
+                            }
+                            .labelsHidden()
+                            .frame(maxWidth: 260)
+                        }
+
+                        HStack {
+                            Text("Родной язык:")
+                                .font(.system(size: 12, weight: .medium))
+                            Spacer()
+                            Picker("", selection: $languages.nativeLanguage) {
+                                Text(systemLanguageLabel).tag(LanguagePreferences.system)
+                                Divider()
+                                ForEach(LanguagePreferences.pickerLanguages, id: \.self) { code in
+                                    Text(LanguagePreferences.displayName(for: code)).tag(code)
+                                }
+                                Divider()
+                                Text("Не выбирать автоматически").tag(LanguagePreferences.none)
+                            }
+                            .labelsHidden()
+                            .frame(maxWidth: 260)
+                        }
+
+                        if languages.nativeLanguage != LanguagePreferences.none,
+                           languages.resolvedNativeCode == nil,
+                           languages.resolvedLearningCode != nil {
+                            Text("Родной язык совпадает с изучаемым — субтитры перевода выбираться не будут.")
+                                .font(.system(size: 11))
+                                .foregroundColor(.orange)
+                        }
+                    }
+                    .padding(14)
+                    .background(Color.white.opacity(0.04))
+                    .cornerRadius(12)
+
+                    // SECTION 3: PLAYBACK BEHAVIOUR
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
                             Image(systemName: "play.circle")
@@ -122,7 +181,7 @@ public struct SettingsView: View {
                     .background(Color.white.opacity(0.04))
                     .cornerRadius(12)
 
-                    // SECTION 3: SUBTITLES CUSTOMIZATION
+                    // SECTION 4: SUBTITLES CUSTOMIZATION
                     VStack(alignment: .leading, spacing: 14) {
                         HStack {
                             Image(systemName: "textformat.size")
@@ -247,7 +306,7 @@ public struct SettingsView: View {
                     .background(Color.white.opacity(0.04))
                     .cornerRadius(12)
                     
-                    // SECTION 4: SHORTCUTS CHEATSHEET
+                    // SECTION 5: SHORTCUTS CHEATSHEET
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
                             Image(systemName: "keyboard")
@@ -281,9 +340,16 @@ public struct SettingsView: View {
             }
         }
         .padding(20)
-        .frame(width: 520, height: 800)
+        .frame(width: 520, height: 820)
     }
     
+    private var systemLanguageLabel: String {
+        if let code = LanguagePreferences.systemLanguageCode {
+            return "Как в системе (\(LanguagePreferences.displayName(for: code)))"
+        }
+        return "Как в системе"
+    }
+
     private func shortcutRow(keys: String, desc: String) -> some View {
         HStack(spacing: 10) {
             Text(keys)
