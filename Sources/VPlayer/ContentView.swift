@@ -45,6 +45,9 @@ public struct ContentView: View {
                 .transition(.opacity)
             }
             
+            // Keyboard feedback (speed, volume, seek) in the top-left corner.
+            OSDView()
+
             // LAYER 4: Interactive Subtitles Layer
             SubtitlesLayer(
                 showExplanation: $isExplanationOpen,

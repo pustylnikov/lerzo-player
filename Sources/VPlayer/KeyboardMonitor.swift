@@ -56,6 +56,7 @@ public final class KeyboardMonitor: ObservableObject {
         }
 
         let player = MPVPlayer.shared
+        let osd = OSDController.shared
         // Arrow keys carry .numericPad/.function; those are not user-held modifiers.
         let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
             .subtracting([.numericPad, .function, .capsLock])
@@ -96,13 +97,13 @@ public final class KeyboardMonitor: ObservableObject {
             if flags.isEmpty {
                 switch event.keyCode {
                 case 33: // [  -> slower (mpv/IINA convention)
-                    player.adjustSpeed(by: -MPVPlayer.speedStep); return nil
+                    player.adjustSpeed(by: -MPVPlayer.speedStep); osd.show(.speed); return nil
                 case 30: // ]  -> faster
-                    player.adjustSpeed(by: MPVPlayer.speedStep); return nil
+                    player.adjustSpeed(by: MPVPlayer.speedStep); osd.show(.speed); return nil
                 case 51: // Backspace -> 1x
-                    player.resetSpeed(); return nil
+                    player.resetSpeed(); osd.show(.speed); return nil
                 case 46: // M -> mute, the desktop video player convention
-                    player.toggleMute(); return nil
+                    player.toggleMute(); osd.show(.volume); return nil
                 default: break
                 }
             }
@@ -139,36 +140,42 @@ public final class KeyboardMonitor: ObservableObject {
             // R KEY (keyCode 15) -> Replay Subtitle Line (sub-seek 0)
             if event.keyCode == 15 {
                 player.seekSubtitle(direction: 0)
+                osd.show(.replayLine)
                 return nil
             }
             
             // E KEY (keyCode 14) -> Jump to Next Subtitle Line (sub-seek 1)
             if event.keyCode == 14 {
                 player.seekSubtitle(direction: 1)
+                osd.show(.nextLine)
                 return nil
             }
             
             // LEFT ARROW (keyCode 123) -> Seek -5s
             if event.keyCode == 123 {
                 player.seekRelative(seconds: -5)
+                osd.show(.seek(seconds: -5))
                 return nil
             }
             
             // RIGHT ARROW (keyCode 124) -> Seek +5s
             if event.keyCode == 124 {
                 player.seekRelative(seconds: 5)
+                osd.show(.seek(seconds: 5))
                 return nil
             }
             
             // UP ARROW (keyCode 126) -> Volume +5
             if event.keyCode == 126 {
                 player.setVolume(player.volume + 5)
+                osd.show(.volume)
                 return nil
             }
             
             // DOWN ARROW (keyCode 125) -> Volume -5
             if event.keyCode == 125 {
                 player.setVolume(player.volume - 5)
+                osd.show(.volume)
                 return nil
             }
             
