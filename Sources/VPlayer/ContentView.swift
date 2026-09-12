@@ -78,7 +78,10 @@ public struct ContentView: View {
             }
         }
         .frame(minWidth: 800, maxWidth: .infinity, minHeight: 480, maxHeight: .infinity)
-        .background(player.playbackState == .idle && player.currentFileURL == nil ? Color(red: 0.08, green: 0.08, blue: 0.1) : Color.clear)
+        // The window itself is transparent (video renders in mpv's window
+        // underneath), so paint a background until that surface exists and a
+        // file is actually loaded; otherwise the desktop shows through.
+        .background(showsVideo ? Color.clear : Color(red: 0.08, green: 0.08, blue: 0.1))
         .onContinuousHover { phase in
             switch phase {
             case .active:
@@ -113,6 +116,14 @@ public struct ContentView: View {
         }
     }
     
+    private var showsVideo: Bool {
+        guard player.hasVideoSurface else { return false }
+        switch player.playbackState {
+        case .playing, .paused, .finished: return true
+        case .idle, .loading: return false
+        }
+    }
+
     // MARK: - Empty State View
     private var emptyStateView: some View {
         VStack(spacing: 20) {

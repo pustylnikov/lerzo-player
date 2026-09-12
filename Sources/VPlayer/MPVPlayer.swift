@@ -34,6 +34,9 @@ public final class MPVPlayer: ObservableObject {
     }
     
     @Published public var subtitleHistory: [String] = []
+    /// True once mpv's window is embedded under the transparent SwiftUI window.
+    /// Until then the UI must paint its own background, or the desktop shows through.
+    @Published public var hasVideoSurface: Bool = false
     
     // MARK: - Internal mpv handle
     private var mpv: OpaquePointer?
@@ -152,6 +155,7 @@ public final class MPVPlayer: ObservableObject {
             targetView?.window?.removeChildWindow(child)
             child.orderOut(nil)
             self.mpvChildWindow = nil
+            self.hasVideoSurface = false
         }
         isRunning = false
         if let handle = mpv {
@@ -231,6 +235,7 @@ public final class MPVPlayer: ObservableObject {
                     window.setFrame(self.embeddedWindowFrame(for: parentWindow), display: true)
                     self.updateEmbeddedWindowOrdering(window, in: parentWindow)
                     self.mpvChildWindow = window
+                    self.hasVideoSurface = true
                     self.embedTimer?.invalidate()
                     self.embedTimer = nil
                     break
