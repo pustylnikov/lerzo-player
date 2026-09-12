@@ -1,0 +1,398 @@
+import SwiftUI
+
+public struct ControlsOverlayView: View {
+    @ObservedObject var player = MPVPlayer.shared
+    @Binding var isSettingsOpen: Bool
+    @Binding var isExplanationOpen: Bool
+    var onOpenFile: () -> Void
+    
+    @State private var isHoveringSeeker: Bool = false
+    @State private var seekDraggingValue: Double? = nil
+    
+    public init(isSettingsOpen: Binding<Bool>,
+                isExplanationOpen: Binding<Bool>,
+                onOpenFile: @escaping () -> Void) {
+        self._isSettingsOpen = isSettingsOpen
+        self._isExplanationOpen = isExplanationOpen
+        self.onOpenFile = onOpenFile
+    }
+    
+    public var body: some View {
+        VStack(spacing: 0) {
+            // TOP HEADER BAR
+            topBar
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
+            
+            Spacer()
+            
+            // CENTER PLAY/PAUSE BIG ICON (when paused)
+            if player.playbackState == .paused {
+                Button(action: { player.togglePlayPause() }) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.black.opacity(0.55))
+                            .frame(width: 72, height: 72)
+                        Image(systemName: "play.fill")
+                            .font(.system(size: 32))
+                            .foregroundColor(.white)
+                            .offset(x: 3)
+                    }
+                }
+                .buttonStyle(.plain)
+                .transition(.scale.combined(with: .opacity))
+            }
+            
+            Spacer()
+            
+            // BOTTOM CONTROLS BAR
+            bottomBar
+                .padding(.horizontal, 16)
+                .padding(.bottom, 12)
+        }
+        .background(
+            // Subtle gradient darkening at edges for contrast
+            LinearGradient(
+                gradient: Gradient(colors: [
+                    Color.black.opacity(0.6),
+                    Color.clear,
+                    Color.clear,
+                    Color.black.opacity(0.7)
+                ]),
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .allowsHitTesting(false)
+        )
+    }
+    
+    // MARK: - Top Bar
+    private var topBar: some View {
+        HStack(spacing: 12) {
+            // Open File Button
+            Button(action: onOpenFile) {
+                HStack(spacing: 6) {
+                    Image(systemName: "folder.badge.plus")
+                    Text("Открыть")
+                }
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(.white)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(Color.white.opacity(0.15))
+                .cornerRadius(8)
+            }
+            .buttonStyle(.plain)
+            .keyboardShortcut("o", modifiers: .command)
+            .help("Открыть видеофайл (Cmd + O)")
+            
+            // Media Title
+            if !player.mediaTitle.isEmpty {
+                Text(player.mediaTitle)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .frame(maxWidth: 350, alignment: .leading)
+            }
+            
+            Spacer()
+            
+            // Subtitle Selection Menu
+            Menu {
+                Text("Основная дорожка (English):").font(.caption)
+                Button(player.currentPrimarySubId == nil ? "✓ Без субтитров" : "Отключить") {
+                    player.setPrimarySubtitle(trackId: nil)
+                }
+                ForEach(player.subtitleTracks) { track in
+                    Button(action: { player.setPrimarySubtitle(trackId: track.id) }) {
+                        if player.currentPrimarySubId == track.id {
+                            Text("✓ \(track.displayName)")
+                        } else {
+                            Text(track.displayName)
+                        }
+                    }
+                }
+                
+                Divider()
+                
+                Text("Вторичная дорожка (Русский для подглядывания):").font(.caption)
+                Button(player.currentSecondarySubId == nil ? "✓ Без вторичных" : "Отключить") {
+                    player.setSecondarySubtitle(trackId: nil)
+                }
+                ForEach(player.subtitleTracks) { track in
+                    Button(action: { player.setSecondarySubtitle(trackId: track.id) }) {
+                        if player.currentSecondarySubId == track.id {
+                            Text("✓ (Peek) \(track.displayName)")
+                        } else {
+                            Text("(Peek) \(track.displayName)")
+                        }
+                    }
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "captions.bubble.fill")
+                    Text("Субтитры")
+                }
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(.white)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(Color.white.opacity(0.15))
+                .cornerRadius(8)
+            }
+            .menuStyle(.borderlessButton)
+            
+            // Audio Track Selection Menu
+            Menu {
+                ForEach(player.audioTracks) { track in
+                    Button(action: { player.setAudioTrack(trackId: track.id) }) {
+                        if player.currentAudioTrackId == track.id {
+                            Text("✓ \(track.displayName)")
+                        } else {
+                            Text(track.displayName)
+                        }
+                    }
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "speaker.wave.2.fill")
+                    Text("Аудио")
+                }
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(.white)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(Color.white.opacity(0.15))
+                .cornerRadius(8)
+            }
+            .menuStyle(.borderlessButton)
+            
+            // Gemini AI Explain Action Button
+            Button(action: {
+                player.pause()
+                isExplanationOpen = true
+            }) {
+                HStack(spacing: 5) {
+                    Image(systemName: "sparkles")
+                        .foregroundColor(.yellow)
+                    Text("Разбор реплики")
+                        .foregroundColor(.white)
+                }
+                .font(.system(size: 12, weight: .semibold))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(Color(red: 0.2, green: 0.2, blue: 0.25).opacity(0.85))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.yellow.opacity(0.4), lineWidth: 1)
+                )
+                .cornerRadius(8)
+            }
+            .buttonStyle(.plain)
+            .keyboardShortcut("g", modifiers: .command)
+            .help("Разобрать текущую реплику и идиомы через Gemini (Cmd + G)")
+            
+            // Settings Button
+            Button(action: { isSettingsOpen.toggle() }) {
+                Image(systemName: "gearshape.fill")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.white)
+                    .padding(8)
+                    .background(Color.white.opacity(0.15))
+                    .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .keyboardShortcut(",", modifiers: .command)
+            .help("Настройки субтитров и Gemini API (Cmd + ,)")
+        }
+    }
+    
+    // MARK: - Bottom Bar
+    private var bottomBar: some View {
+        VStack(spacing: 8) {
+            // Seek bar + Time labels
+            HStack(spacing: 10) {
+                let displayTime = seekDraggingValue ?? player.currentTime
+                Text(formatTime(displayTime))
+                    .font(.system(size: 11, weight: .medium, design: .monospaced))
+                    .foregroundColor(.white.opacity(0.9))
+                    .frame(width: 48, alignment: .leading)
+                
+                // Timeline Slider
+                GeometryReader { geo in
+                    let progress = player.duration > 0 ? (displayTime / player.duration) : 0
+                    ZStack(alignment: .leading) {
+                        // Background track
+                        Capsule()
+                            .fill(Color.white.opacity(0.25))
+                            .frame(height: isHoveringSeeker ? 6 : 4)
+                        
+                        // Filled progress
+                        Capsule()
+                            .fill(Color.yellow)
+                            .frame(width: max(0, CGFloat(progress) * geo.size.width), height: isHoveringSeeker ? 6 : 4)
+                        
+                        // Thumb
+                        if isHoveringSeeker {
+                            Circle()
+                                .fill(Color.white)
+                                .frame(width: 12, height: 12)
+                                .offset(x: max(0, CGFloat(progress) * geo.size.width - 6))
+                        }
+                    }
+                    .frame(height: 16)
+                    .contentShape(Rectangle())
+                    .onHover { isHover in
+                        withAnimation(.easeInOut(duration: 0.15)) {
+                            isHoveringSeeker = isHover
+                        }
+                    }
+                    .gesture(
+                        DragGesture(minimumDistance: 0)
+                            .onChanged { value in
+                                let fraction = max(0, min(1, value.location.x / geo.size.width))
+                                seekDraggingValue = fraction * player.duration
+                            }
+                            .onEnded { value in
+                                if let target = seekDraggingValue {
+                                    player.seek(to: target)
+                                    seekDraggingValue = nil
+                                }
+                            }
+                    )
+                }
+                .frame(height: 16)
+                
+                Text(formatTime(player.duration))
+                    .font(.system(size: 11, weight: .medium, design: .monospaced))
+                    .foregroundColor(.white.opacity(0.7))
+                    .frame(width: 48, alignment: .trailing)
+            }
+            
+            // Buttons Row
+            HStack(spacing: 16) {
+                // Play / Pause
+                Button(action: { player.togglePlayPause() }) {
+                    Image(systemName: player.playbackState == .playing ? "pause.fill" : "play.fill")
+                        .font(.system(size: 18))
+                        .foregroundColor(.white)
+                }
+                .buttonStyle(.plain)
+                .help("Воспроизведение / Пауза (Пробел)")
+                
+                // Replay Current Subtitle Line (Language Learning Feature!)
+                Button(action: { player.seekSubtitle(direction: 0) }) {
+                    HStack(spacing: 3) {
+                        Image(systemName: "arrow.counterclockwise.circle.fill")
+                        Text("Фраза")
+                            .font(.system(size: 11, weight: .bold))
+                    }
+                    .foregroundColor(.yellow)
+                }
+                .buttonStyle(.plain)
+                .help("Повторить текущую реплику сначала (клавиша R)")
+                
+                // Skip -5s
+                Button(action: { player.seekRelative(seconds: -5) }) {
+                    Image(systemName: "gobackward.5")
+                        .font(.system(size: 14))
+                        .foregroundColor(.white.opacity(0.85))
+                }
+                .buttonStyle(.plain)
+                .help("Назад на 5 секунд (Стрелка влево)")
+                
+                // Skip +5s
+                Button(action: { player.seekRelative(seconds: 5) }) {
+                    Image(systemName: "goforward.5")
+                        .font(.system(size: 14))
+                        .foregroundColor(.white.opacity(0.85))
+                }
+                .buttonStyle(.plain)
+                .help("Вперед на 5 секунд (Стрелка вправо)")
+                
+                // Next Subtitle Line
+                Button(action: { player.seekSubtitle(direction: 1) }) {
+                    Image(systemName: "forward.end.alt.fill")
+                        .font(.system(size: 13))
+                        .foregroundColor(.white.opacity(0.85))
+                }
+                .buttonStyle(.plain)
+                .help("К следующей реплике (клавиша E)")
+                
+                // Volume Control
+                HStack(spacing: 6) {
+                    Button(action: { player.toggleMute() }) {
+                        Image(systemName: player.isMuted || player.volume == 0 ? "speaker.slash.fill" : "speaker.wave.2.fill")
+                            .font(.system(size: 13))
+                            .foregroundColor(.white.opacity(0.85))
+                    }
+                    .buttonStyle(.plain)
+                    
+                    Slider(value: Binding(
+                        get: { player.volume },
+                        set: { player.setVolume($0) }
+                    ), in: 0...100)
+                    .frame(width: 70)
+                    .accentColor(.yellow)
+                }
+                
+                Spacer()
+                
+                // Peek Hint Pill
+                HStack(spacing: 5) {
+                    Text("TAB")
+                        .font(.system(size: 9, weight: .bold, design: .monospaced))
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 2)
+                        .background(Color.white.opacity(0.2))
+                        .cornerRadius(4)
+                    Text("Подглядеть перевод")
+                        .font(.system(size: 11, weight: .medium))
+                }
+                .foregroundColor(.white.opacity(0.8))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color.white.opacity(0.1))
+                .cornerRadius(6)
+                .help("Зажмите и удерживайте TAB, чтобы быстро увидеть русские субтитры")
+                
+                // Fullscreen Toggle
+                Button(action: {
+                    if let window = NSApp.keyWindow {
+                        window.toggleFullScreen(nil)
+                    }
+                }) {
+                    Image(systemName: "arrow.up.left.and.arrow.down.right")
+                        .font(.system(size: 13))
+                        .foregroundColor(.white.opacity(0.85))
+                }
+                .buttonStyle(.plain)
+                .help("Полноэкранный режим (F)")
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color(red: 0.12, green: 0.12, blue: 0.14).opacity(0.85))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(Color.white.opacity(0.1), lineWidth: 0.5)
+                )
+        )
+    }
+    
+    private func formatTime(_ seconds: Double) -> String {
+        guard !seconds.isNaN && !seconds.isInfinite && seconds >= 0 else { return "00:00" }
+        let total = Int(seconds)
+        let s = total % 60
+        let m = (total / 60) % 60
+        let h = total / 3600
+        if h > 0 {
+            return String(format: "%d:%02d:%02d", h, m, s)
+        } else {
+            return String(format: "%02d:%02d", m, s)
+        }
+    }
+}

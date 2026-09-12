@@ -1,0 +1,15 @@
+1
+00:00:01,000 --> 00:00:04,000
+Hey John, are you feeling under the weather today?
+
+2
+00:00:04,500 --> 00:00:08,000
+A bit, but I have a big audition. Break a leg, right?
+
+3
+00:00:08,500 --> 00:00:12,000
+Don't worry, you practiced so much. It will be a piece of cake!
+
+4
+00:00:12,500 --> 00:00:16,000
+Thanks! Let's hit the road before we get stuck in traffic.

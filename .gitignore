@@ -1,0 +1,22 @@
+# Xcode / Swift Package Manager
+.build/
+build/
+.swiftpm/
+*.xcodeproj
+*.xcworkspace
+xcuserdata/
+DerivedData/
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Editor files
+*.swp
+*~
+.idea/
+.vscode/
