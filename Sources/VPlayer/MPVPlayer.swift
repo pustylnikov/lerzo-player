@@ -322,7 +322,10 @@ public final class MPVPlayer: ObservableObject {
         let isAttached = parent.childWindows?.contains(child) ?? false
 
         if parent.styleMask.contains(.fullScreen) {
-            NSApp.presentationOptions = [.hideDock, .hideMenuBar]
+            // autoHide (not hide): the menu bar and Dock stay out of the way but
+            // slide in when the cursor reaches the screen edge, like any native
+            // fullscreen app. `.hideMenuBar` would suppress that reveal entirely.
+            NSApp.presentationOptions = [.autoHideDock, .autoHideMenuBar]
             // mpv may bring its own window forward after rendering starts. Keep
             // it on a stable lower level so the transparent SwiftUI window with
             // subtitles and controls always stays above it.
