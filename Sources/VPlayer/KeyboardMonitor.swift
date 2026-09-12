@@ -56,6 +56,21 @@ public final class KeyboardMonitor: ObservableObject {
         }
 
         let player = MPVPlayer.shared
+        // Arrow keys carry .numericPad/.function; those are not user-held modifiers.
+        let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+            .subtracting([.numericPad, .function, .capsLock])
+        // Ctrl/Option chords (Ctrl+Space switches the input source, Option+arrows
+        // are text navigation…) belong to the system, not to the player.
+        // Only Cmd combinations and bare keys are player shortcuts.
+        if flags.contains(.control) || flags.contains(.option) {
+            return event
+        }
+        if flags.contains(.command) {
+            let commandShortcuts: Set<String> = ["g", "o", ","]
+            guard let ch = event.charactersIgnoringModifiers?.lowercased(), commandShortcuts.contains(ch) else {
+                return event
+            }
+        }
         
         if event.type == .keyDown {
             // ESCAPE KEY (keyCode 53) -> Dismiss popover or exit fullscreen
@@ -74,8 +89,7 @@ public final class KeyboardMonitor: ObservableObject {
                 player.setPeekingTranslation(true)
                 return nil
             }
-            
-            let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+
 
             // [ / ] step the speed, Backspace resets it (mpv/IINA convention).
             if flags.isEmpty, let ch = event.charactersIgnoringModifiers {
