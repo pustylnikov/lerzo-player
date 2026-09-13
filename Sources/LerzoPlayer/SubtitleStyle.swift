@@ -123,6 +123,28 @@ public final class SubtitleStyle: ObservableObject {
         }
         return Font.custom(fontFamily, size: size).weight(weight)
     }
+
+    /// AppKit counterpart of `font(size:)`, for measuring text.
+    public func nsFont(size: CGFloat) -> NSFont {
+        if fontFamily.isEmpty {
+            let base = NSFont.systemFont(ofSize: size, weight: .semibold)
+            if let rounded = base.fontDescriptor.withDesign(.rounded),
+               let font = NSFont(descriptor: rounded, size: size) {
+                return font
+            }
+            return base
+        }
+        return NSFontManager.shared.font(withFamily: fontFamily, traits: [], weight: 9, size: size)
+            ?? NSFont(name: fontFamily, size: size)
+            ?? NSFont.systemFont(ofSize: size, weight: .semibold)
+    }
+
+    /// Width of a space in that font. The subtitle words are laid out as
+    /// separate views, so this is the gap between them that makes the line
+    /// read like ordinary text (a fixed gap looked cramped at large sizes).
+    public func spaceWidth(size: CGFloat) -> CGFloat {
+        (" " as NSString).size(withAttributes: [.font: nsFont(size: size)]).width
+    }
 }
 
 /// Text drawn with an outline. SwiftUI has no text stroke, so the outline is

@@ -81,7 +81,7 @@ public struct SubtitlesLayer: View {
                 VStack(alignment: .center, spacing: 4) {
                     ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
                         let words = line.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
-                        WrappingHStack(words: words) { word in
+                        WrappingHStack(words: words, horizontalSpacing: style.spaceWidth(size: primaryFontSize)) { word in
                             subtitleWordView(for: word)
                         }
                     }
@@ -184,8 +184,9 @@ struct WrappingHStack<Content: View>: View {
     var horizontalSpacing: CGFloat = 5
     var verticalSpacing: CGFloat = 2
 
-    init(words: [String], @ViewBuilder content: @escaping (String) -> Content) {
+    init(words: [String], horizontalSpacing: CGFloat = 5, @ViewBuilder content: @escaping (String) -> Content) {
         self.words = words
+        self.horizontalSpacing = horizontalSpacing
         self.content = content
     }
 
