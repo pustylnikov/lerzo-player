@@ -272,6 +272,20 @@ public struct SettingsView: View {
                         .toggleStyle(.switch)
                         .controlSize(.small)
 
+                        Toggle(isOn: $player.boostDialogue) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Boost dialogue (B)")
+                                    .font(.system(size: 12, weight: .medium))
+                                Text("Evens out the volume and lifts speech above music and effects. Surround tracks are mixed to stereo with a louder centre channel.")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .toggleStyle(.switch)
+                        .controlSize(.small)
+
                         Toggle(isOn: $player.hdrOutputEnabled) {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Output HDR video in HDR")
@@ -287,6 +301,32 @@ public struct SettingsView: View {
                         }
                         .toggleStyle(.switch)
                         .controlSize(.small)
+                    }
+                    .padding(14)
+                    .background(Color.white.opacity(0.04))
+                    .cornerRadius(12)
+
+                    // SECTION 3b: PICTURE ADJUSTMENTS
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Image(systemName: "slider.horizontal.3")
+                                .foregroundColor(.yellow)
+                            Text("Picture")
+                                .font(.system(size: 14, weight: .bold))
+                            Spacer()
+                            Button("Reset") { player.resetPictureAdjustments() }
+                                .controlSize(.small)
+                                .disabled(!player.hasPictureAdjustments)
+                        }
+                        Text("For a dark film on a dim screen or a bright room. Applies to every video until reset.")
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        pictureSlider("Brightness", value: $player.brightness)
+                        pictureSlider("Contrast", value: $player.contrast)
+                        pictureSlider("Saturation", value: $player.saturation)
+                        pictureSlider("Gamma", value: $player.gamma)
                     }
                     .padding(14)
                     .background(Color.white.opacity(0.04))
@@ -480,7 +520,7 @@ public struct SettingsView: View {
             }
         }
         .padding(20)
-        .frame(width: 520, height: sheetHeight)
+        .frame(width: 640, height: sheetHeight)
         // Otherwise the sheet focuses (and selects) the API key field on open.
         .background(InitialFocusSink())
         .onAppear { if gemini.hasApiKey && gemini.modelListIsStale { refreshModels() } }
@@ -550,6 +590,23 @@ public struct SettingsView: View {
             NSApp.terminate(nil)
             // The sheet's modal session can swallow the quit; do not stay behind.
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) { exit(0) }
+        }
+    }
+
+    private func pictureSlider(_ title: LocalizedStringKey, value: Binding<Double>) -> some View {
+        HStack(spacing: 10) {
+            Text(title)
+                .font(.system(size: 12, weight: .medium))
+                .frame(width: 110, alignment: .leading)
+            // No `step:` — AppKit draws a tick mark per step, which at 201
+            // steps becomes a solid line under the slider. Values are rounded
+            // to whole numbers when they reach mpv.
+            Slider(value: value, in: MPVPlayer.pictureRange)
+                .accentColor(.yellow)
+            Text(value.wrappedValue == 0 ? "0" : String(format: "%+d", Int(value.wrappedValue)))
+                .font(.system(size: 12, weight: .bold, design: .monospaced))
+                .foregroundColor(value.wrappedValue == 0 ? .secondary : .yellow)
+                .frame(width: 40, alignment: .trailing)
         }
     }
 

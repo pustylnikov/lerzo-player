@@ -249,3 +249,23 @@
 "Zoom in / out" = "Увеличить / уменьшить";
 "Move the picture" = "Сдвинуть картинку";
 "Reset zoom and position" = "Сбросить масштаб и положение";
+
+/* Boost dialogue */
+"Boost Dialogue" = "Усилить речь";
+"Boost dialogue  (B)" = "Усилить речь  (B)";
+"✓ Boost dialogue  (B)" = "✓ Усилить речь  (B)";
+"Boost dialogue (B)" = "Усилить речь (B)";
+"Evens out the volume and lifts speech above music and effects. Surround tracks are mixed to stereo with a louder centre channel." = "Выравнивает громкость и поднимает речь над музыкой и эффектами. Многоканальные дорожки сводятся в стерео с усиленным центральным каналом.";
+"Boost dialogue on" = "Усиление речи включено";
+"Boost dialogue off" = "Усиление речи выключено";
+"Boost dialogue on / off" = "Усиление речи вкл / выкл";
+
+/* Picture adjustments */
+"For a dark film on a dim screen or a bright room. Applies to every video until reset." = "Для тёмного фильма на тусклом экране или в светлой комнате. Действует на все видео, пока не сбросить.";
+"Brightness" = "Яркость";
+"Contrast" = "Контраст";
+"Saturation" = "Насыщенность";
+"Gamma" = "Гамма";
+"Brightness, contrast, gamma…" = "Яркость, контраст, гамма…";
+"✓ Brightness, contrast, gamma…" = "✓ Яркость, контраст, гамма…";
+"Brightness, Contrast, Gamma…" = "Яркость, контраст, гамма…";

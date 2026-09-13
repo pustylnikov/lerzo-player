@@ -13,6 +13,7 @@ public enum OSDItem: Equatable {
     case zoom
     case fill
     case crop(MPVPlayer.CropResult)
+    case boostDialogue
 }
 
 /// Keyboard feedback shown in the top-left corner for a moment, so the user
@@ -91,6 +92,7 @@ public struct OSDView: View {
         case .zoom: return "plus.magnifyingglass"
         case .fill: return player.fillsWindow ? "arrow.up.left.and.arrow.down.right" : "arrow.down.right.and.arrow.up.left"
         case .crop: return "crop"
+        case .boostDialogue: return player.boostDialogue ? "waveform.badge.plus" : "waveform"
         }
     }
 
@@ -129,6 +131,8 @@ public struct OSDView: View {
             case .nothingToCrop: return String(localized: "No black bars found")
             case .failed: return String(localized: "Could not measure this frame")
             }
+        case .boostDialogue:
+            return player.boostDialogue ? String(localized: "Boost dialogue on") : String(localized: "Boost dialogue off")
         }
     }
 

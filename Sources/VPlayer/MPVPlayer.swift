@@ -75,6 +75,26 @@ public final class MPVPlayer: ObservableObject {
         didSet { UserDefaults.standard.set(pauseWhilePeeking, forKey: "VPlayer.pauseWhilePeeking") }
     }
     private var didPauseForPeek = false
+    /// Speech-first audio: lifts the centre channel when downmixing (film
+    /// dialogue lives there and sinks under effects in a plain stereo mix)
+    /// and levels the volume so whispers and explosions land close together.
+    @Published public var boostDialogue: Bool = false {
+        didSet {
+            UserDefaults.standard.set(boostDialogue, forKey: "VPlayer.boostDialogue")
+            applyAudioFilters()
+        }
+    }
+    /// Display-side picture correction (mpv equalizer, −100…100). A
+    /// preference rather than a per-file value: it compensates for the
+    /// monitor and the room, not for the file.
+    @Published public var brightness: Double = 0 { didSet { applyPictureSetting("brightness", brightness) } }
+    @Published public var contrast: Double = 0 { didSet { applyPictureSetting("contrast", contrast) } }
+    @Published public var saturation: Double = 0 { didSet { applyPictureSetting("saturation", saturation) } }
+    @Published public var gamma: Double = 0 { didSet { applyPictureSetting("gamma", gamma) } }
+    public static let pictureRange = -100.0...100.0
+    public var hasPictureAdjustments: Bool { brightness != 0 || contrast != 0 || saturation != 0 || gamma != 0 }
+    private static let dialogueFilterChain =
+        "lavfi=[pan=stereo|FL=FL+1.5*FC+0.6*BL+0.6*SL|FR=FR+1.5*FC+0.6*BR+0.6*SR,dynaudnorm=f=250:g=9:p=0.9:m=10]"
     /// Pass HDR video through to the display as HDR (EDR) instead of
     /// tone-mapping it to SDR. Only takes effect on displays that support EDR.
     @Published public var hdrOutputEnabled: Bool = true {
@@ -138,6 +158,13 @@ public final class MPVPlayer: ObservableObject {
         if let saved = UserDefaults.standard.object(forKey: "VPlayer.hdrOutputEnabled") as? Bool {
             self.hdrOutputEnabled = saved
         }
+        if let saved = UserDefaults.standard.object(forKey: "VPlayer.boostDialogue") as? Bool {
+            self.boostDialogue = saved
+        }
+        self.brightness = defaults.double(forKey: "VPlayer.picture.brightness")
+        self.contrast = defaults.double(forKey: "VPlayer.picture.contrast")
+        self.saturation = defaults.double(forKey: "VPlayer.picture.saturation")
+        self.gamma = defaults.double(forKey: "VPlayer.picture.gamma")
     }
     
     deinit {
@@ -228,6 +255,8 @@ public final class MPVPlayer: ObservableObject {
         
         // 4. Apply subtitle styling defaults
         applySubtitleStyle()
+        applyAudioFilters()
+        applyPictureSettings()
         
         // 5. Observe properties
         observeProperties(handle)
@@ -320,6 +349,26 @@ public final class MPVPlayer: ObservableObject {
         setPropertyAsync("sub-shadow-color", "0.0/0.0/0.0/0.0")
     }
     
+    /// The `af` option is global, so it survives file changes on its own.
+    private func applyAudioFilters() {
+        setPropertyAsync("af", boostDialogue ? Self.dialogueFilterChain : "")
+    }
+
+    private func applyPictureSetting(_ property: String, _ value: Double) {
+        UserDefaults.standard.set(value, forKey: "VPlayer.picture.\(property)")
+        setPropertyAsync(property, "\(Int(value.rounded()))")
+    }
+
+    private func applyPictureSettings() {
+        for (property, value) in [("brightness", brightness), ("contrast", contrast), ("saturation", saturation), ("gamma", gamma)] {
+            setPropertyAsync(property, "\(Int(value.rounded()))")
+        }
+    }
+
+    public func resetPictureAdjustments() {
+        brightness = 0; contrast = 0; saturation = 0; gamma = 0
+    }
+
     // MARK: - Native Child Window Attachment
     public func attachMpvChildWindowIfNeeded() {
         DispatchQueue.main.async { [weak self] in

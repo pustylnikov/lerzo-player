@@ -31,6 +31,7 @@ enum ShortcutsReference {
             ShortcutEntry(keys: "←  /  →", action: "Seek 5 seconds back / forward"),
             ShortcutEntry(keys: "↑  /  ↓", action: "Volume +5% / −5%"),
             ShortcutEntry(keys: "M", action: "Mute / unmute"),
+            ShortcutEntry(keys: "B", action: "Boost dialogue on / off"),
             ShortcutEntry(keys: "[  /  ]", action: "Speed: slower / faster by 0.1×"),
             ShortcutEntry(keys: "⌫", action: "Reset speed to 1×"),
         ]),

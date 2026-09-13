@@ -104,6 +104,12 @@ struct VPlayerApp: App {
                 }
                 .keyboardShortcut("m", modifiers: [])
 
+                Toggle("Boost Dialogue", isOn: Binding(
+                    get: { player.boostDialogue },
+                    set: { player.boostDialogue = $0; OSDController.shared.show(.boostDialogue) }
+                ))
+                .keyboardShortcut("b", modifiers: [])
+
                 Divider()
 
                 Menu("Subtitle Delay") {
@@ -155,6 +161,10 @@ struct VPlayerApp: App {
                 }
                 Button("Reset Crop") { MPVPlayer.shared.resetCrop() }
                     .disabled(player.videoCrop.isEmpty)
+                Divider()
+                Button("Brightness, Contrast, Gamma…") {
+                    NotificationCenter.default.post(name: NSNotification.Name("OpenSettings"), object: nil)
+                }
             }
 
             CommandMenu("Language Learning (AI)") {

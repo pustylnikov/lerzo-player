@@ -185,6 +185,10 @@ public struct ControlsOverlayView: View {
                     }
                 }
                 Divider()
+                Button(player.boostDialogue ? "✓ Boost dialogue  (B)" : "Boost dialogue  (B)") {
+                    player.boostDialogue.toggle(); OSDController.shared.show(.boostDialogue)
+                }
+                Divider()
                 delayMenu(for: .audio)
             } label: {
                 HStack(spacing: 4) {
@@ -227,6 +231,10 @@ public struct ControlsOverlayView: View {
                 }
                 Button("Reset crop") { player.resetCrop() }
                     .disabled(player.videoCrop.isEmpty)
+                Divider()
+                Button(player.hasPictureAdjustments ? "✓ Brightness, contrast, gamma…" : "Brightness, contrast, gamma…") {
+                    isSettingsOpen = true
+                }
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: "aspectratio")

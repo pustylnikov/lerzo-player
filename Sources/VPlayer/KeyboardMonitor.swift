@@ -125,6 +125,8 @@ public final class KeyboardMonitor: ObservableObject {
                     player.adjustZoom(by: -MPVPlayer.zoomStep); osd.show(.zoom); return nil
                 case 29: // 0 -> 100 %, centred
                     player.resetZoomAndPan(); osd.show(.zoom); return nil
+                case 11: // B -> boost dialogue
+                    player.boostDialogue.toggle(); osd.show(.boostDialogue); return nil
                 default: break
                 }
             }

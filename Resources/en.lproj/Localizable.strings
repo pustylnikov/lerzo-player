@@ -251,3 +251,23 @@
 "Zoom in / out" = "Zoom in / out";
 "Move the picture" = "Move the picture";
 "Reset zoom and position" = "Reset zoom and position";
+
+/* Boost dialogue */
+"Boost Dialogue" = "Boost Dialogue";
+"Boost dialogue  (B)" = "Boost dialogue  (B)";
+"✓ Boost dialogue  (B)" = "✓ Boost dialogue  (B)";
+"Boost dialogue (B)" = "Boost dialogue (B)";
+"Evens out the volume and lifts speech above music and effects. Surround tracks are mixed to stereo with a louder centre channel." = "Evens out the volume and lifts speech above music and effects. Surround tracks are mixed to stereo with a louder centre channel.";
+"Boost dialogue on" = "Boost dialogue on";
+"Boost dialogue off" = "Boost dialogue off";
+"Boost dialogue on / off" = "Boost dialogue on / off";
+
+/* Picture adjustments */
+"For a dark film on a dim screen or a bright room. Applies to every video until reset." = "For a dark film on a dim screen or a bright room. Applies to every video until reset.";
+"Brightness" = "Brightness";
+"Contrast" = "Contrast";
+"Saturation" = "Saturation";
+"Gamma" = "Gamma";
+"Brightness, contrast, gamma…" = "Brightness, contrast, gamma…";
+"✓ Brightness, contrast, gamma…" = "✓ Brightness, contrast, gamma…";
+"Brightness, Contrast, Gamma…" = "Brightness, Contrast, Gamma…";
