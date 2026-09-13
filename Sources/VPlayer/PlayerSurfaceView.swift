@@ -24,13 +24,7 @@ public struct PlayerSurfaceView: NSViewRepresentable {
     }
     
     private func handleDroppedFile(_ url: URL) {
-        let ext = url.pathExtension.lowercased()
-        let subExtensions = ["srt", "ass", "ssa", "vtt", "sub"]
-        if subExtensions.contains(ext) {
-            MPVPlayer.shared.loadExternalSubtitle(fileURL: url)
-        } else {
-            MPVPlayer.shared.loadFile(url: url)
-        }
+        MPVPlayer.shared.open(url: url)
     }
 }
 

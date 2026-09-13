@@ -273,6 +273,9 @@ public struct ContentView: View {
         keyboardMonitor.onOpenFileRequested = {
             self.openFileDialog()
         }
+        keyboardMonitor.onOpenSubtitleRequested = {
+            self.openSubtitleDialog()
+        }
         keyboardMonitor.onOpenSettingsRequested = {
             self.isSettingsOpen = true
         }
@@ -286,26 +289,46 @@ public struct ContentView: View {
         }
     }
     
+    private static let videoTypes: [UTType] = [
+        UTType(filenameExtension: "mkv") ?? .movie,
+        UTType(filenameExtension: "mp4") ?? .movie,
+        UTType(filenameExtension: "mov") ?? .movie,
+        UTType(filenameExtension: "avi") ?? .movie,
+        UTType(filenameExtension: "webm") ?? .movie,
+        UTType(filenameExtension: "m4v") ?? .movie,
+        .movie,
+        .video
+    ]
+
+    private static let subtitleTypes: [UTType] = MPVPlayer.subtitleExtensions.sorted().compactMap {
+        UTType(filenameExtension: $0)
+    }
+
+    /// Videos, plus subtitle files once a video is loaded, so Cmd+O does
+    /// both jobs.
     public func openFileDialog() {
+        let subtitlesAllowed = player.currentFileURL != nil
+        runOpenPanel(title: subtitlesAllowed ? String(localized: "Choose a video or subtitle file")
+                                             : String(localized: "Choose a video file"),
+                     types: Self.videoTypes + (subtitlesAllowed ? Self.subtitleTypes : []))
+    }
+
+    public func openSubtitleDialog() {
+        guard player.currentFileURL != nil else { return }
+        runOpenPanel(title: String(localized: "Choose a subtitle file"), types: Self.subtitleTypes)
+    }
+
+    private func runOpenPanel(title: String, types: [UTType]) {
         let panel = NSOpenPanel()
-        panel.title = String(localized: "Choose a video file")
+        panel.title = title
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = false
-        panel.allowedContentTypes = [
-            UTType(filenameExtension: "mkv") ?? .movie,
-            UTType(filenameExtension: "mp4") ?? .movie,
-            UTType(filenameExtension: "mov") ?? .movie,
-            UTType(filenameExtension: "avi") ?? .movie,
-            UTType(filenameExtension: "webm") ?? .movie,
-            UTType(filenameExtension: "m4v") ?? .movie,
-            .movie,
-            .video
-        ]
+        panel.allowedContentTypes = types
         
         if panel.runModal() == .OK, let url = panel.url {
             _ = url.startAccessingSecurityScopedResource()
-            player.loadFile(url: url)
+            player.open(url: url)
         }
     }
 }

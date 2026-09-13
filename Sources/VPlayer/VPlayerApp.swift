@@ -28,14 +28,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func application(_ sender: NSApplication, openFile filename: String) -> Bool {
-        let url = URL(fileURLWithPath: filename)
-        MPVPlayer.shared.loadFile(url: url)
+        MPVPlayer.shared.open(url: URL(fileURLWithPath: filename))
         return true
     }
     
     func application(_ application: NSApplication, open urls: [URL]) {
         if let first = urls.first {
-            MPVPlayer.shared.loadFile(url: first)
+            MPVPlayer.shared.open(url: first)
         }
     }
 }
@@ -52,7 +51,7 @@ struct VPlayerApp: App {
                 .frame(minWidth: 800, maxWidth: .infinity, minHeight: 480, maxHeight: .infinity)
                 .preferredColorScheme(.dark)
                 .onOpenURL { url in
-                    MPVPlayer.shared.loadFile(url: url)
+                    MPVPlayer.shared.open(url: url)
                 }
         }
         .windowStyle(.hiddenTitleBar)
@@ -69,6 +68,12 @@ struct VPlayerApp: App {
                     KeyboardMonitor.shared.onOpenFileRequested?()
                 }
                 .keyboardShortcut("o", modifiers: .command)
+
+                Button("Load Subtitle File...") {
+                    KeyboardMonitor.shared.onOpenSubtitleRequested?()
+                }
+                .keyboardShortcut("o", modifiers: [.command, .shift])
+                .disabled(player.currentFileURL == nil)
             }
             
             CommandMenu("Playback") {

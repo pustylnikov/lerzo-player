@@ -40,8 +40,6 @@
 "Second track (translation to peek at with TAB):" = "Second track (translation to peek at with TAB):";
 "✓ No second track" = "✓ No second track";
 "Subtitles" = "Subtitles";
-"Subtitles become available once a video with subtitle tracks is loaded" = "Subtitles become available once a video with subtitle tracks is loaded";
-"Choose a subtitle track" = "Choose a subtitle track";
 "Audio" = "Audio";
 "Audio tracks become available once a video is loaded" = "Audio tracks become available once a video is loaded";
 "Choose an audio track" = "Choose an audio track";
@@ -273,3 +271,12 @@
 "Brightness, contrast, gamma…" = "Brightness, contrast, gamma…";
 "✓ Brightness, contrast, gamma…" = "✓ Brightness, contrast, gamma…";
 "Brightness, Contrast, Gamma…" = "Brightness, Contrast, Gamma…";
+
+// External subtitle files
+"Load Subtitle File..." = "Load Subtitle File...";
+"Load subtitle file…  (⌘⇧O)" = "Load subtitle file…  (⌘⇧O)";
+"Choose a video or subtitle file" = "Choose a video or subtitle file";
+"Choose a subtitle file" = "Choose a subtitle file";
+"Subtitles become available once a video is loaded" = "Subtitles become available once a video is loaded";
+"Choose a subtitle track or load a subtitle file" = "Choose a subtitle track or load a subtitle file";
+"Load an external subtitle file" = "Load an external subtitle file";

@@ -38,8 +38,6 @@
 "Second track (translation to peek at with TAB):" = "Вторая дорожка (перевод для подглядывания по TAB):";
 "✓ No second track" = "✓ Без вторичных";
 "Subtitles" = "Субтитры";
-"Subtitles become available once a video with subtitle tracks is loaded" = "Субтитры станут доступны после загрузки видео с дорожками";
-"Choose a subtitle track" = "Выбрать дорожку субтитров";
 "Audio" = "Аудио";
 "Audio tracks become available once a video is loaded" = "Аудиодорожки станут доступны после загрузки видео";
 "Choose an audio track" = "Выбрать аудиодорожку";
@@ -271,3 +269,12 @@
 "Brightness, contrast, gamma…" = "Яркость, контраст, гамма…";
 "✓ Brightness, contrast, gamma…" = "✓ Яркость, контраст, гамма…";
 "Brightness, Contrast, Gamma…" = "Яркость, контраст, гамма…";
+
+// External subtitle files
+"Load Subtitle File..." = "Загрузить файл субтитров...";
+"Load subtitle file…  (⌘⇧O)" = "Загрузить файл субтитров…  (⌘⇧O)";
+"Choose a video or subtitle file" = "Выберите видео или файл субтитров";
+"Choose a subtitle file" = "Выберите файл субтитров";
+"Subtitles become available once a video is loaded" = "Субтитры станут доступны после загрузки видео";
+"Choose a subtitle track or load a subtitle file" = "Выбрать дорожку субтитров или загрузить файл";
+"Load an external subtitle file" = "Загрузить внешний файл субтитров";

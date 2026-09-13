@@ -157,6 +157,11 @@ public struct ControlsOverlayView: View {
                 }
                 Divider()
                 delayMenu(for: .secondarySubtitle)
+
+                Divider()
+                Button("Load subtitle file…  (⌘⇧O)") {
+                    KeyboardMonitor.shared.onOpenSubtitleRequested?()
+                }
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: "captions.bubble.fill")
@@ -170,8 +175,8 @@ public struct ControlsOverlayView: View {
                 .cornerRadius(8)
             }
             .menuStyle(.borderlessButton)
-            .disabled(player.subtitleTracks.isEmpty)
-            .help(player.subtitleTracks.isEmpty ? "Subtitles become available once a video with subtitle tracks is loaded" : "Choose a subtitle track")
+            .disabled(player.currentFileURL == nil)
+            .help(player.currentFileURL == nil ? "Subtitles become available once a video is loaded" : "Choose a subtitle track or load a subtitle file")
             
             // Audio Track Selection Menu
             Menu {

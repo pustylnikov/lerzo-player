@@ -47,6 +47,7 @@ enum ShortcutsReference {
         ShortcutGroup(title: "General", icon: "macwindow", entries: [
             ShortcutEntry(keys: "F", action: "Full screen"),
             ShortcutEntry(keys: "⌘ + O", action: "Open a video or an external subtitle file"),
+            ShortcutEntry(keys: "⌘ + ⇧ + O", action: "Load an external subtitle file"),
             ShortcutEntry(keys: "⌘ + ,", action: "Settings"),
             ShortcutEntry(keys: "H", action: "Show / hide this cheat sheet"),
             ShortcutEntry(keys: "Esc", action: "Close a panel, or leave full screen"),

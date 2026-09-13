@@ -1054,7 +1054,20 @@ public final class MPVPlayer: ObservableObject {
         self.currentAudioTrackId = trackId
     }
     
+    /// File extensions treated as subtitle files when opened or dropped.
+    public static let subtitleExtensions: Set<String> = ["srt", "ass", "ssa", "vtt", "sub"]
+
+    /// Opens a video, or adds a subtitle file to the current video.
+    public func open(url: URL) {
+        if Self.subtitleExtensions.contains(url.pathExtension.lowercased()) {
+            loadExternalSubtitle(fileURL: url)
+        } else {
+            loadFile(url: url)
+        }
+    }
+
     public func loadExternalSubtitle(fileURL: URL) {
+        guard currentFileURL != nil else { return }
         _ = fileURL.startAccessingSecurityScopedResource()
         executeCommand(["sub-add", fileURL.path, "cached", fileURL.lastPathComponent])
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in

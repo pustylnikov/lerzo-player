@@ -7,6 +7,7 @@ public final class KeyboardMonitor: ObservableObject {
     private var localMonitor: Any?
     public var onExplainRequested: (() -> Void)?
     public var onOpenFileRequested: (() -> Void)?
+    public var onOpenSubtitleRequested: (() -> Void)?
     public var onOpenSettingsRequested: (() -> Void)?
     public var onDismissExplanationRequested: (() -> Void)?
     public var onDismissSettingsRequested: (() -> Void)?
@@ -152,9 +153,13 @@ public final class KeyboardMonitor: ObservableObject {
                 return nil
             }
             
-            // CMD + O -> Open File
+            // CMD + SHIFT + O -> Load subtitle file, CMD + O -> Open File
             if flags.contains(.command) && event.charactersIgnoringModifiers?.lowercased() == "o" {
-                onOpenFileRequested?()
+                if flags.contains(.shift) {
+                    onOpenSubtitleRequested?()
+                } else {
+                    onOpenFileRequested?()
+                }
                 return nil
             }
             
