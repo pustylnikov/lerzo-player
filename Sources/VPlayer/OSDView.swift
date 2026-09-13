@@ -10,6 +10,9 @@ public enum OSDItem: Equatable {
     case replayLine
     case nextLine
     case delay(MPVPlayer.DelayStream)
+    case zoom
+    case fill
+    case crop(MPVPlayer.CropResult)
 }
 
 /// Keyboard feedback shown in the top-left corner for a moment, so the user
@@ -85,6 +88,9 @@ public struct OSDView: View {
         case .nextLine: return "forward.end.alt.fill"
         case .delay(.audio): return "speaker.wave.2.fill"
         case .delay: return "captions.bubble.fill"
+        case .zoom: return "plus.magnifyingglass"
+        case .fill: return player.fillsWindow ? "arrow.up.left.and.arrow.down.right" : "arrow.down.right.and.arrow.up.left"
+        case .crop: return "crop"
         }
     }
 
@@ -108,7 +114,31 @@ public struct OSDView: View {
             case .secondarySubtitle: return String(localized: "Translation delay \(value)")
             case .audio: return String(localized: "Audio delay \(value)")
             }
+        case .zoom:
+            var text = String(localized: "Zoom \(Int((player.zoomScale * 100).rounded()))%")
+            let offset = Self.panLabel(x: player.videoPanX, y: player.videoPanY)
+            if !offset.isEmpty {
+                text += "  ·  " + offset
+            }
+            return text
+        case .fill:
+            return player.fillsWindow ? String(localized: "Fill window") : String(localized: "Fit to window")
+        case .crop(let result):
+            switch result {
+            case .cropped: return String(localized: "Black bars removed")
+            case .nothingToCrop: return String(localized: "No black bars found")
+            case .failed: return String(localized: "Could not measure this frame")
+            }
         }
+    }
+
+    /// "→ 4%  ↓ 2%" for a non-centred picture, empty when centred.
+    static func panLabel(x: Double, y: Double) -> String {
+        var parts: [String] = []
+        let px = Int((abs(x) * 100).rounded()), py = Int((abs(y) * 100).rounded())
+        if px > 0 { parts.append((x > 0 ? "→ " : "← ") + "\(px)%") }
+        if py > 0 { parts.append((y > 0 ? "↓ " : "↑ ") + "\(py)%") }
+        return parts.joined(separator: "  ")
     }
 
     /// "+0.3 s", "−1.5 s" or "0 s"; the minus is typographic to match the seek OSD.

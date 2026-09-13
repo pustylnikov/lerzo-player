@@ -216,3 +216,38 @@
 "Close a panel, or leave full screen" = "Close a panel, or leave full screen";
 "H or Esc to close" = "H or Esc to close";
 "Keyboard shortcuts (H)" = "Keyboard shortcuts (H)";
+
+/* Video geometry */
+"Video" = "Video";
+"Fit to Window" = "Fit to Window";
+"Fill Window" = "Fill Window";
+"Zoom In" = "Zoom In";
+"Zoom Out" = "Zoom Out";
+"Reset Zoom and Position" = "Reset Zoom and Position";
+"Move Picture" = "Move Picture";
+"Up" = "Up";
+"Down" = "Down";
+"Left" = "Left";
+"Right" = "Right";
+"Remove Black Bars" = "Remove Black Bars";
+"Reset Crop" = "Reset Crop";
+"Fit to window" = "Fit to window";
+"✓ Fit to window" = "✓ Fit to window";
+"Fill window (crop edges)" = "Fill window (crop edges)";
+"✓ Fill window (crop edges)" = "✓ Fill window (crop edges)";
+"Zoom: %lld%%" = "Zoom: %lld%%";
+"Zoom in  (=)" = "Zoom in  (=)";
+"Zoom out  (−)" = "Zoom out  (−)";
+"Reset zoom and position  (0)" = "Reset zoom and position  (0)";
+"Remove black bars" = "Remove black bars";
+"Reset crop" = "Reset crop";
+"Zoom, move and crop the picture (= / −, Shift + arrows, 0)" = "Zoom, move and crop the picture (= / −, Shift + arrows, 0)";
+"Zoom %lld%%" = "Zoom %lld%%";
+"Fill window" = "Fill window";
+"Black bars removed" = "Black bars removed";
+"No black bars found" = "No black bars found";
+"Could not measure this frame" = "Could not measure this frame";
+"Picture" = "Picture";
+"Zoom in / out" = "Zoom in / out";
+"Move the picture" = "Move the picture";
+"Reset zoom and position" = "Reset zoom and position";

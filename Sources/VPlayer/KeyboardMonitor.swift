@@ -119,15 +119,26 @@ public final class KeyboardMonitor: ObservableObject {
                     player.adjustDelay(of: .subtitle, by: -MPVPlayer.delayStep); osd.show(.delay(.subtitle)); return nil
                 case 7: // X -> subtitles later
                     player.adjustDelay(of: .subtitle, by: MPVPlayer.delayStep); osd.show(.delay(.subtitle)); return nil
+                case 24: // = -> zoom in
+                    player.adjustZoom(by: MPVPlayer.zoomStep); osd.show(.zoom); return nil
+                case 27: // - -> zoom out
+                    player.adjustZoom(by: -MPVPlayer.zoomStep); osd.show(.zoom); return nil
+                case 29: // 0 -> 100 %, centred
+                    player.resetZoomAndPan(); osd.show(.zoom); return nil
                 default: break
                 }
             }
             if flags == [.shift] {
+                let step = MPVPlayer.panStep
                 switch event.keyCode {
                 case 6: // Shift+Z -> audio earlier
                     player.adjustDelay(of: .audio, by: -MPVPlayer.delayStep); osd.show(.delay(.audio)); return nil
                 case 7: // Shift+X -> audio later
                     player.adjustDelay(of: .audio, by: MPVPlayer.delayStep); osd.show(.delay(.audio)); return nil
+                case 123: player.pan(dx: -step, dy: 0); osd.show(.zoom); return nil   // Shift+← -> move picture left
+                case 124: player.pan(dx: step, dy: 0); osd.show(.zoom); return nil    // Shift+→
+                case 126: player.pan(dx: 0, dy: -step); osd.show(.zoom); return nil   // Shift+↑
+                case 125: player.pan(dx: 0, dy: step); osd.show(.zoom); return nil    // Shift+↓
                 default: break
                 }
             }

@@ -38,6 +38,11 @@ enum ShortcutsReference {
             ShortcutEntry(keys: "Z  /  X", action: "Subtitle delay: earlier / later by 0.1 s"),
             ShortcutEntry(keys: "⇧ + Z  /  ⇧ + X", action: "Audio delay: earlier / later by 0.1 s"),
         ]),
+        ShortcutGroup(title: "Picture", icon: "aspectratio", entries: [
+            ShortcutEntry(keys: "=  /  −", action: "Zoom in / out"),
+            ShortcutEntry(keys: "⇧ + arrows", action: "Move the picture"),
+            ShortcutEntry(keys: "0", action: "Reset zoom and position"),
+        ]),
         ShortcutGroup(title: "General", icon: "macwindow", entries: [
             ShortcutEntry(keys: "F", action: "Full screen"),
             ShortcutEntry(keys: "⌘ + O", action: "Open a video or an external subtitle file"),
@@ -107,10 +112,10 @@ public struct ShortcutsOverlayView: View {
                         .foregroundColor(.white.opacity(0.5))
                 }
 
-                // Language learning + Sync on the left, Playback + General on the right.
+                // Language learning + Sync + Picture on the left, Playback + General on the right.
                 HStack(alignment: .top, spacing: 28) {
-                    column([ShortcutsReference.groups[0], ShortcutsReference.groups[2]])
-                    column([ShortcutsReference.groups[1], ShortcutsReference.groups[3]])
+                    column([ShortcutsReference.groups[0], ShortcutsReference.groups[2], ShortcutsReference.groups[3]])
+                    column([ShortcutsReference.groups[1], ShortcutsReference.groups[4]])
                 }
             }
             .padding(20)

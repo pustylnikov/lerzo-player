@@ -202,6 +202,47 @@ public struct ControlsOverlayView: View {
             .disabled(player.audioTracks.isEmpty)
             .help(player.audioTracks.isEmpty ? "Audio tracks become available once a video is loaded" : "Choose an audio track")
             
+            // Video geometry: fit/fill, zoom, black bars
+            Menu {
+                Button(player.fillsWindow ? "Fit to window" : "✓ Fit to window") {
+                    player.setFillsWindow(false); OSDController.shared.show(.fill)
+                }
+                Button(player.fillsWindow ? "✓ Fill window (crop edges)" : "Fill window (crop edges)") {
+                    player.setFillsWindow(true); OSDController.shared.show(.fill)
+                }
+                Divider()
+                Text("Zoom: \(Int((player.zoomScale * 100).rounded()))%").font(.caption)
+                ForEach(MPVPlayer.zoomPresets, id: \.self) { preset in
+                    Button(action: { player.setZoom(scale: preset); OSDController.shared.show(.zoom) }) {
+                        Text(abs(player.zoomScale - preset) < 0.01 ? "✓ \(Int(preset * 100))%" : "\(Int(preset * 100))%")
+                    }
+                }
+                Button("Zoom in  (=)") { player.adjustZoom(by: MPVPlayer.zoomStep); OSDController.shared.show(.zoom) }
+                Button("Zoom out  (−)") { player.adjustZoom(by: -MPVPlayer.zoomStep); OSDController.shared.show(.zoom) }
+                Button("Reset zoom and position  (0)") { player.resetZoomAndPan(); OSDController.shared.show(.zoom) }
+                    .disabled(player.videoZoom == 0 && player.videoPanX == 0 && player.videoPanY == 0)
+                Divider()
+                Button("Remove black bars") {
+                    player.removeBlackBars { OSDController.shared.show(.crop($0)) }
+                }
+                Button("Reset crop") { player.resetCrop() }
+                    .disabled(player.videoCrop.isEmpty)
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "aspectratio")
+                    Text("Video")
+                }
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(isVideoAdjusted ? .yellow : .white)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(Color.white.opacity(isVideoAdjusted ? 0.18 : 0.15))
+                .cornerRadius(8)
+            }
+            .menuStyle(.borderlessButton)
+            .disabled(!canControlPlayback)
+            .help("Zoom, move and crop the picture (= / −, Shift + arrows, 0)")
+            
             // Gemini AI Explain Action Button
             Button(action: {
                 player.pause()
@@ -257,6 +298,9 @@ public struct ControlsOverlayView: View {
     
     // MARK: - Bottom Bar
     private var isCustomSpeed: Bool { abs(player.playbackSpeed - 1) > 0.01 }
+    private var isVideoAdjusted: Bool {
+        player.videoZoom != 0 || player.videoPanX != 0 || player.videoPanY != 0 || player.fillsWindow || !player.videoCrop.isEmpty
+    }
 
     /// Flat delay controls for one stream. Not a submenu: the controls bar
     /// re-renders on every time-pos tick while playing, and SwiftUI rebuilds

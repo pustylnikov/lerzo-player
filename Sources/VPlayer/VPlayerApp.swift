@@ -43,6 +43,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 @main
 struct VPlayerApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    /// Observed so the Video menu's Fit/Fill title follows the player.
+    @ObservedObject private var player = MPVPlayer.shared
     
     var body: some Scene {
         Window("VPlayer", id: "main") {
@@ -125,6 +127,36 @@ struct VPlayerApp: App {
                 }
             }
             
+            CommandMenu("Video") {
+                Button(player.fillsWindow ? "Fit to Window" : "Fill Window") {
+                    MPVPlayer.shared.setFillsWindow(!player.fillsWindow)
+                    OSDController.shared.show(.fill)
+                }
+                Divider()
+                Button("Zoom In") { MPVPlayer.shared.adjustZoom(by: MPVPlayer.zoomStep); OSDController.shared.show(.zoom) }
+                    .keyboardShortcut("=", modifiers: [])
+                Button("Zoom Out") { MPVPlayer.shared.adjustZoom(by: -MPVPlayer.zoomStep); OSDController.shared.show(.zoom) }
+                    .keyboardShortcut("-", modifiers: [])
+                Button("Reset Zoom and Position") { MPVPlayer.shared.resetZoomAndPan(); OSDController.shared.show(.zoom) }
+                    .keyboardShortcut("0", modifiers: [])
+                Menu("Move Picture") {
+                    Button("Up") { MPVPlayer.shared.pan(dx: 0, dy: -MPVPlayer.panStep); OSDController.shared.show(.zoom) }
+                        .keyboardShortcut(.upArrow, modifiers: .shift)
+                    Button("Down") { MPVPlayer.shared.pan(dx: 0, dy: MPVPlayer.panStep); OSDController.shared.show(.zoom) }
+                        .keyboardShortcut(.downArrow, modifiers: .shift)
+                    Button("Left") { MPVPlayer.shared.pan(dx: -MPVPlayer.panStep, dy: 0); OSDController.shared.show(.zoom) }
+                        .keyboardShortcut(.leftArrow, modifiers: .shift)
+                    Button("Right") { MPVPlayer.shared.pan(dx: MPVPlayer.panStep, dy: 0); OSDController.shared.show(.zoom) }
+                        .keyboardShortcut(.rightArrow, modifiers: .shift)
+                }
+                Divider()
+                Button("Remove Black Bars") {
+                    MPVPlayer.shared.removeBlackBars { OSDController.shared.show(.crop($0)) }
+                }
+                Button("Reset Crop") { MPVPlayer.shared.resetCrop() }
+                    .disabled(player.videoCrop.isEmpty)
+            }
+
             CommandMenu("Language Learning (AI)") {
                 Button("Explain Line with Gemini") {
                     KeyboardMonitor.shared.onExplainRequested?()

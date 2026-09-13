@@ -214,3 +214,38 @@
 "Close a panel, or leave full screen" = "Закрыть панель или выйти из полноэкранного режима";
 "H or Esc to close" = "H или Esc — закрыть";
 "Keyboard shortcuts (H)" = "Горячие клавиши (H)";
+
+/* Video geometry */
+"Video" = "Видео";
+"Fit to Window" = "Вписать в окно";
+"Fill Window" = "Заполнить окно";
+"Zoom In" = "Увеличить";
+"Zoom Out" = "Уменьшить";
+"Reset Zoom and Position" = "Сбросить масштаб и положение";
+"Move Picture" = "Сдвинуть картинку";
+"Up" = "Вверх";
+"Down" = "Вниз";
+"Left" = "Влево";
+"Right" = "Вправо";
+"Remove Black Bars" = "Убрать чёрные полосы";
+"Reset Crop" = "Сбросить обрезку";
+"Fit to window" = "Вписать в окно";
+"✓ Fit to window" = "✓ Вписать в окно";
+"Fill window (crop edges)" = "Заполнить окно (обрезать края)";
+"✓ Fill window (crop edges)" = "✓ Заполнить окно (обрезать края)";
+"Zoom: %lld%%" = "Масштаб: %lld %%";
+"Zoom in  (=)" = "Увеличить  (=)";
+"Zoom out  (−)" = "Уменьшить  (−)";
+"Reset zoom and position  (0)" = "Сбросить масштаб и положение  (0)";
+"Remove black bars" = "Убрать чёрные полосы";
+"Reset crop" = "Сбросить обрезку";
+"Zoom, move and crop the picture (= / −, Shift + arrows, 0)" = "Масштаб, сдвиг и обрезка картинки (= / −, Shift + стрелки, 0)";
+"Zoom %lld%%" = "Масштаб %lld %%";
+"Fill window" = "Заполнить окно";
+"Black bars removed" = "Чёрные полосы убраны";
+"No black bars found" = "Чёрных полос не найдено";
+"Could not measure this frame" = "Не удалось измерить этот кадр";
+"Picture" = "Картинка";
+"Zoom in / out" = "Увеличить / уменьшить";
+"Move the picture" = "Сдвинуть картинку";
+"Reset zoom and position" = "Сбросить масштаб и положение";

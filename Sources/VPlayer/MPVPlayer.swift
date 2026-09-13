@@ -25,6 +25,22 @@ public final class MPVPlayer: ObservableObject {
     @Published public private(set) var audioDelay: Double = 0
     public static let delayRange = -30.0...30.0
     public static let delayStep = 0.1
+    /// Picture geometry, all per file like the delays. `videoZoom` is mpv's
+    /// log2 scale (0 = 100 %, 1 = 200 %); pan is a fraction of the scaled
+    /// video, so the point under the window centre stays put while zooming.
+    @Published public private(set) var videoZoom: Double = 0
+    @Published public private(set) var videoPanX: Double = 0
+    @Published public private(set) var videoPanY: Double = 0
+    /// True in "fill" mode (mpv panscan=1): the video covers the whole
+    /// window and the overflowing edges are cut off.
+    @Published public private(set) var fillsWindow: Bool = false
+    /// mpv `video-crop` string ("WxH+X+Y"), empty when nothing is cropped.
+    @Published public private(set) var videoCrop: String = ""
+    public static let zoomRange = 0.5...4.0         // as a scale: 50 % … 400 %
+    /// One key press changes the scale by this many percentage points.
+    public static let zoomStep = 0.02
+    public static let zoomPresets: [Double] = [1.0, 1.25, 1.5, 2.0]
+    public static let panStep = 0.02
     @Published public var mediaTitle: String = ""
     @Published public var currentFileURL: URL? = nil
     
@@ -261,6 +277,11 @@ public final class MPVPlayer: ObservableObject {
         mpv_observe_property(handle, 16, "sub-delay", MPV_FORMAT_DOUBLE)
         mpv_observe_property(handle, 17, "secondary-sub-delay", MPV_FORMAT_DOUBLE)
         mpv_observe_property(handle, 18, "audio-delay", MPV_FORMAT_DOUBLE)
+        mpv_observe_property(handle, 19, "video-zoom", MPV_FORMAT_DOUBLE)
+        mpv_observe_property(handle, 20, "video-pan-x", MPV_FORMAT_DOUBLE)
+        mpv_observe_property(handle, 21, "video-pan-y", MPV_FORMAT_DOUBLE)
+        mpv_observe_property(handle, 22, "panscan", MPV_FORMAT_DOUBLE)
+        mpv_observe_property(handle, 23, "video-crop", MPV_FORMAT_STRING)
     }
     
     // MARK: - Asynchronous Command Helper (Deadlock-free!)
@@ -555,6 +576,7 @@ public final class MPVPlayer: ObservableObject {
         for stream in DelayStream.allCases {
             setPropertyAsync(stream.property, "0")
         }
+        resetVideoGeometry()
         executeCommand(["loadfile", url.path, "replace"])
     }
     
@@ -693,6 +715,175 @@ public final class MPVPlayer: ObservableObject {
         setDelay(0, of: stream)
     }
     
+    // MARK: - Video Geometry (zoom, pan, fill, crop)
+    /// Zoom as the user sees it: 1.0 = 100 %.
+    public var zoomScale: Double { pow(2, videoZoom) }
+
+    /// Steps are linear in percent (100 → 102 → 104), not in mpv's log scale,
+    /// because that is what the OSD shows and what feels even to the eye.
+    public func setZoom(scale: Double) {
+        let clamped = min(max(scale, Self.zoomRange.lowerBound), Self.zoomRange.upperBound)
+        let snapped = (clamped * 100).rounded() / 100
+        setPropertyAsync("video-zoom", String(format: "%.4f", log2(snapped)))
+    }
+
+    public func adjustZoom(by delta: Double) {
+        setZoom(scale: zoomScale + delta)
+    }
+
+    /// Moves the picture by a fraction of its scaled size; positive dx/dy = right/down.
+    public func pan(dx: Double, dy: Double) {
+        let x = (((videoPanX + dx) / Self.panStep).rounded() * Self.panStep)
+        let y = (((videoPanY + dy) / Self.panStep).rounded() * Self.panStep)
+        setPropertyAsync("video-pan-x", String(format: "%.3f", min(max(x, -1), 1)))
+        setPropertyAsync("video-pan-y", String(format: "%.3f", min(max(y, -1), 1)))
+    }
+
+    public func resetZoomAndPan() {
+        setPropertyAsync("video-zoom", "0")
+        setPropertyAsync("video-pan-x", "0")
+        setPropertyAsync("video-pan-y", "0")
+    }
+
+    public func setFillsWindow(_ fill: Bool) {
+        setPropertyAsync("panscan", fill ? "1" : "0")
+    }
+
+    public func resetCrop() {
+        setPropertyAsync("video-crop", "")
+    }
+
+    /// Everything the Video menu touches, back to defaults.
+    public func resetVideoGeometry() {
+        resetZoomAndPan()
+        setPropertyAsync("panscan", "0")
+        resetCrop()
+    }
+
+    public enum CropResult: Equatable {
+        case cropped, nothingToCrop, failed
+    }
+
+    /// Measures the black bars baked into the current frame and crops them
+    /// away with `video-crop`. Works on a raw frame grabbed from mpv, so it
+    /// does not care whether decoding is hardware-accelerated (a cropdetect
+    /// filter would). Any earlier crop is dropped first, so the measurement
+    /// is always against the full source picture.
+    public func removeBlackBars(completion: @escaping (CropResult) -> Void) {
+        guard let handle = mpv, currentFileURL != nil else { completion(.failed); return }
+        let hadCrop = !videoCrop.isEmpty
+        if hadCrop {
+            resetCrop()
+        }
+        DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + (hadCrop ? 0.3 : 0)) {
+            guard let frame = Self.grabRawFrame(handle) else {
+                DispatchQueue.main.async { completion(.failed) }
+                return
+            }
+            var srcW: Int64 = 0, srcH: Int64 = 0
+            mpv_get_property(handle, "width", MPV_FORMAT_INT64, &srcW)
+            mpv_get_property(handle, "height", MPV_FORMAT_INT64, &srcH)
+            guard srcW > 0, srcH > 0, let bars = Self.detectContentRect(in: frame) else {
+                DispatchQueue.main.async { completion(.failed) }
+                return
+            }
+            // The frame may come back at a different size than the source;
+            // scale the rectangle into source pixels, which video-crop expects.
+            let sx = Double(srcW) / Double(frame.width), sy = Double(srcH) / Double(frame.height)
+            // Even offsets and sizes (chroma subsampling), erring towards the
+            // inside: a pixel of picture lost is invisible, a pixel of bar is not.
+            let x = (Int((Double(bars.minX) * sx).rounded(.up)) + 1) & ~1
+            let y = (Int((Double(bars.minY) * sy).rounded(.up)) + 1) & ~1
+            let w = min(Int(srcW) - x, Int((Double(bars.maxX) * sx).rounded(.down)) & ~1 - x)
+            let h = min(Int(srcH) - y, Int((Double(bars.maxY) * sy).rounded(.down)) & ~1 - y)
+            let trimmed = Double(w * h) / Double(srcW * srcH)
+            DispatchQueue.main.async { [weak self] in
+                guard trimmed < 0.98 else { completion(.nothingToCrop); return }
+                self?.setPropertyAsync("video-crop", "\(w)x\(h)+\(x)+\(y)")
+                completion(.cropped)
+            }
+        }
+    }
+
+    private struct RawFrame {
+        let width: Int, height: Int, stride: Int
+        let pixels: [UInt8]   // bgr0 / bgra, 4 bytes per pixel
+    }
+
+    /// `screenshot-raw video`: the current frame without subtitles or OSD.
+    private static func grabRawFrame(_ handle: OpaquePointer) -> RawFrame? {
+        var result = mpv_node()
+        let args: [String] = ["screenshot-raw", "video"]
+        var cArgs: [UnsafePointer<CChar>?] = args.map { UnsafePointer(strdup($0)) }
+        cArgs.append(nil)
+        defer { for ptr in cArgs where ptr != nil { free(UnsafeMutableRawPointer(mutating: ptr)) } }
+        guard mpv_command_ret(handle, &cArgs, &result) >= 0 else { return nil }
+        defer { mpv_free_node_contents(&result) }
+        guard result.format == MPV_FORMAT_NODE_MAP, let list = result.u.list else { return nil }
+
+        var w = 0, h = 0, stride = 0
+        var format = ""
+        var bytes: [UInt8]? = nil
+        for i in 0..<Int(list.pointee.num) {
+            let key = String(cString: list.pointee.keys[i]!)
+            let value = list.pointee.values[i]
+            switch key {
+            case "w": w = Int(value.u.int64)
+            case "h": h = Int(value.u.int64)
+            case "stride": stride = Int(value.u.int64)
+            case "format": if value.format == MPV_FORMAT_STRING { format = String(cString: value.u.string) }
+            case "data":
+                if value.format == MPV_FORMAT_BYTE_ARRAY, let ba = value.u.ba {
+                    bytes = Array(UnsafeBufferPointer(start: ba.pointee.data.assumingMemoryBound(to: UInt8.self), count: ba.pointee.size))
+                }
+            default: break
+            }
+        }
+        guard w > 0, h > 0, stride >= w * 4, let pixels = bytes, pixels.count >= stride * h,
+              format == "bgr0" || format == "bgra" || format == "rgba" else { return nil }
+        return RawFrame(width: w, height: h, stride: stride, pixels: pixels)
+    }
+
+    /// Bounding box of the non-black picture: a row or column counts as a
+    /// bar when almost all of its pixels are darker than `threshold`.
+    private static func detectContentRect(in frame: RawFrame) -> CGRect? {
+        let threshold: UInt8 = 32   // above codec ringing at the bar edge, below any real picture
+        let tolerance = 0.02   // share of bright pixels a bar row may still contain (noise, logos)
+        let px = frame.pixels
+
+        func isBright(_ x: Int, _ y: Int) -> Bool {
+            let i = y * frame.stride + x * 4
+            return px[i] > threshold || px[i + 1] > threshold || px[i + 2] > threshold
+        }
+        func rowIsBlack(_ y: Int) -> Bool {
+            var bright = 0
+            let limit = Int(Double(frame.width) * tolerance)
+            for x in 0..<frame.width where isBright(x, y) {
+                bright += 1
+                if bright > limit { return false }
+            }
+            return true
+        }
+        func columnIsBlack(_ x: Int) -> Bool {
+            var bright = 0
+            let limit = Int(Double(frame.height) * tolerance)
+            for y in 0..<frame.height where isBright(x, y) {
+                bright += 1
+                if bright > limit { return false }
+            }
+            return true
+        }
+
+        var top = 0, bottom = frame.height - 1, left = 0, right = frame.width - 1
+        while top < bottom && rowIsBlack(top) { top += 1 }
+        while bottom > top && rowIsBlack(bottom) { bottom -= 1 }
+        guard bottom - top > frame.height / 4 else { return nil }   // black frame: nothing to measure
+        while left < right && columnIsBlack(left) { left += 1 }
+        while right > left && columnIsBlack(right) { right -= 1 }
+        guard right - left > frame.width / 4 else { return nil }
+        return CGRect(x: left, y: top, width: right - left + 1, height: bottom - top + 1)
+    }
+
     // MARK: - Language Learning & Subtitle Methods
     public func setPeekingTranslation(_ isPeeking: Bool) {
         // Tab auto-repeats while held; only react to actual transitions.
@@ -865,6 +1056,29 @@ public final class MPVPlayer: ObservableObject {
                 DispatchQueue.main.async { [weak self] in
                     self?.playbackSpeed = speed
                 }
+            }
+
+        case "video-zoom", "video-pan-x", "video-pan-y", "panscan":
+            if let data = prop.data {
+                let value = data.assumingMemoryBound(to: Double.self).pointee
+                DispatchQueue.main.async { [weak self] in
+                    guard let self else { return }
+                    switch propName {
+                    case "video-zoom": self.videoZoom = value
+                    case "video-pan-x": self.videoPanX = value
+                    case "video-pan-y": self.videoPanY = value
+                    default: self.fillsWindow = value > 0.5
+                    }
+                }
+            }
+
+        case "video-crop":
+            var crop = ""
+            if let data = prop.data, let cStr = data.assumingMemoryBound(to: UnsafePointer<CChar>?.self).pointee {
+                crop = String(cString: cStr)
+            }
+            DispatchQueue.main.async { [weak self] in
+                self?.videoCrop = crop
             }
 
         case "sub-delay", "secondary-sub-delay", "audio-delay":
