@@ -96,7 +96,11 @@ public struct ContentView: View {
         // The window itself is transparent (video renders in mpv's window
         // underneath), so paint a background until that surface exists and a
         // file is actually loaded; otherwise the desktop shows through.
-        .background(showsVideo ? Color.clear : Color(red: 0.08, green: 0.08, blue: 0.1))
+        // Once video shows, the tint must stay just above zero: the window
+        // server lets clicks fall through fully transparent pixels (seen in
+        // fullscreen, where nothing of ours is underneath to catch them), so
+        // clicking the video would not pause it.
+        .background(showsVideo ? Color.black.opacity(0.01) : Color(red: 0.08, green: 0.08, blue: 0.1))
         .onContinuousHover { phase in
             switch phase {
             case .active:

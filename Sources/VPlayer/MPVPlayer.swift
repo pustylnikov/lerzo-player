@@ -343,7 +343,7 @@ public final class MPVPlayer: ObservableObject {
                     window.styleMask = [.borderless]
                     window.hasShadow = false
                     window.ignoresMouseEvents = true
-                    window.collectionBehavior = [.fullScreenAuxiliary, .canJoinAllSpaces]
+                    window.collectionBehavior = Self.embeddedWindowBehavior
 
                     self.configureEmbeddedWindow(window, in: parentWindow)
                     window.setFrame(self.embeddedWindowFrame(for: parentWindow), display: true)
@@ -374,8 +374,8 @@ public final class MPVPlayer: ObservableObject {
             if child.styleMask != [.borderless] {
                 child.styleMask = [.borderless]
             }
-            if !child.collectionBehavior.contains(.fullScreenAuxiliary) {
-                child.collectionBehavior = [.fullScreenAuxiliary, .canJoinAllSpaces]
+            if child.collectionBehavior != Self.embeddedWindowBehavior {
+                child.collectionBehavior = Self.embeddedWindowBehavior
             }
             child.ignoresMouseEvents = true
             child.hasShadow = false
@@ -400,7 +400,9 @@ public final class MPVPlayer: ObservableObject {
                 // mpv's window can adjust a full frame back to visibleFrame. A
                 // direct origin update after resizing avoids that 30 pt shift.
                 child.setFrameOrigin(targetFrame.origin)
-                child.order(.below, relativeTo: parent.windowNumber)
+                if parent.isOnActiveSpace {
+                    child.order(.below, relativeTo: parent.windowNumber)
+                }
             }
         }
     }
@@ -466,6 +468,12 @@ public final class MPVPlayer: ObservableObject {
         return fallbackEmbeddedWindowCornerRadius
     }
 
+    /// The video window must never be on every desktop (`.canJoinAllSpaces`
+    /// showed the picture on other Spaces, and everywhere in fullscreen).
+    /// It rides along as a child window, and while detached in fullscreen
+    /// `.moveToActiveSpace` lets it be pulled onto the fullscreen Space.
+    private static let embeddedWindowBehavior: NSWindow.CollectionBehavior = [.fullScreenAuxiliary, .moveToActiveSpace]
+
     private func updateEmbeddedWindowOrdering(_ child: NSWindow, in parent: NSWindow) {
         let isAttached = parent.childWindows?.contains(child) ?? false
 
@@ -482,7 +490,16 @@ public final class MPVPlayer: ObservableObject {
             if isAttached {
                 parent.removeChildWindow(child)
             }
-            child.order(.below, relativeTo: parent.windowNumber)
+            // Only reorder while the fullscreen Space is the active one:
+            // `.moveToActiveSpace` would otherwise drag the video onto
+            // whatever desktop the user swiped to. A detached window left on
+            // another Space is ordered out and back in to relocate it.
+            if parent.isOnActiveSpace {
+                if !child.isOnActiveSpace {
+                    child.orderOut(nil)
+                }
+                child.order(.below, relativeTo: parent.windowNumber)
+            }
         } else {
             NSApp.presentationOptions = []
             child.level = .normal
