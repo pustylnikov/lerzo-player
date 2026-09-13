@@ -1,107 +1,115 @@
 # Lerzo Player 🎬
 
-**Lerzo Player** — специализированный нативный видеоплеер для macOS, созданный на связке **SwiftUI + libmpv + Google Gemini API**. Разработан специально для комфортного просмотра фильмов на английском языке с целью изучения и эффективной языковой практики.
+**Lerzo Player** is a native macOS video player for learning languages by watching films: **SwiftUI + libmpv + Google Gemini**. Subtitles are interactive, dialogue can be replayed line by line, a hidden translation is one key away, and any line can be explained by an AI.
 
 ---
 
-## ✨ Ключевые возможности
+## ✨ Features
 
-- 🚀 **Аппаратное ускорение:** Воспроизведение MKV, MP4, WebM, AVI через `libmpv` с аппаратным декодированием VideoToolbox (`gpu-next`).
-- 🪟 **Единое нативное окно:** Бесшовный рендеринг видео Metal и полупрозрачного SwiftUI-интерфейса поверх видеопотока.
-- 💬 **Интерактивные реплики:** Наведение на слова в субтитрах подсвечивает их; клик по любому слову или кнопке **«+ ИИ»** передает реплику на анализ с фокусом на выбранном выражении.
-- ⚡️ **Быстрое подглядывание (TAB Quick Peek):** Зажмите клавишу **`TAB`** — мгновенно появляется русский перевод из вторичной дорожки. Отпустите — фильм продолжается на английском.
-- 🧠 **Разбор контекста через Gemini AI (⌘ + G):** Подробный разбор диалога, идиом (*"under the weather"*, *"break a leg"*, *"piece of cake"*), сленга, частей речи и скрытого подтекста сцены.
-- 🔄 **Навигация по репликам:** **`R`** повторяет текущую реплику, **`W`** / **`E`** переходят к предыдущей / следующей — по собственному индексу реплик дорожки, поэтому работают точно и на любое число реплик подряд (для MKV индекс читается за доли секунды даже на файлах в десятки гигабайт).
-- 📄 **Внешние субтитры:** файлы `.srt`, `.ass`, `.vtt` подключаются через ⌘⇧O, диалог открытия или перетаскиванием; автоматический выбор дорожек по предпочитаемым языкам.
-- 🎚 **Синхронизация и звук:** задержка субтитров, перевода и звука с шагом 0.1 с; Boost dialogue — усиление речи и выравнивание громкости; скорость воспроизведения.
-- 🖼 **Картинка:** масштабирование и сдвиг, удаление чёрных полос, яркость / контраст / гамма, HDR-вывод.
-- ⚙️ **Настройки (⌘ + ,):** шрифт и размер субтитров с живым предпросмотром, языки дорожек, модель Gemini; ключ API хранится в keychain.
-- 🔄 **Автообновления** через Sparkle.
-
----
-
-## ⌨️ Горячие клавиши
-
-Полная шпаргалка доступна в самом плеере по клавише **`H`**; в исходниках список
-живёт в `ShortcutsReference` (`ShortcutsOverlayView.swift`). Клавиши привязаны к
-физическим кодам и работают в любой раскладке.
-
-### Изучение языка
-
-| Клавиша | Действие |
-| :--- | :--- |
-| **`TAB` (зажать)** | Мгновенно подглядеть перевод (вторая дорожка субтитров) |
-| **`R`** | Повторить текущую реплику с начала |
-| **`W` / `E`** | Предыдущая / следующая реплика |
-| **`⌘ + G`** | ИИ-разбор текущей реплики через Gemini |
-
-### Воспроизведение
-
-| Клавиша | Действие |
-| :--- | :--- |
-| **`Пробел`** | Пауза / воспроизведение |
-| **`←` / `→`** | Перемотка на 5 секунд назад / вперёд |
-| **`↑` / `↓`** | Громкость +5 % / −5 % |
-| **`M`** | Выключить / включить звук |
-| **`B`** | Boost dialogue — усиление речи вкл / выкл |
-| **`[` / `]`** | Скорость: медленнее / быстрее на 0.1× |
-| **`⌫`** | Сбросить скорость на 1× |
-
-### Синхронизация
-
-| Клавиша | Действие |
-| :--- | :--- |
-| **`Z` / `X`** | Задержка субтитров: раньше / позже на 0.1 с |
-| **`⇧ + Z` / `⇧ + X`** | Задержка звука: раньше / позже на 0.1 с |
-
-### Картинка
-
-| Клавиша | Действие |
-| :--- | :--- |
-| **`=` / `−`** | Приблизить / отдалить |
-| **`⇧ + стрелки`** | Сдвинуть картинку |
-| **`0`** | Сбросить масштаб и положение |
-
-### Общие
-
-| Клавиша | Действие |
-| :--- | :--- |
-| **`F`** | Полноэкранный режим |
-| **`⌘ + O`** | Открыть видео или внешний файл субтитров |
-| **`⌘ + ⇧ + O`** | Загрузить внешний файл субтитров |
-| **`⌘ + ,`** | Настройки |
-| **`H`** | Показать / скрыть шпаргалку клавиш |
-| **`Esc`** | Закрыть панель или выйти из полноэкранного режима |
+- 🚀 **Hardware-accelerated playback:** MKV, MP4, WebM, AVI and everything else mpv plays, decoded by VideoToolbox and rendered with `gpu-next` (Metal via MoltenVK), HDR output included.
+- 🪟 **One native window:** the video and the translucent SwiftUI interface share a single window.
+- 💬 **Interactive subtitles:** hovering highlights words; clicking a word or the **“+ AI”** button sends the line for a breakdown focused on that expression.
+- ⚡️ **Quick peek (`TAB`):** hold **`TAB`** to see the translation from the second subtitle track instantly; release it and the film goes on in the original language.
+- 🧠 **AI breakdown with Gemini (`⌘ G`):** a detailed explanation of the line — idioms (*“under the weather”*, *“break a leg”*), slang, grammar and the subtext of the scene. Uses your own Google AI Studio key, stored in the keychain.
+- 🔄 **Line-by-line navigation:** **`R`** replays the current line, **`W`** / **`E`** jump to the previous / next one. The player builds its own index of the track’s lines, so seeking is exact and works any number of lines in a row; for MKV the index is read from the Cues in a fraction of a second even on files of tens of gigabytes.
+- 📄 **External subtitles:** `.srt`, `.ass`, `.vtt` files via ⌘⇧O, the open dialog or drag and drop; tracks are picked automatically by your preferred languages.
+- 🎚 **Sync and sound:** subtitle, translation and audio delay in 0.1 s steps; *Boost dialogue* lifts speech and evens out loudness; playback speed.
+- 🖼 **Picture:** zoom and pan, black-bar removal, brightness / contrast / gamma.
+- ⚙️ **Settings (`⌘ ,`):** subtitle font and size with live preview, track languages, Gemini model.
+- 🔄 **Automatic updates** via Sparkle.
 
 ---
 
-## 🛠 Требования и установка
+## ⬇️ Download
 
-### 1. Зависимости
-Для сборки и работы требуется библиотека `mpv` (устанавливается через Homebrew):
+Lerzo Player runs on macOS 14 or later (Apple silicon). Grab the DMG from the [releases page](../../releases) — the app is signed and notarized and updates itself.
+
+---
+
+## ⌨️ Keyboard shortcuts
+
+Press **`H`** in the player for the built-in cheat sheet; in the source the list lives in `ShortcutsReference` (`ShortcutsOverlayView.swift`). Keys are matched by physical position, so they work in any keyboard layout.
+
+### Language learning
+
+| Key | Action |
+| :--- | :--- |
+| **`TAB` (hold)** | Peek at the translation (second subtitle track) |
+| **`R`** | Replay the current line from the start |
+| **`W` / `E`** | Previous / next line of dialogue |
+| **`⌘ + G`** | AI breakdown of the current line with Gemini |
+
+### Playback
+
+| Key | Action |
+| :--- | :--- |
+| **`Space`** | Pause / play |
+| **`←` / `→`** | Seek 5 seconds back / forward |
+| **`↑` / `↓`** | Volume +5 % / −5 % |
+| **`M`** | Mute / unmute |
+| **`B`** | Boost dialogue on / off |
+| **`[` / `]`** | Speed: slower / faster by 0.1× |
+| **`⌫`** | Reset speed to 1× |
+
+### Sync
+
+| Key | Action |
+| :--- | :--- |
+| **`Z` / `X`** | Subtitle delay: earlier / later by 0.1 s |
+| **`⇧ + Z` / `⇧ + X`** | Audio delay: earlier / later by 0.1 s |
+
+### Picture
+
+| Key | Action |
+| :--- | :--- |
+| **`=` / `−`** | Zoom in / out |
+| **`⇧ + arrows`** | Move the picture |
+| **`0`** | Reset zoom and position |
+
+### General
+
+| Key | Action |
+| :--- | :--- |
+| **`F`** | Full screen |
+| **`⌘ + O`** | Open a video or an external subtitle file |
+| **`⌘ + ⇧ + O`** | Load an external subtitle file |
+| **`⌘ + ,`** | Settings |
+| **`H`** | Show / hide the cheat sheet |
+| **`Esc`** | Close a panel, or leave full screen |
+
+---
+
+## 🛠 Building from source
+
+### 1. Dependencies
+
+Xcode command line tools and mpv from Homebrew (it brings ffmpeg, libass, libplacebo and MoltenVK with it):
+
 ```bash
 brew install mpv
 ```
-Sparkle (автообновления) SwiftPM скачивает сам при первой сборке.
 
-### 2. Сборка и запуск
-Сборка выполняется с помощью встроенного скрипта:
+Sparkle is fetched by SwiftPM on the first build.
+
+### 2. Build and run
+
 ```bash
 ./build_app.sh
 open "build/Lerzo Player.app"
 ```
 
+`build_app.sh` produces a development bundle that links the Homebrew libraries in place. `scripts/release.sh` builds the self-contained, signed and notarized release DMG (see the header of the script).
+
 ---
 
-## 🧪 Тестовые медиафайлы
-В репозитории включен тестовый видеоролик с цветными калибровочными полосами и английскими/русскими субтитрами:
+## 🧪 Test media
+
+The repository includes a short clip with colour bars and English / Russian subtitle tracks:
+
 ```bash
 open -a "build/Lerzo Player.app" test_media/sample_dialogue.mkv
 ```
 
-## 📄 Лицензия
+## 📄 License
 
-Lerzo Player распространяется под [GNU GPL v3](LICENSE). В сборку входят libmpv и ffmpeg
-(GPL) и их зависимости; каждый DMG содержит папку «Source code» с архивом исходников
-этой версии и списком всех встроенных библиотек с версиями и ссылками на их исходники
-(`THIRD-PARTY-SOURCES.md`).
+Lerzo Player is free software under the [GNU GPL v3](LICENSE). The build bundles libmpv and ffmpeg (GPL) and their dependencies; every DMG carries a “Source code” folder with the source archive of that exact version and `THIRD-PARTY-SOURCES.md`, which lists every bundled library with its version, license and where to get its source.

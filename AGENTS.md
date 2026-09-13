@@ -122,4 +122,4 @@ Swift-интерполяциях — одиночный `%`. Проверка: `
 - Sparkle: https://sparkle-project.org/documentation/
 - Notarization: https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution
 
-Список оставшихся задач — в `TODO.md`.
+Список оставшихся задач — в `TODO.md` (локальный файл автора, в git не входит).

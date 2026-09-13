@@ -21,3 +21,6 @@ DerivedData/
 .idea/
 .vscode/
 dist/
+
+# Author's private task list
+TODO.md
