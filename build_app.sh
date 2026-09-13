@@ -25,8 +25,9 @@ mkdir -p "$RESOURCES"
 cp "$DIR/.build/release/$EXECUTABLE" "$MACOS/$EXECUTABLE"
 chmod +x "$MACOS/$EXECUTABLE"
 
-# UI translations
+# UI translations and the app icon (regenerate it with `swift scripts/make_icon.swift`)
 cp -R "$DIR"/Resources/*.lproj "$RESOURCES/"
+cp "$DIR/Resources/AppIcon.icns" "$RESOURCES/"
 
 # Ensure rpath points to Homebrew lib
 install_name_tool -add_rpath "/opt/homebrew/lib" "$MACOS/$EXECUTABLE" 2>/dev/null || true
@@ -46,6 +47,8 @@ cat << 'EOF' > "$CONTENTS/Info.plist"
     </array>
     <key>CFBundleExecutable</key>
     <string>LerzoPlayer</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
     <key>CFBundleIdentifier</key>
     <string>com.lerzo.player</string>
     <key>CFBundleInfoDictionaryVersion</key>

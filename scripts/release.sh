@@ -42,8 +42,7 @@ cp "build/$APP_NAME.app/Contents/Info.plist" "$CONTENTS/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$CONTENTS/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" "$CONTENTS/Info.plist"
 cp -R "$DIR"/Resources/*.lproj "$RESOURCES/"
-[ -f "$DIR/Resources/AppIcon.icns" ] && cp "$DIR/Resources/AppIcon.icns" "$RESOURCES/" \
-    && /usr/libexec/PlistBuddy -c "Add :CFBundleIconFile string AppIcon" "$CONTENTS/Info.plist"
+cp "$DIR/Resources/AppIcon.icns" "$RESOURCES/"
 
 # --- Bundle libmpv + every Homebrew dylib it pulls in --------------------------
 # Each library is copied under its real file name, its install name becomes

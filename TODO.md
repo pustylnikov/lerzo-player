@@ -5,9 +5,8 @@
 ## Релиз
 
 - [x] Переименование в Lerzo Player, bundle id `com.lerzo.player`.
-- [ ] **Иконка приложения** — положить `Resources/AppIcon.icns`; `scripts/release.sh` сам
-      скопирует её в бандл и пропишет `CFBundleIconFile`. `build_app.sh` (dev-сборка)
-      иконку пока не подхватывает.
+- [x] Иконка приложения — `Resources/AppIcon.svg` (мастер, play в кольце в цветах Lerzo),
+      `swift scripts/make_icon.swift` собирает `AppIcon.icns` на сетке macOS.
 - [ ] **Исходники в DMG** — `scripts/release.sh` должен класть `Source code.zip`
       (`git archive` текущего коммита) рядом с приложением: так выполняется GPLv3 §6(a) и
       на лендинге репозиторий упоминать не обязательно.

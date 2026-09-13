@@ -17,6 +17,9 @@
 - Dev-цикл: `./build_app.sh` → `build/Lerzo Player.app` (линкуется с Homebrew,
   подписывается Developer ID). Запуск для проверки:
   `pkill -x LerzoPlayer; sleep 1; open -a "$PWD/build/Lerzo Player.app" "$PWD/test_media/sample_dialogue.mkv"`
+- Иконка: мастер `Resources/AppIcon.svg` (полноформатный квадрат 1024 в цветах Lerzo
+  `#0A0A0B`/`#F2F2F4`), `swift scripts/make_icon.swift` вписывает его в сетку macOS
+  (824 pt в холсте 1024) и собирает `Resources/AppIcon.icns`; оба файла в репозитории.
 - Релиз: `scripts/release.sh` копирует libmpv и все dylib в бандл, переписывает
   install names, подписывает, ноутаризует, собирает DMG (см. шапку скрипта).
 - Отладка mpv: `VPLAYER_MPV_LOG=/path/log open -a "build/Lerzo Player.app" file.mkv` —
