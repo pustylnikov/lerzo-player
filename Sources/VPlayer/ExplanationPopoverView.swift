@@ -9,6 +9,7 @@ public struct ExplanationPopoverView: View {
     
     @State private var explanation: SubtitleExplanation? = nil
     @State private var errorText: String? = nil
+    @State private var geminiError: GeminiError? = nil
     @State private var isFetching: Bool = false
     
     public init(isOpen: Binding<Bool>, isSettingsOpen: Binding<Bool>, focusedWord: String? = nil) {
@@ -68,6 +69,10 @@ public struct ExplanationPopoverView: View {
                 // Body content based on state
                 if isFetching {
                     loadingView
+                } else if geminiError == .missingKey {
+                    setupView
+                } else if let err = geminiError {
+                    errorView(err)
                 } else if let err = errorText {
                     errorView(err)
                 } else if let expl = explanation {
@@ -149,40 +154,107 @@ public struct ExplanationPopoverView: View {
         .frame(maxWidth: .infinity, minHeight: 180)
     }
     
-    // MARK: - Error View
-    private func errorView(_ message: String) -> some View {
+    // MARK: - First run: no key yet
+    private var setupView: some View {
         VStack(spacing: 14) {
+            Image(systemName: "key.fill")
+                .font(.system(size: 32))
+                .foregroundColor(.yellow)
+            
+            Text("Set up AI explanations")
+                .font(.system(size: 15, weight: .bold))
+                .foregroundColor(.white)
+            
+            Text("VPlayer explains idioms, slang and context with Google Gemini. It needs a free API key — getting one takes a minute, no card required.")
+                .font(.system(size: 13))
+                .foregroundColor(.white.opacity(0.85))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+            
+            HStack(spacing: 10) {
+                Link(destination: GeminiService.apiKeyPageURL) {
+                    HStack(spacing: 5) {
+                        Text("1. Get a free key")
+                        Image(systemName: "arrow.up.right.square")
+                    }
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(Color.white.opacity(0.12))
+                    .cornerRadius(8)
+                }
+                
+                primaryButton("2. Paste it in Settings") {
+                    isOpen = false
+                    isSettingsOpen = true
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, minHeight: 180)
+    }
+    
+    // MARK: - Error View
+    private func errorView(_ error: GeminiError) -> some View {
+        VStack(spacing: 12) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 32))
                 .foregroundColor(.orange)
             
+            Text(error.errorDescription ?? "")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(.white.opacity(0.95))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+            
+            if let hint = error.recoverySuggestion {
+                Text(hint)
+                    .font(.system(size: 12))
+                    .foregroundColor(.white.opacity(0.7))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            
+            HStack(spacing: 10) {
+                if error.pointsToSettings {
+                    primaryButton("Open Settings") {
+                        isOpen = false
+                        isSettingsOpen = true
+                    }
+                }
+                Button("Try again") { fetchExplanation() }
+                    .buttonStyle(.bordered)
+            }
+            .padding(.top, 2)
+        }
+        .frame(maxWidth: .infinity, minHeight: 180)
+    }
+    
+    /// Plain-text failures that are not Gemini's fault (no subtitle to explain).
+    private func errorView(_ message: String) -> some View {
+        VStack(spacing: 14) {
+            Image(systemName: "text.bubble")
+                .font(.system(size: 32))
+                .foregroundColor(.white.opacity(0.5))
             Text(message)
                 .font(.system(size: 13))
                 .foregroundColor(.white.opacity(0.9))
                 .multilineTextAlignment(.center)
-            
-            if !gemini.hasApiKey {
-                Button(action: {
-                    isOpen = false
-                    isSettingsOpen = true
-                }) {
-                    Text("Enter Gemini API key in Settings")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.black)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
-                        .background(Color.yellow)
-                        .cornerRadius(8)
-                }
-                .buttonStyle(.plain)
-            } else {
-                Button("Try again") {
-                    fetchExplanation()
-                }
-                .buttonStyle(.borderedProminent)
-            }
         }
         .frame(maxWidth: .infinity, minHeight: 180)
+    }
+    
+    private func primaryButton(_ title: LocalizedStringKey, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(.black)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background(Color.yellow)
+                .cornerRadius(8)
+        }
+        .buttonStyle(.plain)
     }
     
     // MARK: - Empty State
@@ -329,6 +401,7 @@ public struct ExplanationPopoverView: View {
         
         isFetching = true
         errorText = nil
+        geminiError = nil
         
         Task {
             do {
@@ -344,7 +417,7 @@ public struct ExplanationPopoverView: View {
                 }
             } catch {
                 await MainActor.run {
-                    self.errorText = error.localizedDescription
+                    self.geminiError = GeminiError.from(transport: error)
                     self.isFetching = false
                 }
             }

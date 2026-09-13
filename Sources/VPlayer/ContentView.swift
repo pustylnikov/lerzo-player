@@ -3,6 +3,7 @@ import AppKit
 import UniformTypeIdentifiers
 
 public struct ContentView: View {
+    @ObservedObject private var gemini = GeminiService.shared
     @ObservedObject var player = MPVPlayer.shared
     @ObservedObject var keyboardMonitor = KeyboardMonitor.shared
     
@@ -200,6 +201,25 @@ public struct ContentView: View {
                 featureBadge(icon: "arrow.counterclockwise.circle", text: "R: replay the current line")
             }
             .padding(.top, 16)
+
+            if !gemini.hasApiKey {
+                Button(action: { isSettingsOpen = true }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "key.fill")
+                        Text("AI explanations need a free Gemini key — set it up in Settings")
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 9, weight: .bold))
+                    }
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.yellow)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 7)
+                    .background(Color.yellow.opacity(0.12))
+                    .cornerRadius(8)
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 4)
+            }
         }
         .padding(40)
         .background(

@@ -15,7 +15,30 @@ public final class GeminiService: ObservableObject {
     private static let legacyDefaultsKey = "VPlayer.geminiApiKey"
     private var isLoadingKey = false
 
-    @Published public var selectedModel: String = "gemini-2.5-flash"
+    /// Google retires model names for new keys every few months, so the
+    /// model is discovered from the API on a 404 and remembered.
+    @Published public var selectedModel: String = UserDefaults.standard.string(forKey: "VPlayer.geminiModel") ?? defaultModel {
+        didSet { UserDefaults.standard.set(selectedModel, forKey: "VPlayer.geminiModel") }
+    }
+    public static let defaultModel = "gemini-3.6-flash"
+    /// Text models the key can use. Cached for a day — new models do not
+    /// appear every minute, and the list call counts against the quota too.
+    @Published public var availableModels: [String] = UserDefaults.standard.stringArray(forKey: modelsCacheKey) ?? [] {
+        didSet {
+            UserDefaults.standard.set(availableModels, forKey: Self.modelsCacheKey)
+            UserDefaults.standard.set(Date(), forKey: Self.modelsFetchedAtKey)
+        }
+    }
+    private static let modelsCacheKey = "VPlayer.geminiModels"
+    private static let modelsFetchedAtKey = "VPlayer.geminiModelsFetchedAt"
+    private static let modelsCacheLifetime: TimeInterval = 24 * 60 * 60
+
+    /// True when the cached list is missing or older than a day.
+    public var modelListIsStale: Bool {
+        guard !availableModels.isEmpty,
+              let fetched = UserDefaults.standard.object(forKey: Self.modelsFetchedAtKey) as? Date else { return true }
+        return Date().timeIntervalSince(fetched) > Self.modelsCacheLifetime
+    }
     @Published public var isLoading: Bool = false
     @Published public var lastExplanation: SubtitleExplanation? = nil
     @Published public var errorMessage: String? = nil
@@ -39,6 +62,9 @@ public final class GeminiService: ObservableObject {
         defaults.removeObject(forKey: Self.legacyDefaultsKey)
     }
 
+    /// Where a user gets a key; shared by Settings and the first-run screen.
+    public static let apiKeyPageURL = URL(string: "https://aistudio.google.com/app/apikey")!
+
     public var hasApiKey: Bool {
         return !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
@@ -49,11 +75,7 @@ public final class GeminiService: ObservableObject {
                         translationPeekText: String? = nil,
                         focusedWord: String? = nil) async throws -> SubtitleExplanation {
         let cleanKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !cleanKey.isEmpty else {
-            throw NSError(domain: "GeminiService", code: 401, userInfo: [
-                NSLocalizedDescriptionKey: String(localized: "Gemini API key is not set. Please enter it in the player settings (⚙️ icon).")
-            ])
-        }
+        guard !cleanKey.isEmpty else { throw GeminiError.missingKey }
         
         await MainActor.run {
             self.isLoading = true
@@ -111,12 +133,7 @@ public final class GeminiService: ObservableObject {
         }
         """
         
-        let urlString = "https://generativelanguage.googleapis.com/v1beta/models/\(selectedModel):generateContent?key=\(cleanKey)"
-        guard let url = URL(string: urlString) else {
-            throw NSError(domain: "GeminiService", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid API URL"])
-        }
-        
-        var request = URLRequest(url: url)
+        var request = try Self.makeRequest(path: "models/\(selectedModel):generateContent", key: cleanKey)
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         
@@ -136,27 +153,33 @@ public final class GeminiService: ObservableObject {
         
         request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
         
-        let (data, response) = try await URLSession.shared.data(for: request)
-        
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw NSError(domain: "GeminiService", code: 500, userInfo: [NSLocalizedDescriptionKey: "Invalid server response"])
+        let data: Data
+        do {
+            data = try await Self.perform(request, model: selectedModel)
+        } catch GeminiError.modelNotFound {
+            // The remembered model was retired: find a current one and retry once.
+            let model = try await discoverModel(key: cleanKey)
+            var retry = try Self.makeRequest(path: "models/\(model):generateContent", key: cleanKey)
+            retry.httpMethod = "POST"
+            retry.addValue("application/json", forHTTPHeaderField: "Content-Type")
+            retry.httpBody = request.httpBody
+            data = try await Self.perform(retry, model: model)
         }
         
-        guard httpResponse.statusCode == 200 else {
-            let errorText = String(data: data, encoding: .utf8) ?? "HTTP \(httpResponse.statusCode)"
-            throw NSError(domain: "GeminiService", code: httpResponse.statusCode, userInfo: [
-                NSLocalizedDescriptionKey: String(localized: "Gemini API error (\(httpResponse.statusCode)): \(errorText)")
-            ])
+        let jsonObject = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+        // A refused prompt comes back as 200 with no candidates, or with a
+        // candidate that has a finishReason but no content.
+        if let feedback = jsonObject?["promptFeedback"] as? [String: Any], feedback["blockReason"] != nil {
+            throw GeminiError.blocked
         }
-        
-        guard let jsonObject = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let candidates = jsonObject["candidates"] as? [[String: Any]],
-              let firstCandidate = candidates.first,
-              let content = firstCandidate["content"] as? [String: Any],
+        let firstCandidate = (jsonObject?["candidates"] as? [[String: Any]])?.first
+        guard let content = firstCandidate?["content"] as? [String: Any],
               let parts = content["parts"] as? [[String: Any]],
-              let firstPart = parts.first,
-              let textResponse = firstPart["text"] as? String else {
-            throw NSError(domain: "GeminiService", code: 502, userInfo: [NSLocalizedDescriptionKey: String(localized: "Could not read the Gemini response")])
+              let textResponse = parts.first?["text"] as? String else {
+            if let reason = firstCandidate?["finishReason"] as? String, reason != "STOP", reason != "MAX_TOKENS" {
+                throw GeminiError.blocked
+            }
+            throw GeminiError.unreadableResponse
         }
         
         // Clean markdown backticks if any
@@ -171,16 +194,134 @@ public final class GeminiService: ObservableObject {
         }
         cleanJson = cleanJson.trimmingCharacters(in: .whitespacesAndNewlines)
         
-        guard let jsonData = cleanJson.data(using: .utf8) else {
-            throw NSError(domain: "GeminiService", code: 502, userInfo: [NSLocalizedDescriptionKey: String(localized: "JSON encoding error")])
+        let explanation: SubtitleExplanation
+        do {
+            explanation = try JSONDecoder().decode(SubtitleExplanation.self, from: Data(cleanJson.utf8))
+        } catch {
+            throw GeminiError.unreadableResponse
         }
-        
-        let explanation = try JSONDecoder().decode(SubtitleExplanation.self, from: jsonData)
         
         await MainActor.run {
             self.lastExplanation = explanation
         }
         
         return explanation
+    }
+
+    // MARK: - Key validation
+
+    /// Cheap round trip to find out whether a key works, for the Settings
+    /// "Check key" button. Returns nil when the key is good.
+    public func validateKey(_ key: String) async -> GeminiError? {
+        let clean = key.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !clean.isEmpty else { return .missingKey }
+        do {
+            let request = try Self.makeRequest(path: "models/\(selectedModel)", key: clean)
+            _ = try await Self.perform(request, model: selectedModel)
+            return nil
+        } catch GeminiError.modelNotFound {
+            do { _ = try await discoverModel(key: clean); return nil } catch { return GeminiError.from(transport: error) }
+        } catch {
+            return GeminiError.from(transport: error)
+        }
+    }
+
+    // MARK: - Model discovery
+
+    /// Asks the API which models this key can use and picks the newest
+    /// general-purpose Flash one (fast and free-tier friendly). The choice
+    /// is stored in `selectedModel`.
+    @discardableResult
+    func discoverModel(key: String) async throws -> String {
+        let usable = try await fetchModels(key: key)
+        guard let best = Self.preferredModel(from: usable) else {
+            throw GeminiError.modelNotFound(model: selectedModel,
+                                            detail: String(localized: "this key has no text model that supports generateContent"))
+        }
+        await MainActor.run { self.selectedModel = best }
+        return best
+    }
+
+    /// Refreshes `availableModels` for the Settings picker. Returns the error, if any.
+    public func refreshModels() async -> GeminiError? {
+        let key = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !key.isEmpty else { return .missingKey }
+        do { _ = try await fetchModels(key: key); return nil } catch { return GeminiError.from(transport: error) }
+    }
+
+    /// Text-capable models this key can use, newest first; also stored in `availableModels`.
+    private func fetchModels(key: String) async throws -> [String] {
+        let request = try Self.makeRequest(path: "models?pageSize=200", key: key)
+        let data = try await Self.perform(request, model: selectedModel)
+        let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+        let models = (json?["models"] as? [[String: Any]]) ?? []
+        let usable = models.compactMap { entry -> String? in
+            guard let name = entry["name"] as? String,
+                  let methods = entry["supportedGenerationMethods"] as? [String],
+                  methods.contains("generateContent") else { return nil }
+            return name.hasPrefix("models/") ? String(name.dropFirst(7)) : name
+        }
+        // Only plain text chat models make sense for explaining subtitles.
+        let sorted = usable.filter(Self.isTextChatModel).sorted { Self.version($0) > Self.version($1) || (Self.version($0) == Self.version($1) && $0 < $1) }
+        await MainActor.run { self.availableModels = sorted }
+        return usable
+    }
+
+    /// Flash / Pro text models; no image, speech, live, embedding or agent variants.
+    static func isTextChatModel(_ name: String) -> Bool {
+        guard name.hasPrefix("gemini-"), name.contains("flash") || name.contains("pro") else { return false }
+        let unrelated = ["image", "tts", "live", "audio", "embedding", "robotics", "computer", "research", "vision", "omni", "-exp", "thinking"]
+        return !unrelated.contains { name.contains($0) }
+    }
+
+    /// "gemini-3.6-flash-lite" → 3.6
+    static func version(_ name: String) -> Double {
+        let parts = name.split(separator: "-")
+        return parts.count > 1 ? (Double(parts[1]) ?? 0) : 0
+    }
+
+    /// Newest plain "gemini-X.Y-flash"; then any flash variant; then anything.
+    static func preferredModel(from names: [String]) -> String? {
+        let special = ["lite", "preview", "exp", "image", "tts", "live", "audio", "thinking", "embedding", "8b"]
+        let gemini = names.filter { $0.hasPrefix("gemini-") && !$0.contains("gemma") }
+        let plainFlash = gemini.filter { name in
+            name.hasSuffix("-flash") && !special.contains { name.contains($0) }
+        }
+        let anyFlash = gemini.filter { $0.contains("flash") && !$0.contains("image") && !$0.contains("tts") && !$0.contains("live") && !$0.contains("audio") && !$0.contains("embedding") }
+        for pool in [plainFlash, anyFlash, gemini] {
+            if let best = pool.max(by: { (version($0), $0) < (version($1), $1) }) { return best }
+        }
+        return names.first
+    }
+
+    // MARK: - Transport
+
+    private static let apiBase = URL(string: "https://generativelanguage.googleapis.com/v1beta/")!
+
+    /// The key travels in a header rather than the query string, so it never
+    /// ends up in URL logs.
+    private static func makeRequest(path: String, key: String) throws -> URLRequest {
+        guard let url = URL(string: path, relativeTo: apiBase) else {
+            throw GeminiError.other("Invalid API URL")
+        }
+        var request = URLRequest(url: url, timeoutInterval: 30)
+        request.addValue(key, forHTTPHeaderField: "x-goog-api-key")
+        return request
+    }
+
+    /// Runs the request and maps every failure — transport or HTTP — to `GeminiError`.
+    private static func perform(_ request: URLRequest, model: String) async throws -> Data {
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await URLSession.shared.data(for: request)
+        } catch {
+            throw GeminiError.from(transport: error)
+        }
+        guard let http = response as? HTTPURLResponse else { throw GeminiError.unreadableResponse }
+        guard (200..<300).contains(http.statusCode) else {
+            throw GeminiError.from(status: http.statusCode, body: data, model: model)
+        }
+        return data
     }
 }

@@ -74,7 +74,6 @@
 "Replay line (R)" = "Повторить фразу (R)";
 "Continue (Space)" = "Продолжить (Пробел)";
 "Gemini is analyzing the line's context and idioms..." = "Gemini анализирует контекст реплики и идиомы...";
-"Enter Gemini API key in Settings" = "Ввести Gemini API ключ в Настройках";
 "Try again" = "Повторить запрос";
 "No active subtitles right now." = "В данный момент нет активных субтитров.";
 "Original:" = "Оригинал:";
@@ -86,17 +85,11 @@
 "💡 Scene context and tone:" = "💡 Контекст и интонация сцены:";
 "There are no subtitles right now. Play the video and pause on a line you don't understand." = "Субтитры сейчас пусты. Включите видео и нажмите паузу на непонятной реплике.";
 
-/* Gemini errors */
-"Gemini API key is not set. Please enter it in the player settings (⚙️ icon)." = "Gemini API ключ не задан. Пожалуйста, укажите его в настройках плеера (значок ⚙️).";
-"Gemini API error (%lld): %@" = "Ошибка Gemini API (%lld): %@";
-"Could not read the Gemini response" = "Не удалось прочитать ответ Gemini";
-"JSON encoding error" = "Ошибка кодировки JSON";
 
 /* Settings */
 "VPlayer Settings" = "Настройки VPlayer";
 "Gemini API Integration" = "Интеграция с Gemini API";
 "The key is used for contextual translation and for explaining slang and idioms from the movie." = "Ключ используется для контекстного перевода и разбора сленга/идиом из фильма.";
-"Get a free API key in Google AI Studio ↗" = "Получить бесплатный API ключ в Google AI Studio ↗";
 "Key is set" = "Ключ активен";
 "Google AI Studio API Key:" = "API-ключ Google AI Studio:";
 "Languages" = "Языки";
@@ -148,3 +141,41 @@
 "Full screen" = "Полноэкранный режим";
 "Open a video or an external subtitle file" = "Открыть видео или внешний файл субтитров";
 "Done" = "Готово";
+
+/* First run & Gemini errors */
+"Set up AI explanations" = "Настройте ИИ-разбор";
+"VPlayer explains idioms, slang and context with Google Gemini. It needs a free API key — getting one takes a minute, no card required." = "VPlayer объясняет идиомы, сленг и контекст через Google Gemini. Для этого нужен бесплатный API-ключ — получить его можно за минуту, карта не нужна.";
+"1. Get a free key" = "1. Получить ключ";
+"2. Paste it in Settings" = "2. Вставить в Настройках";
+"Open Settings" = "Открыть настройки";
+"1. Open Google AI Studio and create a key (free, no card needed)" = "1. Откройте Google AI Studio и создайте ключ (бесплатно, карта не нужна)";
+"2. Paste it into the field above — VPlayer keeps it in your keychain." = "2. Вставьте его в поле выше — VPlayer хранит его в вашей связке ключей.";
+"Google AI Studio ↗" = "Google AI Studio ↗";
+"Check key" = "Проверить ключ";
+"Key works" = "Ключ работает";
+"AI explanations need a free Gemini key — set it up in Settings" = "Для ИИ-разбора нужен бесплатный ключ Gemini — настройте в Настройках";
+"AI explanations need a Gemini API key." = "Для ИИ-разбора нужен API-ключ Gemini.";
+"Google rejected the API key." = "Google не принял API-ключ.";
+"This key is not allowed to use Gemini: %@" = "Этому ключу запрещён доступ к Gemini: %@";
+"The free quota for this key is used up for now." = "Бесплатная квота этого ключа пока исчерпана.";
+"The model “%@” is not available for this key: %@" = "Модель «%1$@» недоступна для этого ключа: %2$@";
+"Gemini is overloaded or temporarily down." = "Gemini перегружен или временно недоступен.";
+"No internet connection." = "Нет подключения к интернету.";
+"Gemini took too long to answer." = "Gemini слишком долго не отвечает.";
+"Gemini declined to explain this line (safety filter)." = "Gemini отказался разбирать эту реплику (фильтр безопасности).";
+"Gemini sent an answer VPlayer could not read." = "Gemini прислал ответ, который VPlayer не смог прочитать.";
+"Gemini error: %@" = "Ошибка Gemini: %@";
+"HTTP %lld" = "HTTP %lld";
+"Get a free key in Google AI Studio (it takes a minute), then paste it in Settings." = "Получите бесплатный ключ в Google AI Studio (это займёт минуту) и вставьте его в Настройках.";
+"Check the key in Settings — it should start with “AIza”. If you regenerated it, paste the new one." = "Проверьте ключ в Настройках — он должен начинаться с «AIza». Если вы пересоздали ключ, вставьте новый.";
+"Open Google AI Studio and make sure the key has access to the Gemini API." = "Откройте Google AI Studio и убедитесь, что у ключа есть доступ к Gemini API.";
+"Wait a minute and try again, or create a new key in Google AI Studio." = "Подождите минуту и попробуйте снова или создайте новый ключ в Google AI Studio.";
+"Try again later; if it keeps failing, update VPlayer." = "Попробуйте позже; если не помогает — обновите VPlayer.";
+"Try again in a moment." = "Попробуйте ещё раз через минуту.";
+"Check the connection and try again." = "Проверьте подключение и попробуйте снова.";
+"Try a different line." = "Попробуйте другую реплику.";
+"Try again; if it keeps failing, report the line to the developer." = "Попробуйте ещё раз; если повторяется — сообщите разработчику, на какой реплике.";
+"this key has no text model that supports generateContent" = "у этого ключа нет текстовой модели с поддержкой generateContent";
+"Model:" = "Модель:";
+"Reload the list of models available to this key" = "Обновить список моделей, доступных этому ключу";
+"Flash models are the cheap, fast ones and have a free tier; Flash-Lite is cheaper still but explains idioms less well. Pro models are noticeably more expensive." = "Flash — быстрые и дешёвые модели с бесплатным лимитом; Flash-Lite ещё дешевле, но хуже объясняет идиомы. Pro заметно дороже.";

@@ -76,7 +76,6 @@
 "Replay line (R)" = "Replay line (R)";
 "Continue (Space)" = "Continue (Space)";
 "Gemini is analyzing the line's context and idioms..." = "Gemini is analyzing the line's context and idioms...";
-"Enter Gemini API key in Settings" = "Enter Gemini API key in Settings";
 "Try again" = "Try again";
 "No active subtitles right now." = "No active subtitles right now.";
 "Original:" = "Original:";
@@ -88,17 +87,11 @@
 "💡 Scene context and tone:" = "💡 Scene context and tone:";
 "There are no subtitles right now. Play the video and pause on a line you don't understand." = "There are no subtitles right now. Play the video and pause on a line you don't understand.";
 
-/* Gemini errors */
-"Gemini API key is not set. Please enter it in the player settings (⚙️ icon)." = "Gemini API key is not set. Please enter it in the player settings (⚙️ icon).";
-"Gemini API error (%lld): %@" = "Gemini API error (%lld): %@";
-"Could not read the Gemini response" = "Could not read the Gemini response";
-"JSON encoding error" = "JSON encoding error";
 
 /* Settings */
 "VPlayer Settings" = "VPlayer Settings";
 "Gemini API Integration" = "Gemini API Integration";
 "The key is used for contextual translation and for explaining slang and idioms from the movie." = "The key is used for contextual translation and for explaining slang and idioms from the movie.";
-"Get a free API key in Google AI Studio ↗" = "Get a free API key in Google AI Studio ↗";
 "Key is set" = "Key is set";
 "Google AI Studio API Key:" = "Google AI Studio API Key:";
 "Languages" = "Languages";
@@ -150,3 +143,41 @@
 "Full screen" = "Full screen";
 "Open a video or an external subtitle file" = "Open a video or an external subtitle file";
 "Done" = "Done";
+
+/* First run & Gemini errors */
+"Set up AI explanations" = "Set up AI explanations";
+"VPlayer explains idioms, slang and context with Google Gemini. It needs a free API key — getting one takes a minute, no card required." = "VPlayer explains idioms, slang and context with Google Gemini. It needs a free API key — getting one takes a minute, no card required.";
+"1. Get a free key" = "1. Get a free key";
+"2. Paste it in Settings" = "2. Paste it in Settings";
+"Open Settings" = "Open Settings";
+"1. Open Google AI Studio and create a key (free, no card needed)" = "1. Open Google AI Studio and create a key (free, no card needed)";
+"2. Paste it into the field above — VPlayer keeps it in your keychain." = "2. Paste it into the field above — VPlayer keeps it in your keychain.";
+"Google AI Studio ↗" = "Google AI Studio ↗";
+"Check key" = "Check key";
+"Key works" = "Key works";
+"AI explanations need a free Gemini key — set it up in Settings" = "AI explanations need a free Gemini key — set it up in Settings";
+"AI explanations need a Gemini API key." = "AI explanations need a Gemini API key.";
+"Google rejected the API key." = "Google rejected the API key.";
+"This key is not allowed to use Gemini: %@" = "This key is not allowed to use Gemini: %@";
+"The free quota for this key is used up for now." = "The free quota for this key is used up for now.";
+"The model “%@” is not available for this key: %@" = "The model “%1$@” is not available for this key: %2$@";
+"Gemini is overloaded or temporarily down." = "Gemini is overloaded or temporarily down.";
+"No internet connection." = "No internet connection.";
+"Gemini took too long to answer." = "Gemini took too long to answer.";
+"Gemini declined to explain this line (safety filter)." = "Gemini declined to explain this line (safety filter).";
+"Gemini sent an answer VPlayer could not read." = "Gemini sent an answer VPlayer could not read.";
+"Gemini error: %@" = "Gemini error: %@";
+"HTTP %lld" = "HTTP %lld";
+"Get a free key in Google AI Studio (it takes a minute), then paste it in Settings." = "Get a free key in Google AI Studio (it takes a minute), then paste it in Settings.";
+"Check the key in Settings — it should start with “AIza”. If you regenerated it, paste the new one." = "Check the key in Settings — it should start with “AIza”. If you regenerated it, paste the new one.";
+"Open Google AI Studio and make sure the key has access to the Gemini API." = "Open Google AI Studio and make sure the key has access to the Gemini API.";
+"Wait a minute and try again, or create a new key in Google AI Studio." = "Wait a minute and try again, or create a new key in Google AI Studio.";
+"Try again later; if it keeps failing, update VPlayer." = "Try again later; if it keeps failing, update VPlayer.";
+"Try again in a moment." = "Try again in a moment.";
+"Check the connection and try again." = "Check the connection and try again.";
+"Try a different line." = "Try a different line.";
+"Try again; if it keeps failing, report the line to the developer." = "Try again; if it keeps failing, report the line to the developer.";
+"this key has no text model that supports generateContent" = "this key has no text model that supports generateContent";
+"Model:" = "Model:";
+"Reload the list of models available to this key" = "Reload the list of models available to this key";
+"Flash models are the cheap, fast ones and have a free tier; Flash-Lite is cheaper still but explains idioms less well. Pro models are noticeably more expensive." = "Flash models are the cheap, fast ones and have a free tier; Flash-Lite is cheaper still but explains idioms less well. Pro models are noticeably more expensive.";

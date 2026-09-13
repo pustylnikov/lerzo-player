@@ -11,6 +11,12 @@ public struct SettingsView: View {
     private let fontFamilies = SubtitleStyle.availableFontFamilies
     
     @State private var showApiKey: Bool = false
+    @State private var keyCheck: KeyCheck = .idle
+    @State private var modelsRefreshing = false
+
+    private enum KeyCheck: Equatable {
+        case idle, checking, valid, failed(GeminiError)
+    }
     
     public init(isOpen: Binding<Bool>) {
         self._isOpen = isOpen
@@ -85,24 +91,63 @@ public struct SettingsView: View {
                             }
                         }
                         
-                        HStack {
-                            Link("Get a free API key in Google AI Studio ↗",
-                                 destination: URL(string: "https://aistudio.google.com/app/apikey")!)
-                                .font(.system(size: 11))
-                                .foregroundColor(.blue)
-                            
-                            Spacer()
-                            
-                            if gemini.hasApiKey {
-                                HStack(spacing: 4) {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .foregroundColor(.green)
-                                    Text("Key is set")
-                                        .font(.system(size: 11, weight: .medium))
-                                        .foregroundColor(.green)
-                                }
+                        if !gemini.hasApiKey {
+                            // First run: walk through getting a key.
+                            VStack(alignment: .leading, spacing: 6) {
+                                Label {
+                                    Link("1. Open Google AI Studio and create a key (free, no card needed)",
+                                         destination: GeminiService.apiKeyPageURL)
+                                        .foregroundColor(.blue)
+                                } icon: { Image(systemName: "1.circle").foregroundColor(.yellow) }
+                                Label {
+                                    Text("2. Paste it into the field above — VPlayer keeps it in your keychain.")
+                                } icon: { Image(systemName: "2.circle").foregroundColor(.yellow) }
                             }
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
                         }
+
+                        if gemini.hasApiKey {
+                            HStack {
+                                Text("Model:")
+                                    .font(.system(size: 12, weight: .medium))
+                                Spacer()
+                                Picker("", selection: $gemini.selectedModel) {
+                                    ForEach(modelChoices, id: \.self) { Text($0).tag($0) }
+                                }
+                                .labelsHidden()
+                                .frame(maxWidth: 260, alignment: .trailing)
+                                Button(action: refreshModels) {
+                                    if modelsRefreshing { ProgressView().controlSize(.small) }
+                                    else { Image(systemName: "arrow.clockwise") }
+                                }
+                                .buttonStyle(.plain)
+                                .foregroundColor(.secondary)
+                                .disabled(modelsRefreshing)
+                                .help("Reload the list of models available to this key")
+                            }
+                            Text("Flash models are the cheap, fast ones and have a free tier; Flash-Lite is cheaper still but explains idioms less well. Pro models are noticeably more expensive.")
+                                .font(.system(size: 11))
+                                .foregroundColor(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
+                        HStack {
+                            if gemini.hasApiKey {
+                                Link("Google AI Studio ↗", destination: GeminiService.apiKeyPageURL)
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.blue)
+                            }
+
+                            Spacer()
+
+                            keyStatusView
+
+                            Button("Check key") { checkKey() }
+                                .controlSize(.small)
+                                .disabled(!gemini.hasApiKey || keyCheck == .checking)
+                        }
+                        .onChange(of: gemini.apiKey) { _, _ in keyCheck = .idle }
                     }
                     .padding(14)
                     .background(Color.white.opacity(0.04))
@@ -428,8 +473,58 @@ public struct SettingsView: View {
         .frame(width: 520, height: sheetHeight)
         // Otherwise the sheet focuses (and selects) the API key field on open.
         .background(InitialFocusSink())
+        .onAppear { if gemini.hasApiKey && gemini.modelListIsStale { refreshModels() } }
     }
     
+    @ViewBuilder
+    private var keyStatusView: some View {
+        switch keyCheck {
+        case .idle:
+            if gemini.hasApiKey {
+                Label("Key is set", systemImage: "checkmark.circle.fill")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.green)
+            }
+        case .checking:
+            ProgressView().controlSize(.small)
+        case .valid:
+            Label("Key works", systemImage: "checkmark.seal.fill")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundColor(.green)
+        case .failed(let error):
+            Label(error.errorDescription ?? "", systemImage: "xmark.octagon.fill")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundColor(.orange)
+                .help(error.recoverySuggestion ?? "")
+        }
+    }
+
+    /// The API's list when we have it, always including the current choice.
+    private var modelChoices: [String] {
+        var list = gemini.availableModels
+        if !list.contains(gemini.selectedModel) { list.insert(gemini.selectedModel, at: 0) }
+        return list
+    }
+
+    private func refreshModels() {
+        modelsRefreshing = true
+        Task {
+            if let error = await gemini.refreshModels() {
+                await MainActor.run { keyCheck = .failed(error) }
+            }
+            await MainActor.run { modelsRefreshing = false }
+        }
+    }
+
+    private func checkKey() {
+        keyCheck = .checking
+        let key = gemini.apiKey
+        Task {
+            let result = await gemini.validateKey(key)
+            await MainActor.run { keyCheck = result.map { .failed($0) } ?? .valid }
+        }
+    }
+
     /// Quits and reopens the app so the new `AppleLanguages` takes effect.
     private func relaunchApp() {
         // A helper waits for this process to exit, then opens the bundle
