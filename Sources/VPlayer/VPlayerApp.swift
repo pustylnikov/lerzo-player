@@ -79,11 +79,19 @@ struct VPlayerApp: App {
                 
                 Button("Replay Line") {
                     MPVPlayer.shared.seekSubtitle(direction: 0)
+                    OSDController.shared.show(.replayLine)
                 }
                 .keyboardShortcut("r", modifiers: [])
                 
+                Button("Previous Line") {
+                    MPVPlayer.shared.seekSubtitle(direction: -1)
+                    OSDController.shared.show(.previousLine)
+                }
+                .keyboardShortcut("w", modifiers: [])
+
                 Button("Next Line") {
                     MPVPlayer.shared.seekSubtitle(direction: 1)
+                    OSDController.shared.show(.nextLine)
                 }
                 .keyboardShortcut("e", modifiers: [])
                 

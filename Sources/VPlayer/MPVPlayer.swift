@@ -47,8 +47,18 @@ public final class MPVPlayer: ObservableObject {
     @Published public var audioTracks: [MediaTrack] = []
     @Published public var subtitleTracks: [MediaTrack] = []
     @Published public var currentAudioTrackId: Int? = nil
-    @Published public var currentPrimarySubId: Int? = nil
+    @Published public var currentPrimarySubId: Int? = nil {
+        didSet { if currentPrimarySubId != oldValue { updateSubtitleTimeline() } }
+    }
     @Published public var currentSecondarySubId: Int? = nil
+
+    /// Every cue of the primary subtitle track, for exact line-by-line seeks.
+    /// `nil` while loading, for bitmap subtitles, or without a track.
+    private var subtitleTimeline: SubtitleTimeline?
+    /// "<file>#<ff-index>" of the track `subtitleTimeline` is for or being loaded for.
+    private var subtitleTimelineKey: String?
+    private var subtitleTimelineCache: [String: SubtitleTimeline] = [:]
+    private var subtitleTimelinesLoading: Set<String> = []
     
     @Published public var currentSubText: String = ""
     @Published public var currentSecondarySubText: String = ""
@@ -630,6 +640,9 @@ public final class MPVPlayer: ObservableObject {
         self.mediaTitle = url.deletingPathExtension().lastPathComponent
         self.playbackState = .loading
         self.subtitleHistory.removeAll()
+        self.subtitleTimeline = nil
+        self.subtitleTimelineKey = nil
+        self.subtitleTimelineCache.removeAll()
         
         guard mpv != nil, targetView?.window != nil else {
             return
@@ -685,9 +698,54 @@ public final class MPVPlayer: ObservableObject {
         executeCommand(["seek", "\(seconds)", "relative"])
     }
     
+    /// `direction` is a line count, `sub-seek` style: 0 replays the current
+    /// line, ±1 jumps to the next / previous one. Uses the track's own cue
+    /// list when it is known; mpv's `sub-seek` only sees the events already
+    /// decoded, so with embedded subtitles it cannot jump ahead reliably.
     public func seekSubtitle(direction: Int) {
+        if let timeline = subtitleTimeline, !timeline.cues.isEmpty {
+            // Subtitle clock -> video clock: a cue starting at s shows at s + sub-delay.
+            if let target = timeline.seekTarget(from: currentTime - subDelay, skip: direction) {
+                seek(to: target + subDelay)
+            }
+            return
+        }
         beginSeek(optimisticTime: nil)
         executeCommand(["sub-seek", "\(direction)"])
+    }
+
+    /// Reads the primary subtitle track's cues in the background (a full
+    /// sequential scan of the file), keeping them per track for this file.
+    private func updateSubtitleTimeline() {
+        guard let track = subtitleTracks.first(where: { $0.id == currentPrimarySubId }),
+              let ffIndex = track.ffIndex,
+              let path = track.externalFilename ?? currentFileURL?.path else {
+            subtitleTimeline = nil
+            subtitleTimelineKey = nil
+            return
+        }
+        let key = "\(path)#\(ffIndex)"
+        guard key != subtitleTimelineKey else { return }
+        subtitleTimelineKey = key
+        subtitleTimeline = subtitleTimelineCache[key]
+        // Unreadable tracks are cached as an empty timeline, so this also
+        // stops us from rescanning them.
+        guard subtitleTimeline == nil, !subtitleTimelinesLoading.contains(key) else { return }
+        subtitleTimelinesLoading.insert(key)
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let timeline = SubtitleTimeline.load(path: path, streamIndex: ffIndex)
+            DispatchQueue.main.async {
+                guard let self else { return }
+                self.subtitleTimelinesLoading.remove(key)
+                // Bitmap subtitles: an empty timeline makes seekSubtitle fall
+                // back to mpv, which does handle them within its window.
+                let loaded = timeline ?? SubtitleTimeline(cues: [])
+                self.subtitleTimelineCache[key] = loaded
+                if self.subtitleTimelineKey == key {
+                    self.subtitleTimeline = loaded
+                }
+            }
+        }
     }
 
     private func beginSeek(optimisticTime: Double?) {
@@ -1266,6 +1324,8 @@ public final class MPVPlayer: ObservableObject {
             let isDef = getTrackFlag(handle, idx: i, prop: "default")
             let isExt = getTrackFlag(handle, idx: i, prop: "external")
             let isForced = getTrackFlag(handle, idx: i, prop: "forced")
+            let ffIndex = getTrackInt(handle, idx: i, prop: "ff-index").map { Int($0) }
+            let externalFilename = isExt ? getTrackProp(handle, idx: i, prop: "external-filename") : nil
             
             if typeStr == "audio" {
                 let isCurrent = selectedAudioID == Int(idVal) || isSel
@@ -1285,7 +1345,9 @@ public final class MPVPlayer: ObservableObject {
                                           isDefault: isDef,
                                           isSelected: isCurrent,
                                           isExternal: isExt,
-                                          isForced: isForced))
+                                          isForced: isForced,
+                                          ffIndex: ffIndex,
+                                          externalFilename: externalFilename))
             }
         }
         
@@ -1294,6 +1356,10 @@ public final class MPVPlayer: ObservableObject {
         self.currentAudioTrackId = selectedAudioID ?? newAudios.first(where: \.isSelected)?.id
         self.currentPrimarySubId = selectedPrimarySubID
         self.currentSecondarySubId = selectedSecondarySubID
+        // The track list may have arrived after the selection did.
+        if subtitleTimeline == nil {
+            updateSubtitleTimeline()
+        }
     }
     
     /// Applies the language preferences to the freshly loaded file: audio and

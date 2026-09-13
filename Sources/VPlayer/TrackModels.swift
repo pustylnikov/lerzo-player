@@ -17,6 +17,10 @@ public struct MediaTrack: Identifiable, Hashable {
     /// "Forced" subtitle tracks only carry a few lines (foreign speech, signs)
     /// and must not be picked as the main track for the language.
     public var isForced: Bool = false
+    /// libavformat's stream index inside its own file (mpv's `ff-index`).
+    public var ffIndex: Int? = nil
+    /// Path of the file an external subtitle track was loaded from.
+    public var externalFilename: String? = nil
     
     public var displayName: String {
         var name = title.isEmpty ? (lang?.uppercased() ?? String(localized: "Track \(id)")) : title

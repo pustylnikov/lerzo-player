@@ -59,7 +59,7 @@ def links(path):
 # MoltenVK is loaded by the Vulkan loader through an ICD manifest, so it never
 # shows up in otool output; seed it explicitly.
 roots = [f"{brew}/opt/mpv/lib/libmpv.2.dylib", f"{brew}/opt/molten-vk/lib/libMoltenVK.dylib"]
-queue, real_of = list(roots), {}
+queue, real_of = roots + links(exe), {}
 while queue:
     ref = queue.pop(0)
     real = os.path.realpath(ref)

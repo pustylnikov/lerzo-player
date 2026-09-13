@@ -181,6 +181,13 @@ public final class KeyboardMonitor: ObservableObject {
                 return nil
             }
             
+            // W KEY (keyCode 13) -> Jump to Previous Subtitle Line (sub-seek -1)
+            if event.keyCode == 13 {
+                player.seekSubtitle(direction: -1)
+                osd.show(.previousLine)
+                return nil
+            }
+
             // E KEY (keyCode 14) -> Jump to Next Subtitle Line (sub-seek 1)
             if event.keyCode == 14 {
                 player.seekSubtitle(direction: 1)

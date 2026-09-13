@@ -23,7 +23,7 @@ enum ShortcutsReference {
         ShortcutGroup(title: "Language learning", icon: "graduationcap.fill", entries: [
             ShortcutEntry(keys: "TAB", action: "Hold: instantly peek at the translation (second subtitle track)"),
             ShortcutEntry(keys: "R", action: "Replay the current line from the start"),
-            ShortcutEntry(keys: "E", action: "Jump to the next line of dialogue"),
+            ShortcutEntry(keys: "W  /  E", action: "Previous / next line of dialogue"),
             ShortcutEntry(keys: "⌘ + G", action: "AI breakdown of the current line with Gemini"),
         ]),
         ShortcutGroup(title: "Playback", icon: "play.fill", entries: [

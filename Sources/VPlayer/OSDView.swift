@@ -8,6 +8,7 @@ public enum OSDItem: Equatable {
     case volume
     case seek(seconds: Double)
     case replayLine
+    case previousLine
     case nextLine
     case delay(MPVPlayer.DelayStream)
     case zoom
@@ -85,7 +86,8 @@ public struct OSDView: View {
         case .speed: return "gauge.with.needle"
         case .volume: return player.isMuted || player.volume == 0 ? "speaker.slash.fill" : "speaker.wave.2.fill"
         case .seek(let s): return s < 0 ? "gobackward.5" : "goforward.5"
-        case .replayLine: return "backward.end.alt.fill"
+        case .replayLine: return "arrow.counterclockwise"
+        case .previousLine: return "backward.end.alt.fill"
         case .nextLine: return "forward.end.alt.fill"
         case .delay(.audio): return "speaker.wave.2.fill"
         case .delay: return "captions.bubble.fill"
@@ -107,6 +109,8 @@ public struct OSDView: View {
             return String(localized: "\(sign)\(Int(abs(s))) s  ·  \(Self.formatTime(player.currentTime))")
         case .replayLine:
             return String(localized: "Replay line")
+        case .previousLine:
+            return String(localized: "Previous line")
         case .nextLine:
             return String(localized: "Next line")
         case .delay(let stream):

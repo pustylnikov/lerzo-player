@@ -6,6 +6,7 @@
 "Playback" = "Воспроизведение";
 "Play / Pause" = "Воспроизведение / Пауза";
 "Replay Line" = "Повторить реплику сначала";
+"Previous Line" = "Предыдущая реплика";
 "Next Line" = "Следующая реплика";
 "Back 5 Seconds" = "Перемотка −5 сек";
 "Forward 5 Seconds" = "Перемотка +5 сек";
@@ -51,6 +52,7 @@
 "Replay the current line from the start (R)" = "Повторить текущую реплику сначала (клавиша R)";
 "Back 5 seconds (Left Arrow)" = "Назад на 5 секунд (Стрелка влево)";
 "Forward 5 seconds (Right Arrow)" = "Вперёд на 5 секунд (Стрелка вправо)";
+"Jump to the previous line (W)" = "К предыдущей реплике (клавиша W)";
 "Jump to the next line (E)" = "К следующей реплике (клавиша E)";
 "Playback speed ([ slower, ] faster, Backspace — 1×)" = "Скорость воспроизведения ([ медленнее, ] быстрее, Backspace — 1×)";
 "Peek translation" = "Подглядеть перевод";
@@ -67,6 +69,7 @@
 "Volume %lld%%" = "Громкость %lld %%";
 "%@%lld s  ·  %@" = "%@%lld с  ·  %@";
 "Replay line" = "Повтор реплики";
+"Previous line" = "Предыдущая реплика";
 "Next line" = "Следующая реплика";
 
 /* Explanation popover */
@@ -129,7 +132,7 @@
 "Keyboard Shortcuts" = "Горячие клавиши";
 "Hold: instantly peek at the translation (second subtitle track)" = "Зажать: мгновенно подглядеть перевод (вторая дорожка субтитров)";
 "Replay the current line from the start" = "Повторить текущую реплику сначала";
-"Jump to the next line of dialogue" = "Перейти к следующей реплике диалога";
+"Previous / next line of dialogue" = "Предыдущая / следующая реплика диалога";
 "AI breakdown of the current line with Gemini" = "ИИ-разбор текущей фразы через Gemini";
 "Space" = "Пробел";
 "Pause / Play" = "Пауза / Воспроизведение";

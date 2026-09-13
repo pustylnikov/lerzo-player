@@ -8,6 +8,7 @@
 "Playback" = "Playback";
 "Play / Pause" = "Play / Pause";
 "Replay Line" = "Replay Line";
+"Previous Line" = "Previous Line";
 "Next Line" = "Next Line";
 "Back 5 Seconds" = "Back 5 Seconds";
 "Forward 5 Seconds" = "Forward 5 Seconds";
@@ -53,6 +54,7 @@
 "Replay the current line from the start (R)" = "Replay the current line from the start (R)";
 "Back 5 seconds (Left Arrow)" = "Back 5 seconds (Left Arrow)";
 "Forward 5 seconds (Right Arrow)" = "Forward 5 seconds (Right Arrow)";
+"Jump to the previous line (W)" = "Jump to the previous line (W)";
 "Jump to the next line (E)" = "Jump to the next line (E)";
 "Playback speed ([ slower, ] faster, Backspace — 1×)" = "Playback speed ([ slower, ] faster, Backspace — 1×)";
 "Peek translation" = "Peek translation";
@@ -69,6 +71,7 @@
 "Volume %lld%%" = "Volume %lld%%";
 "%@%lld s  ·  %@" = "%@%lld s  ·  %@";
 "Replay line" = "Replay line";
+"Previous line" = "Previous line";
 "Next line" = "Next line";
 
 /* Explanation popover */
@@ -131,7 +134,7 @@
 "Keyboard Shortcuts" = "Keyboard Shortcuts";
 "Hold: instantly peek at the translation (second subtitle track)" = "Hold: instantly peek at the translation (second subtitle track)";
 "Replay the current line from the start" = "Replay the current line from the start";
-"Jump to the next line of dialogue" = "Jump to the next line of dialogue";
+"Previous / next line of dialogue" = "Previous / next line of dialogue";
 "AI breakdown of the current line with Gemini" = "AI breakdown of the current line with Gemini";
 "Space" = "Space";
 "Pause / Play" = "Pause / Play";

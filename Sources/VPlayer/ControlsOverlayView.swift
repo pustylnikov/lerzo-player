@@ -428,6 +428,15 @@ public struct ControlsOverlayView: View {
                 .buttonStyle(.plain)
                 .help("Play / Pause (Space)")
                 
+                // Previous Subtitle Line
+                Button(action: { player.seekSubtitle(direction: -1) }) {
+                    Image(systemName: "backward.end.alt.fill")
+                        .font(.system(size: 13))
+                        .foregroundColor(.white.opacity(0.85))
+                }
+                .buttonStyle(.plain)
+                .help("Jump to the previous line (W)")
+
                 // Replay Current Subtitle Line (Language Learning Feature!)
                 Button(action: { player.seekSubtitle(direction: 0) }) {
                     HStack(spacing: 3) {
@@ -439,6 +448,15 @@ public struct ControlsOverlayView: View {
                 }
                 .buttonStyle(.plain)
                 .help("Replay the current line from the start (R)")
+                
+                // Next Subtitle Line
+                Button(action: { player.seekSubtitle(direction: 1) }) {
+                    Image(systemName: "forward.end.alt.fill")
+                        .font(.system(size: 13))
+                        .foregroundColor(.white.opacity(0.85))
+                }
+                .buttonStyle(.plain)
+                .help("Jump to the next line (E)")
                 
                 // Skip -5s
                 Button(action: { player.seekRelative(seconds: -5) }) {
@@ -457,15 +475,6 @@ public struct ControlsOverlayView: View {
                 }
                 .buttonStyle(.plain)
                 .help("Forward 5 seconds (Right Arrow)")
-                
-                // Next Subtitle Line
-                Button(action: { player.seekSubtitle(direction: 1) }) {
-                    Image(systemName: "forward.end.alt.fill")
-                        .font(.system(size: 13))
-                        .foregroundColor(.white.opacity(0.85))
-                }
-                .buttonStyle(.plain)
-                .help("Jump to the next line (E)")
                 
                 // Volume Control
                 HStack(spacing: 6) {

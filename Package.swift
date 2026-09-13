@@ -17,15 +17,22 @@ let package = Package(
                 .unsafeFlags(["-I/opt/homebrew/include"])
             ]
         ),
+        .target(
+            name: "Cavformat",
+            path: "Sources/Cavformat",
+            cSettings: [
+                .unsafeFlags(["-I/opt/homebrew/include"])
+            ]
+        ),
         .executableTarget(
             name: "VPlayer",
-            dependencies: ["Cmpv"],
+            dependencies: ["Cmpv", "Cavformat"],
             path: "Sources/VPlayer",
             swiftSettings: [
                 .unsafeFlags(["-I/opt/homebrew/include"])
             ],
             linkerSettings: [
-                .unsafeFlags(["-L/opt/homebrew/lib", "-lmpv", "-Xlinker", "-rpath", "-Xlinker", "/opt/homebrew/lib"])
+                .unsafeFlags(["-L/opt/homebrew/lib", "-lmpv", "-lavformat", "-lavcodec", "-lavutil", "-Xlinker", "-rpath", "-Xlinker", "/opt/homebrew/lib"])
             ]
         )
     ]
