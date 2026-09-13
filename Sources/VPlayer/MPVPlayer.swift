@@ -18,6 +18,13 @@ public final class MPVPlayer: ObservableObject {
     public static let speedRange = 0.5...3.0
     public static let speedStep = 0.1
     public static let speedPresets: [Double] = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0]
+    /// A/V and subtitle offsets in seconds; positive delays that stream. They
+    /// belong to one badly muxed file, so they reset when another file loads.
+    @Published public private(set) var subDelay: Double = 0
+    @Published public private(set) var secondarySubDelay: Double = 0
+    @Published public private(set) var audioDelay: Double = 0
+    public static let delayRange = -30.0...30.0
+    public static let delayStep = 0.1
     @Published public var mediaTitle: String = ""
     @Published public var currentFileURL: URL? = nil
     
@@ -251,6 +258,9 @@ public final class MPVPlayer: ObservableObject {
         mpv_observe_property(handle, 13, "eof-reached", MPV_FORMAT_FLAG)
         mpv_observe_property(handle, 14, "video-params/gamma", MPV_FORMAT_STRING)
         mpv_observe_property(handle, 15, "speed", MPV_FORMAT_DOUBLE)
+        mpv_observe_property(handle, 16, "sub-delay", MPV_FORMAT_DOUBLE)
+        mpv_observe_property(handle, 17, "secondary-sub-delay", MPV_FORMAT_DOUBLE)
+        mpv_observe_property(handle, 18, "audio-delay", MPV_FORMAT_DOUBLE)
     }
     
     // MARK: - Asynchronous Command Helper (Deadlock-free!)
@@ -542,6 +552,9 @@ public final class MPVPlayer: ObservableObject {
         
         setPropertyAsync("pause", "no")
         setPropertyAsync("speed", "1")
+        for stream in DelayStream.allCases {
+            setPropertyAsync(stream.property, "0")
+        }
         executeCommand(["loadfile", url.path, "replace"])
     }
     
@@ -642,6 +655,42 @@ public final class MPVPlayer: ObservableObject {
 
     public func resetSpeed() {
         setSpeed(1.0)
+    }
+
+    // MARK: - Delays
+    public enum DelayStream: CaseIterable {
+        case subtitle, secondarySubtitle, audio
+
+        var property: String {
+            switch self {
+            case .subtitle: return "sub-delay"
+            case .secondarySubtitle: return "secondary-sub-delay"
+            case .audio: return "audio-delay"
+            }
+        }
+    }
+
+    public func delay(of stream: DelayStream) -> Double {
+        switch stream {
+        case .subtitle: return subDelay
+        case .secondarySubtitle: return secondarySubDelay
+        case .audio: return audioDelay
+        }
+    }
+
+    public func setDelay(_ value: Double, of stream: DelayStream) {
+        let clamped = min(max(value, Self.delayRange.lowerBound), Self.delayRange.upperBound)
+        // Snap to the step grid so repeated +/- presses do not drift (0.30000001).
+        let snapped = (clamped / Self.delayStep).rounded() * Self.delayStep
+        setPropertyAsync(stream.property, String(format: "%.3f", snapped))
+    }
+
+    public func adjustDelay(of stream: DelayStream, by delta: Double) {
+        setDelay(delay(of: stream) + delta, of: stream)
+    }
+
+    public func resetDelay(of stream: DelayStream) {
+        setDelay(0, of: stream)
     }
     
     // MARK: - Language Learning & Subtitle Methods
@@ -815,6 +864,19 @@ public final class MPVPlayer: ObservableObject {
                 let speed = data.assumingMemoryBound(to: Double.self).pointee
                 DispatchQueue.main.async { [weak self] in
                     self?.playbackSpeed = speed
+                }
+            }
+
+        case "sub-delay", "secondary-sub-delay", "audio-delay":
+            if let data = prop.data {
+                let delay = data.assumingMemoryBound(to: Double.self).pointee
+                DispatchQueue.main.async { [weak self] in
+                    guard let self else { return }
+                    switch propName {
+                    case "sub-delay": self.subDelay = delay
+                    case "secondary-sub-delay": self.secondarySubDelay = delay
+                    default: self.audioDelay = delay
+                    }
                 }
             }
             

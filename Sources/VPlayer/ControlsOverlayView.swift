@@ -134,6 +134,8 @@ public struct ControlsOverlayView: View {
                         }
                     }
                 }
+                Divider()
+                delayMenu(for: .subtitle)
                 
                 Divider()
                 
@@ -150,6 +152,8 @@ public struct ControlsOverlayView: View {
                         }
                     }
                 }
+                Divider()
+                delayMenu(for: .secondarySubtitle)
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: "captions.bubble.fill")
@@ -177,6 +181,8 @@ public struct ControlsOverlayView: View {
                         }
                     }
                 }
+                Divider()
+                delayMenu(for: .audio)
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: "speaker.wave.2.fill")
@@ -236,6 +242,36 @@ public struct ControlsOverlayView: View {
     
     // MARK: - Bottom Bar
     private var isCustomSpeed: Bool { abs(player.playbackSpeed - 1) > 0.01 }
+
+    /// Flat delay controls for one stream. Not a submenu: the controls bar
+    /// re-renders on every time-pos tick while playing, and SwiftUI rebuilds
+    /// nested NSMenus on each pass, which closes a submenu as soon as it opens.
+    @ViewBuilder
+    private func delayMenu(for stream: MPVPlayer.DelayStream) -> some View {
+        Text("Delay: \(OSDView.delayLabel(player.delay(of: stream)))").font(.caption)
+        switch stream {
+        case .subtitle:
+            Button("Earlier by 0.1 s  (Z)") { adjustDelay(stream, by: -MPVPlayer.delayStep) }
+            Button("Later by 0.1 s  (X)") { adjustDelay(stream, by: MPVPlayer.delayStep) }
+        case .audio:
+            Button("Earlier by 0.1 s  (⇧Z)") { adjustDelay(stream, by: -MPVPlayer.delayStep) }
+            Button("Later by 0.1 s  (⇧X)") { adjustDelay(stream, by: MPVPlayer.delayStep) }
+        case .secondarySubtitle:
+            Button("Earlier by 0.1 s") { adjustDelay(stream, by: -MPVPlayer.delayStep) }
+            Button("Later by 0.1 s") { adjustDelay(stream, by: MPVPlayer.delayStep) }
+        }
+        Button("Reset delay") { adjustDelay(stream, by: nil) }
+            .disabled(player.delay(of: stream) == 0)
+    }
+
+    private func adjustDelay(_ stream: MPVPlayer.DelayStream, by delta: Double?) {
+        if let delta {
+            player.adjustDelay(of: stream, by: delta)
+        } else {
+            player.resetDelay(of: stream)
+        }
+        OSDController.shared.show(.delay(stream))
+    }
 
     /// "1×", "0.75×", "1.5×" — trailing zeros dropped.
     private static func speedLabel(_ speed: Double) -> String {

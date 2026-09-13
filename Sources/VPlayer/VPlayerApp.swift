@@ -101,6 +101,28 @@ struct VPlayerApp: App {
                     MPVPlayer.shared.toggleMute()
                 }
                 .keyboardShortcut("m", modifiers: [])
+
+                Divider()
+
+                Menu("Subtitle Delay") {
+                    Button("Earlier by 0.1 s") { adjustDelay(.subtitle, by: -MPVPlayer.delayStep) }
+                        .keyboardShortcut("z", modifiers: [])
+                    Button("Later by 0.1 s") { adjustDelay(.subtitle, by: MPVPlayer.delayStep) }
+                        .keyboardShortcut("x", modifiers: [])
+                    Button("Reset") { adjustDelay(.subtitle, by: nil) }
+                }
+                Menu("Translation Delay") {
+                    Button("Earlier by 0.1 s") { adjustDelay(.secondarySubtitle, by: -MPVPlayer.delayStep) }
+                    Button("Later by 0.1 s") { adjustDelay(.secondarySubtitle, by: MPVPlayer.delayStep) }
+                    Button("Reset") { adjustDelay(.secondarySubtitle, by: nil) }
+                }
+                Menu("Audio Delay") {
+                    Button("Earlier by 0.1 s") { adjustDelay(.audio, by: -MPVPlayer.delayStep) }
+                        .keyboardShortcut("z", modifiers: .shift)
+                    Button("Later by 0.1 s") { adjustDelay(.audio, by: MPVPlayer.delayStep) }
+                        .keyboardShortcut("x", modifiers: .shift)
+                    Button("Reset") { adjustDelay(.audio, by: nil) }
+                }
             }
             
             CommandMenu("Language Learning (AI)") {
@@ -110,5 +132,15 @@ struct VPlayerApp: App {
                 .keyboardShortcut("g", modifiers: .command)
             }
         }
+    }
+
+    /// `nil` resets the delay. Shows the OSD so the menu gives the same feedback as the keys.
+    private func adjustDelay(_ stream: MPVPlayer.DelayStream, by delta: Double?) {
+        if let delta {
+            MPVPlayer.shared.adjustDelay(of: stream, by: delta)
+        } else {
+            MPVPlayer.shared.resetDelay(of: stream)
+        }
+        OSDController.shared.show(.delay(stream))
     }
 }

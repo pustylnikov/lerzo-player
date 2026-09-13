@@ -187,3 +187,22 @@
 "· thinking %lld" = "· thinking %lld";
 "· session %lld" = "· session %lld";
 "Prompt %lld, answer %lld, thinking %lld tokens" = "Prompt %1$lld, answer %2$lld, thinking %3$lld tokens";
+
+/* Delays */
+"Subtitle Delay" = "Subtitle Delay";
+"Translation Delay" = "Translation Delay";
+"Audio Delay" = "Audio Delay";
+"Earlier by 0.1 s" = "Earlier by 0.1 s";
+"Later by 0.1 s" = "Later by 0.1 s";
+"Earlier by 0.1 s  (Z)" = "Earlier by 0.1 s  (Z)";
+"Later by 0.1 s  (X)" = "Later by 0.1 s  (X)";
+"Earlier by 0.1 s  (⇧Z)" = "Earlier by 0.1 s  (⇧Z)";
+"Later by 0.1 s  (⇧X)" = "Later by 0.1 s  (⇧X)";
+"Reset" = "Reset";
+"Delay: %@" = "Delay: %@";
+"Subtitle delay %@" = "Subtitle delay %@";
+"Translation delay %@" = "Translation delay %@";
+"Audio delay %@" = "Audio delay %@";
+"Subtitle delay: earlier / later by 0.1 s" = "Subtitle delay: earlier / later by 0.1 s";
+"Audio delay: earlier / later by 0.1 s" = "Audio delay: earlier / later by 0.1 s";
+"Reset delay" = "Reset delay";

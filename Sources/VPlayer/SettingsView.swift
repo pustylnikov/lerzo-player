@@ -464,6 +464,8 @@ public struct SettingsView: View {
                         shortcutRow(keys: "M", desc: "Mute / unmute")
                         shortcutRow(keys: "[  /  ]", desc: "Speed: slower / faster by 0.1×")
                         shortcutRow(keys: "⌫", desc: "Reset speed to 1×")
+                        shortcutRow(keys: "Z  /  X", desc: "Subtitle delay: earlier / later by 0.1 s")
+                        shortcutRow(keys: "⇧ + Z  /  ⇧ + X", desc: "Audio delay: earlier / later by 0.1 s")
                         shortcutRow(keys: "F", desc: "Full screen")
                         shortcutRow(keys: "⌘ + O", desc: "Open a video or an external subtitle file")
                     }

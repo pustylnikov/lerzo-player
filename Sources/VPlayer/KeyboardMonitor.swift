@@ -104,6 +104,19 @@ public final class KeyboardMonitor: ObservableObject {
                     player.resetSpeed(); osd.show(.speed); return nil
                 case 46: // M -> mute, the desktop video player convention
                     player.toggleMute(); osd.show(.volume); return nil
+                case 6: // Z -> subtitles earlier (mpv convention)
+                    player.adjustDelay(of: .subtitle, by: -MPVPlayer.delayStep); osd.show(.delay(.subtitle)); return nil
+                case 7: // X -> subtitles later
+                    player.adjustDelay(of: .subtitle, by: MPVPlayer.delayStep); osd.show(.delay(.subtitle)); return nil
+                default: break
+                }
+            }
+            if flags == [.shift] {
+                switch event.keyCode {
+                case 6: // Shift+Z -> audio earlier
+                    player.adjustDelay(of: .audio, by: -MPVPlayer.delayStep); osd.show(.delay(.audio)); return nil
+                case 7: // Shift+X -> audio later
+                    player.adjustDelay(of: .audio, by: MPVPlayer.delayStep); osd.show(.delay(.audio)); return nil
                 default: break
                 }
             }

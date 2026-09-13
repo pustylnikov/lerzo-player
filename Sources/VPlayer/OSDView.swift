@@ -9,6 +9,7 @@ public enum OSDItem: Equatable {
     case seek(seconds: Double)
     case replayLine
     case nextLine
+    case delay(MPVPlayer.DelayStream)
 }
 
 /// Keyboard feedback shown in the top-left corner for a moment, so the user
@@ -82,6 +83,8 @@ public struct OSDView: View {
         case .seek(let s): return s < 0 ? "gobackward.5" : "goforward.5"
         case .replayLine: return "backward.end.alt.fill"
         case .nextLine: return "forward.end.alt.fill"
+        case .delay(.audio): return "speaker.wave.2.fill"
+        case .delay: return "captions.bubble.fill"
         }
     }
 
@@ -98,7 +101,24 @@ public struct OSDView: View {
             return String(localized: "Replay line")
         case .nextLine:
             return String(localized: "Next line")
+        case .delay(let stream):
+            let value = Self.delayLabel(player.delay(of: stream))
+            switch stream {
+            case .subtitle: return String(localized: "Subtitle delay \(value)")
+            case .secondarySubtitle: return String(localized: "Translation delay \(value)")
+            case .audio: return String(localized: "Audio delay \(value)")
+            }
         }
+    }
+
+    /// "+0.3 s", "−1.5 s" or "0 s"; the minus is typographic to match the seek OSD.
+    static func delayLabel(_ seconds: Double) -> String {
+        let rounded = (seconds * 100).rounded() / 100
+        if rounded == 0 { return "0 s" }
+        var text = String(format: "%.2f", abs(rounded))
+        while text.hasSuffix("0") { text.removeLast() }
+        if text.hasSuffix(".") { text.removeLast() }
+        return (rounded < 0 ? "−" : "+") + text + " s"
     }
 
     static func speedLabel(_ speed: Double) -> String {

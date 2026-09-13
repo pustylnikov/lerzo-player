@@ -185,3 +185,22 @@
 "· thinking %lld" = "· размышления %lld";
 "· session %lld" = "· за сеанс %lld";
 "Prompt %lld, answer %lld, thinking %lld tokens" = "Запрос %1$lld, ответ %2$lld, размышления %3$lld токенов";
+
+/* Delays */
+"Subtitle Delay" = "Задержка субтитров";
+"Translation Delay" = "Задержка перевода";
+"Audio Delay" = "Задержка звука";
+"Earlier by 0.1 s" = "Раньше на 0,1 с";
+"Later by 0.1 s" = "Позже на 0,1 с";
+"Earlier by 0.1 s  (Z)" = "Раньше на 0,1 с  (Z)";
+"Later by 0.1 s  (X)" = "Позже на 0,1 с  (X)";
+"Earlier by 0.1 s  (⇧Z)" = "Раньше на 0,1 с  (⇧Z)";
+"Later by 0.1 s  (⇧X)" = "Позже на 0,1 с  (⇧X)";
+"Reset" = "Сбросить";
+"Delay: %@" = "Задержка: %@";
+"Subtitle delay %@" = "Задержка субтитров %@";
+"Translation delay %@" = "Задержка перевода %@";
+"Audio delay %@" = "Задержка звука %@";
+"Subtitle delay: earlier / later by 0.1 s" = "Задержка субтитров: раньше / позже на 0,1 с";
+"Audio delay: earlier / later by 0.1 s" = "Задержка звука: раньше / позже на 0,1 с";
+"Reset delay" = "Сбросить задержку";
