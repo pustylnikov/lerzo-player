@@ -28,6 +28,7 @@ chmod +x "$MACOS/$EXECUTABLE"
 # UI translations and the app icon (regenerate it with `swift scripts/make_icon.swift`)
 cp -R "$DIR"/Resources/*.lproj "$RESOURCES/"
 cp "$DIR/Resources/AppIcon.icns" "$RESOURCES/"
+cp "$DIR/LICENSE" "$RESOURCES/LICENSE"
 
 # Ensure rpath points to Homebrew lib
 install_name_tool -add_rpath "/opt/homebrew/lib" "$MACOS/$EXECUTABLE" 2>/dev/null || true

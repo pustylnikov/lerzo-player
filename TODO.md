@@ -7,11 +7,11 @@
 - [x] Переименование в Lerzo Player, bundle id `com.lerzo.player`.
 - [x] Иконка приложения — `Resources/AppIcon.svg` (мастер, play в кольце в цветах Lerzo),
       `swift scripts/make_icon.swift` собирает `AppIcon.icns` на сетке macOS.
-- [ ] **Исходники в DMG** — `scripts/release.sh` должен класть `Source code.zip`
-      (`git archive` текущего коммита) рядом с приложением: так выполняется GPLv3 §6(a) и
-      на лендинге репозиторий упоминать не обязательно.
-- [ ] **LICENSE** — файл GPLv3 в корне репозитория; публичный репозиторий (например,
-      `lerzo-player`), ссылка на него — в About.
+- [x] Исходники в DMG — `scripts/release.sh` кладёт папку «Source code» (`git archive`
+      релизного коммита, `THIRD-PARTY-SOURCES.md` со всеми встроенными библиотеками и их
+      исходниками, `LICENSE`); требует чистого рабочего дерева.
+- [x] `LICENSE` (GPLv3) в корне репозитория; копия — в `Contents/Resources` бандла.
+- [ ] **Публичный репозиторий** (например, `lerzo-player`), ссылка на него — в About.
 - [ ] **Страница плеера на лендинге Lerzo** — отдельный бесплатный open-source плеер для
       macOS, без связи с подпиской приложения; там же DMG и `appcast.xml` для Sparkle.
 - [ ] **Sparkle-автообновления** — подключить Sparkle 2, ключ EdDSA, `SUFeedURL`,

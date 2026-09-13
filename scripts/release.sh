@@ -9,6 +9,12 @@
 #
 # NOTARY_PROFILE is a keychain profile created once with
 #   xcrun notarytool store-credentials <profile> --apple-id ... --team-id ... --password <app-specific>
+#
+# The DMG also carries a "Source code" folder: a `git archive` of the released commit
+# plus THIRD-PARTY-SOURCES.md listing every bundled library with its exact version and
+# source URL. That is what GPLv3 §6 requires of a binary release, so the working tree
+# must be clean — the archive has to match the binary (ALLOW_DIRTY=1 skips the check
+# for throwaway local builds).
 set -euo pipefail
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -28,6 +34,14 @@ CONTENTS="$APP/Contents"
 FRAMEWORKS="$CONTENTS/Frameworks"
 RESOURCES="$CONTENTS/Resources"
 DMG="$OUT/$EXECUTABLE-$VERSION.dmg"
+SOURCE_ZIP="$OUT/$EXECUTABLE-$VERSION-src.zip"
+THIRD_PARTY="$OUT/THIRD-PARTY-SOURCES.md"
+
+if [ -n "$(git status --porcelain)" ] && [ "${ALLOW_DIRTY:-}" != 1 ]; then
+    echo "❌ Uncommitted changes: the source archive in the DMG must match the binary."
+    echo "   Commit first, or set ALLOW_DIRTY=1 for a local test build."
+    exit 1
+fi
 
 echo "🔨 Building $APP_NAME $VERSION ($BUILD_NUMBER), release…"
 swift build -c release 2>&1 | tail -1
@@ -48,9 +62,9 @@ cp "$DIR/Resources/AppIcon.icns" "$RESOURCES/"
 # Each library is copied under its real file name, its install name becomes
 # @rpath/<name>, and every reference to a Homebrew path is rewritten to match.
 echo "📚 Bundling dylibs…"
-python3 - "$CONTENTS/MacOS/$EXECUTABLE" "$FRAMEWORKS" "$BREW_PREFIX" <<'PY'
-import os, shutil, subprocess, sys
-exe, frameworks, brew = sys.argv[1:]
+python3 - "$CONTENTS/MacOS/$EXECUTABLE" "$FRAMEWORKS" "$BREW_PREFIX" "$THIRD_PARTY" "$APP_NAME $VERSION ($BUILD_NUMBER)" <<'PY'
+import json, os, shutil, subprocess, sys
+exe, frameworks, brew, third_party, release = sys.argv[1:]
 
 def links(path):
     out = subprocess.run(["otool", "-L", path], capture_output=True, text=True, check=True).stdout
@@ -87,9 +101,37 @@ def fix(binary, is_lib):
 for dest in copied.values(): fix(dest, True)
 fix(exe, False)
 print(f"   {len(copied)} libraries")
+
+# Every bundled dylib comes from a Homebrew keg: <brew>/Cellar/<formula>/<version>/...
+# Record which formulas (and which upstream sources) went into this build.
+kegs = {}
+for real in copied:
+    parts = os.path.relpath(real, os.path.join(brew, "Cellar")).split(os.sep)
+    kegs.setdefault(parts[0], (parts[1], []))[1].append(os.path.basename(real))
+info = json.loads(subprocess.run(["brew", "info", "--json=v2"] + sorted(kegs), capture_output=True, text=True, check=True).stdout)
+formulae = {f["name"]: f for f in info["formulae"]}
+core = next(iter(formulae.values()))["tap_git_head"]
+lines = [f"# Third-party sources — {release}", "",
+         "The application bundle (Contents/Frameworks) ships the libraries below, built from",
+         "the listed sources with the Homebrew formulas of homebrew-core commit",
+         f"[{core[:12]}](https://github.com/Homebrew/homebrew-core/tree/{core}). Each formula is",
+         "the complete build recipe (configure flags, patches) for the version shipped here.", "",
+         "| Formula | Version | License | Source | Libraries |", "|---|---|---|---|---|"]
+for name in sorted(kegs):
+    version, libs = kegs[name]
+    f = formulae[name]
+    formula_url = f"https://github.com/Homebrew/homebrew-core/blob/{core}/Formula/{name[0]}/{name}.rb"
+    lines.append(f"| [{name}]({formula_url}) | {version} | {f['license'] or '—'} | {f['urls']['stable']['url']} | {', '.join(sorted(libs))} |")
+lines += ["", "Lerzo Player itself is licensed under the GNU GPL v3; its source archive sits next to this file."]
+open(third_party, "w").write("\n".join(lines) + "\n")
+print(f"   {len(kegs)} formulas listed in {os.path.basename(third_party)}")
 PY
 # The dev build added a Homebrew rpath; a release bundle must not have one.
 install_name_tool -delete_rpath "$BREW_PREFIX/lib" "$CONTENTS/MacOS/$EXECUTABLE" 2>/dev/null || true
+
+# License texts travel with the app as well, for the About window.
+cp "$DIR/LICENSE" "$RESOURCES/LICENSE"
+cp "$THIRD_PARTY" "$RESOURCES/"
 
 # Vulkan ICD manifest pointing at the bundled MoltenVK (path is relative to the JSON).
 mkdir -p "$RESOURCES/vulkan/icd.d"
@@ -120,8 +162,10 @@ codesign --verify --deep --strict "$APP"
 
 # --- DMG ------------------------------------------------------------------------
 echo "💿 Creating DMG…"
-STAGE="$OUT/dmg"; mkdir -p "$STAGE"
+git archive --format=zip --prefix="$EXECUTABLE-$VERSION/" -o "$SOURCE_ZIP" HEAD
+STAGE="$OUT/dmg"; mkdir -p "$STAGE/Source code"
 cp -R "$APP" "$STAGE/"; ln -s /Applications "$STAGE/Applications"
+cp "$SOURCE_ZIP" "$THIRD_PARTY" "$DIR/LICENSE" "$STAGE/Source code/"
 hdiutil create -volname "$APP_NAME" -srcfolder "$STAGE" -ov -format UDZO -quiet "$DMG"
 rm -rf "$STAGE"
 codesign --force --timestamp --sign "$SIGN_IDENTITY" "$DMG"

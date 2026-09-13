@@ -57,3 +57,10 @@ open "build/Lerzo Player.app"
 ```bash
 open -a "build/Lerzo Player.app" test_media/sample_dialogue.mkv
 ```
+
+## 📄 Лицензия
+
+Lerzo Player распространяется под [GNU GPL v3](LICENSE). В сборку входят libmpv и ffmpeg
+(GPL) и их зависимости; каждый DMG содержит папку «Source code» с архивом исходников
+этой версии и списком всех встроенных библиотек с версиями и ссылками на их исходники
+(`THIRD-PARTY-SOURCES.md`).
