@@ -21,7 +21,14 @@
   `#0A0A0B`/`#F2F2F4`), `swift scripts/make_icon.swift` вписывает его в сетку macOS
   (824 pt в холсте 1024) и собирает `Resources/AppIcon.icns`; оба файла в репозитории.
 - Релиз: `scripts/release.sh` копирует libmpv и все dylib в бандл, переписывает
-  install names, подписывает, ноутаризует, собирает DMG (см. шапку скрипта).
+  install names, подписывает, ноутаризует, собирает DMG с папкой «Source code», затем
+  подписывает DMG ключом Sparkle и пишет `dist/appcast.xml` (см. шапку скрипта).
+- Обновления: Sparkle 2 через SwiftPM (binary artifact в `.build/artifacts/sparkle`, там же
+  `bin/generate_keys`, `sign_update`, `generate_appcast`). Фид
+  `https://lerzowords.com/player/appcast.xml`, публичный ключ EdDSA — в шаблоне Info.plist
+  в `build_app.sh`, приватный — в keychain автора. `UpdaterController.swift` — обёртка над
+  `SPUStandardUpdaterController`. Оба скрипта кладут `Sparkle.framework` в
+  `Contents/Frameworks`; в релизе его вложенные XPC/Autoupdate подписываются отдельно.
 - Отладка mpv: `VPLAYER_MPV_LOG=/path/log open -a "build/Lerzo Player.app" file.mkv` —
   подробный лог mpv (команды, `Set property: …`). Stderr приложения:
   `open --stderr /path/log -a "build/Lerzo Player.app" file.mkv`.

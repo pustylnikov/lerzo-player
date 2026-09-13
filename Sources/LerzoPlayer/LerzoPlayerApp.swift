@@ -45,6 +45,7 @@ struct LerzoPlayerApp: App {
     /// Observed so the Video menu's Fit/Fill title follows the player.
     @ObservedObject private var player = MPVPlayer.shared
     @Environment(\.openWindow) private var openWindow
+    @ObservedObject private var updater = UpdaterController.shared
     
     var body: some Scene {
         Window("Lerzo Player", id: "main") {
@@ -61,6 +62,10 @@ struct LerzoPlayerApp: App {
                 Button("About Lerzo Player") {
                     openWindow(id: AboutView.windowID)
                 }
+                Button("Check for Updates...") {
+                    updater.checkForUpdates()
+                }
+                .disabled(!updater.canCheckForUpdates)
             }
 
             CommandGroup(replacing: .appSettings) {

@@ -9,6 +9,9 @@ let package = Package(
     products: [
         .executable(name: "LerzoPlayer", targets: ["LerzoPlayer"])
     ],
+    dependencies: [
+        .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.6.0")
+    ],
     targets: [
         .target(
             name: "Cmpv",
@@ -26,7 +29,7 @@ let package = Package(
         ),
         .executableTarget(
             name: "LerzoPlayer",
-            dependencies: ["Cmpv", "Cavformat"],
+            dependencies: ["Cmpv", "Cavformat", .product(name: "Sparkle", package: "Sparkle")],
             path: "Sources/LerzoPlayer",
             swiftSettings: [
                 .unsafeFlags(["-I/opt/homebrew/include"])

@@ -298,3 +298,4 @@
 "This development build links the libraries installed by Homebrew." = "This development build links the libraries installed by Homebrew.";
 "Release builds bundle them and list each one here with its version, license and source." = "Release builds bundle them and list each one here with its version, license and source.";
 "%lld libraries built by Homebrew are bundled with the app. Links lead to each library's source code and build recipe." = "%lld libraries built by Homebrew are bundled with the app. Links lead to each library's source code and build recipe.";
+"Check for Updates..." = "Check for Updates...";

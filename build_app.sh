@@ -33,6 +33,12 @@ cp "$DIR/LICENSE" "$RESOURCES/LICENSE"
 # Ensure rpath points to Homebrew lib
 install_name_tool -add_rpath "/opt/homebrew/lib" "$MACOS/$EXECUTABLE" 2>/dev/null || true
 
+# Sparkle.framework from the SwiftPM binary artifact, found via @executable_path/../Frameworks.
+SPARKLE="$DIR/.build/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework"
+mkdir -p "$CONTENTS/Frameworks"
+cp -R "$SPARKLE" "$CONTENTS/Frameworks/"
+install_name_tool -add_rpath "@executable_path/../Frameworks" "$MACOS/$EXECUTABLE" 2>/dev/null || true
+
 # Generate Info.plist
 cat << 'EOF' > "$CONTENTS/Info.plist"
 <?xml version="1.0" encoding="UTF-8"?>
@@ -67,6 +73,12 @@ cat << 'EOF' > "$CONTENTS/Info.plist"
     <key>LSMinimumSystemVersion</key>
     <string>14.0</string>
     <key>NSHighResolutionCapable</key>
+    <true/>
+    <key>SUFeedURL</key>
+    <string>https://lerzowords.com/player/appcast.xml</string>
+    <key>SUPublicEDKey</key>
+    <string>sAd3I+Ud5TSsl2xUaP8J5fhmp5aN9w0JYs7FzjMdd+c=</string>
+    <key>SUEnableAutomaticChecks</key>
     <true/>
     <key>NSHumanReadableCopyright</key>
     <string>Copyright © 2026 Yurii Pustylnikov. Licensed under the GNU GPL v3.</string>
@@ -104,7 +116,7 @@ IDENTITY="${SIGN_IDENTITY:-$(security find-identity -v -p codesigning 2>/dev/nul
     | grep -o '"Developer ID Application: [^"]*"' | head -1 | tr -d '"')}"
 if [ -n "$IDENTITY" ]; then
     echo "🔏 Signing with: $IDENTITY"
-    codesign --force --sign "$IDENTITY" "$APP_BUNDLE"
+    codesign --force --deep --sign "$IDENTITY" "$APP_BUNDLE"
 else
     echo "⚠️  No Developer ID certificate found — leaving the ad-hoc signature"
 fi

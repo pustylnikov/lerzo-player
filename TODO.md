@@ -13,10 +13,16 @@
 - [x] `LICENSE` (GPLv3) в корне репозитория; копия — в `Contents/Resources` бандла.
 - [ ] **Публичный репозиторий** (например, `lerzo-player`); адрес — в
       `AboutInfo.repositoryURL`, тогда в About появится кнопка «Исходный код».
-- [ ] **Страница плеера на лендинге Lerzo** — отдельный бесплатный open-source плеер для
-      macOS, без связи с подпиской приложения; там же DMG и `appcast.xml` для Sparkle.
-- [ ] **Sparkle-автообновления** — подключить Sparkle 2, ключ EdDSA, `SUFeedURL`,
-      генерировать appcast при релизе (`scripts/release.sh` уже делает DMG).
+- [ ] **Страница плеера на лендинге Lerzo** (`/player/`) — отдельный бесплатный open-source
+      плеер для macOS, без связи с подпиской приложения; в той же папке — DMG и `appcast.xml`.
+- [x] Sparkle-автообновления: пакет Sparkle 2.9, `UpdaterController.swift`, пункт «Check for
+      Updates…», `SUFeedURL` = `https://lerzowords.com/player/appcast.xml`, `SUPublicEDKey` в
+      `build_app.sh`; `release.sh` подписывает DMG (`generate_appcast`) и пишет `dist/appcast.xml`.
+- [ ] **Первый деплой обновлений**: выложить `LerzoPlayer-<v>.dmg` и `appcast.xml` в
+      `https://lerzowords.com/player/` и проверить «Check for Updates…» с предыдущей версии.
+- [ ] **Бэкап приватного ключа Sparkle** из keychain:
+      `.build/artifacts/sparkle/Sparkle/bin/generate_keys -x <файл>` — в надёжное место; без
+      него нельзя подписать следующее обновление.
 - [x] Окно About (`AboutView.swift`): версия, GPLv3 (текст из `Resources/LICENSE`),
       вкладка «Библиотеки» из `THIRD-PARTY-SOURCES.md` релизной сборки, ссылка на сайт.
       Ссылка на репозиторий появится, когда `AboutInfo.repositoryURL` получит адрес.

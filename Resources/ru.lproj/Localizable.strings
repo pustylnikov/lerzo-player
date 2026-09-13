@@ -296,3 +296,4 @@
 "This development build links the libraries installed by Homebrew." = "Эта dev-сборка использует библиотеки, установленные через Homebrew.";
 "Release builds bundle them and list each one here with its version, license and source." = "Релизные сборки включают их в приложение и показывают здесь каждую с версией, лицензией и исходниками.";
 "%lld libraries built by Homebrew are bundled with the app. Links lead to each library's source code and build recipe." = "В приложение включены библиотеки, собранные Homebrew: %lld. Ссылки ведут к исходному коду и рецепту сборки каждой.";
+"Check for Updates..." = "Проверить обновления...";

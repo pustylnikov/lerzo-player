@@ -10,6 +10,11 @@
 # NOTARY_PROFILE is a keychain profile created once with
 #   xcrun notarytool store-credentials <profile> --apple-id ... --team-id ... --password <app-specific>
 #
+# Sparkle: after notarization the DMG is EdDSA-signed with the key in the keychain
+# (generate_keys, public half in build_app.sh) and dist/appcast.xml is written.
+# Upload the DMG and appcast.xml to $UPDATE_URL (SUFeedURL in build_app.sh points
+# there). RELEASE_NOTES=notes.md (or .html/.txt) embeds release notes in the entry.
+#
 # The DMG also carries a "Source code" folder: a `git archive` of the released commit
 # plus THIRD-PARTY-SOURCES.md listing every bundled library with its exact version and
 # source URL. That is what GPLv3 §6 requires of a binary release, so the working tree
@@ -27,6 +32,10 @@ BUILD_NUMBER="${BUILD_NUMBER:-$(git rev-list --count HEAD 2>/dev/null || echo 1)
 SIGN_IDENTITY="${SIGN_IDENTITY:--}"
 NOTARY_PROFILE="${NOTARY_PROFILE:-}"
 BREW_PREFIX="$(brew --prefix)"
+UPDATE_URL="${UPDATE_URL:-https://lerzowords.com/player/}"
+RELEASE_NOTES="${RELEASE_NOTES:-}"
+SPARKLE_DIR="$DIR/.build/artifacts/sparkle/Sparkle"
+SPARKLE_FRAMEWORK="$SPARKLE_DIR/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework"
 
 OUT="$DIR/dist"
 APP="$OUT/$APP_NAME.app"
@@ -57,6 +66,7 @@ cp "build/$APP_NAME.app/Contents/Info.plist" "$CONTENTS/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" "$CONTENTS/Info.plist"
 cp -R "$DIR"/Resources/*.lproj "$RESOURCES/"
 cp "$DIR/Resources/AppIcon.icns" "$RESOURCES/"
+cp -R "$SPARKLE_FRAMEWORK" "$FRAMEWORKS/"
 
 # --- Bundle libmpv + every Homebrew dylib it pulls in --------------------------
 # Each library is copied under its real file name, its install name becomes
@@ -122,6 +132,11 @@ for name in sorted(kegs):
     f = formulae[name]
     formula_url = f"https://github.com/Homebrew/homebrew-core/blob/{core}/Formula/{name[0]}/{name}.rb"
     lines.append(f"| [{name}]({formula_url}) | {version} | {f['license'] or '—'} | {f['urls']['stable']['url']} | {', '.join(sorted(libs))} |")
+sparkle_plist = os.path.join(frameworks, "Sparkle.framework/Resources/Info.plist")
+sparkle_version = subprocess.run(["/usr/libexec/PlistBuddy", "-c", "Print :CFBundleShortVersionString", sparkle_plist],
+                                 capture_output=True, text=True, check=True).stdout.strip()
+lines.append(f"| [Sparkle](https://github.com/sparkle-project/Sparkle) | {sparkle_version} | MIT | "
+             f"https://github.com/sparkle-project/Sparkle/archive/refs/tags/{sparkle_version}.tar.gz | Sparkle.framework |")
 lines += ["", "Lerzo Player itself is licensed under the GNU GPL v3; its source archive sits next to this file."]
 open(third_party, "w").write("\n".join(lines) + "\n")
 print(f"   {len(kegs)} formulas listed in {os.path.basename(third_party)}")
@@ -157,6 +172,12 @@ ENTITLEMENTS="$DIR/scripts/LerzoPlayer.entitlements"
 for lib in "$FRAMEWORKS"/*.dylib; do
     codesign --force --options runtime --timestamp --sign "$SIGN_IDENTITY" "$lib" 2>&1 | grep -v "replacing existing signature" || true
 done
+# Sparkle's nested helpers must be signed inside-out before the framework itself.
+SPARKLE_B="$FRAMEWORKS/Sparkle.framework/Versions/B"
+for item in "$SPARKLE_B/XPCServices/Installer.xpc" "$SPARKLE_B/XPCServices/Downloader.xpc" \
+            "$SPARKLE_B/Autoupdate" "$SPARKLE_B/Updater.app" "$FRAMEWORKS/Sparkle.framework"; do
+    codesign --force --options runtime --timestamp --sign "$SIGN_IDENTITY" "$item" 2>&1 | grep -v "replacing existing signature" || true
+done
 codesign --force --options runtime --timestamp --entitlements "$ENTITLEMENTS" --sign "$SIGN_IDENTITY" "$APP"
 codesign --verify --deep --strict "$APP"
 
@@ -181,4 +202,14 @@ else
     echo "ℹ️  Skipped notarization (set NOTARY_PROFILE). Gatekeeper will block this build on other Macs."
 fi
 
+# --- Sparkle appcast ---------------------------------------------------------------
+# Runs last: stapling changes the DMG, and the EdDSA signature covers the final bytes.
+echo "📡 Signing the update and writing the appcast…"
+UPDATES="$OUT/updates"; mkdir -p "$UPDATES"
+cp "$DMG" "$UPDATES/"
+[ -n "$RELEASE_NOTES" ] && cp "$RELEASE_NOTES" "$UPDATES/$EXECUTABLE-$VERSION.${RELEASE_NOTES##*.}"
+"$SPARKLE_DIR/bin/generate_appcast" --download-url-prefix "$UPDATE_URL" --link "$UPDATE_URL" \
+    --embed-release-notes -o "$OUT/appcast.xml" "$UPDATES"
+
 echo "✅ $DMG ($(du -h "$DMG" | cut -f1))"
+echo "   Upload $(basename "$DMG") and appcast.xml from $OUT to $UPDATE_URL"
