@@ -30,6 +30,8 @@
   экспорт, Firebase Hosting): страница `/player` берёт версию, размер и ссылку на DMG
   из `public/player/appcast.xml` через `yarn sync:player`; порядок публикации описан в
   разделе «Lerzo Player page» его README.
+- Статистика: `scripts/downloads.sh` — загрузки каждого DMG с GitHub Releases (включая
+  Sparkle-обновления) и трафик репозитория за 14 дней, через `gh`.
 - Обновления: Sparkle 2 через SwiftPM (binary artifact в `.build/artifacts/sparkle`, там же
   `bin/generate_keys`, `sign_update`, `generate_appcast`). Фид
   `https://lerzowords.com/player/appcast.xml`, публичный ключ EdDSA — в шаблоне Info.plist
