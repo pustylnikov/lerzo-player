@@ -58,6 +58,12 @@ public struct ContentView: View {
             let controlsWanted = showControls || player.playbackState == .paused || player.playbackState == .finished || player.playbackState == .idle
             let controlsShown = controlsWanted && !player.isPeekingTranslation && !player.isResumingAfterPeek
 
+            // Controls backdrop: under the subtitles so it never dims them.
+            if controlsShown {
+                ControlsBackdropView()
+                    .transition(.opacity.animation(.easeInOut(duration: 0.2)))
+            }
+
             // LAYER 4: Interactive Subtitles Layer
             SubtitlesLayer(
                 showExplanation: $isExplanationOpen,

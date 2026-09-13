@@ -65,23 +65,6 @@ public struct ControlsOverlayView: View {
                 .opacity(canControlPlayback ? 1 : 0.42)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(
-            // Subtle gradient darkening at edges for contrast
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    Color.black.opacity(0.6),
-                    Color.clear,
-                    Color.clear,
-                    Color.black.opacity(0.7)
-                ]),
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            // The window has a hidden title bar; without this the gradient
-            // would start below its safe-area inset, leaving an untinted strip.
-            .ignoresSafeArea()
-            .allowsHitTesting(false)
-        )
     }
     
     // MARK: - Top Bar
@@ -595,5 +578,28 @@ struct ControlsBarHeightKey: PreferenceKey {
     static let defaultValue: CGFloat = 0
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = max(value, nextValue())
+    }
+}
+
+
+/// Edge darkening shown together with the controls for contrast. Drawn as a
+/// separate layer *below* the subtitles (see `ContentView`), so it tints the
+/// video but never the subtitle text.
+struct ControlsBackdropView: View {
+    var body: some View {
+        LinearGradient(
+            gradient: Gradient(colors: [
+                Color.black.opacity(0.6),
+                Color.clear,
+                Color.clear,
+                Color.black.opacity(0.7)
+            ]),
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        // The window has a hidden title bar; without this the gradient
+        // would start below its safe-area inset, leaving an untinted strip.
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
     }
 }
