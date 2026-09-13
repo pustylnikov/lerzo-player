@@ -11,9 +11,15 @@
 #   xcrun notarytool store-credentials <profile> --apple-id ... --team-id ... --password <app-specific>
 #
 # Sparkle: after notarization the DMG is EdDSA-signed with the key in the keychain
-# (generate_keys, public half in build_app.sh) and dist/appcast.xml is written.
-# Upload the DMG and appcast.xml to $UPDATE_URL (SUFeedURL in build_app.sh points
-# there). RELEASE_NOTES=notes.md (or .html/.txt) embeds release notes in the entry.
+# (generate_keys, public half in build_app.sh) and dist/appcast.xml is written. The
+# appcast lives at $FEED_URL (SUFeedURL in build_app.sh) and points at the DMG under
+# $DOWNLOAD_URL — by default the GitHub release for tag v$VERSION.
+# RELEASE_NOTES=notes.md (or .html/.txt) embeds release notes in the appcast entry and
+# on the GitHub release.
+#
+# PUBLISH=1 additionally creates the GitHub release with the DMG attached (needs `gh`
+# logged in and HEAD pushed to origin); only a notarized build can be published.
+# Afterwards upload dist/appcast.xml to $FEED_URL yourself.
 #
 # The DMG also carries a "Source code" folder: a `git archive` of the released commit
 # plus THIRD-PARTY-SOURCES.md listing every bundled library with its exact version and
@@ -32,8 +38,10 @@ BUILD_NUMBER="${BUILD_NUMBER:-$(git rev-list --count HEAD 2>/dev/null || echo 1)
 SIGN_IDENTITY="${SIGN_IDENTITY:--}"
 NOTARY_PROFILE="${NOTARY_PROFILE:-}"
 BREW_PREFIX="$(brew --prefix)"
-UPDATE_URL="${UPDATE_URL:-https://lerzowords.com/player/}"
+GITHUB_REPO="pustylnikov/lerzo-player"
+FEED_URL="https://lerzowords.com/player/"
 RELEASE_NOTES="${RELEASE_NOTES:-}"
+PUBLISH="${PUBLISH:-}"
 SPARKLE_DIR="$DIR/.build/artifacts/sparkle/Sparkle"
 SPARKLE_FRAMEWORK="$SPARKLE_DIR/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework"
 
@@ -46,10 +54,22 @@ DMG="$OUT/$EXECUTABLE-$VERSION.dmg"
 SOURCE_ZIP="$OUT/$EXECUTABLE-$VERSION-src.zip"
 THIRD_PARTY="$OUT/THIRD-PARTY-SOURCES.md"
 
+TAG="v$VERSION"
+DOWNLOAD_URL="${DOWNLOAD_URL:-https://github.com/$GITHUB_REPO/releases/download/$TAG/}"
+
 if [ -n "$(git status --porcelain)" ] && [ "${ALLOW_DIRTY:-}" != 1 ]; then
     echo "❌ Uncommitted changes: the source archive in the DMG must match the binary."
     echo "   Commit first, or set ALLOW_DIRTY=1 for a local test build."
     exit 1
+fi
+if [ -n "$PUBLISH" ]; then
+    [ -n "$NOTARY_PROFILE" ] || { echo "❌ PUBLISH=1 needs a notarized build: set NOTARY_PROFILE."; exit 1; }
+    gh auth status >/dev/null 2>&1 || { echo "❌ gh is not logged in (run: gh auth login)."; exit 1; }
+    git fetch -q origin
+    git merge-base --is-ancestor HEAD origin/main || { echo "❌ HEAD is not pushed to origin/main."; exit 1; }
+    if gh release view "$TAG" --repo "$GITHUB_REPO" >/dev/null 2>&1; then
+        echo "❌ Release $TAG already exists on GitHub; bump the version in build_app.sh."; exit 1
+    fi
 fi
 
 echo "🔨 Building $APP_NAME $VERSION ($BUILD_NUMBER), release…"
@@ -208,8 +228,19 @@ echo "📡 Signing the update and writing the appcast…"
 UPDATES="$OUT/updates"; mkdir -p "$UPDATES"
 cp "$DMG" "$UPDATES/"
 [ -n "$RELEASE_NOTES" ] && cp "$RELEASE_NOTES" "$UPDATES/$EXECUTABLE-$VERSION.${RELEASE_NOTES##*.}"
-"$SPARKLE_DIR/bin/generate_appcast" --download-url-prefix "$UPDATE_URL" --link "$UPDATE_URL" \
+"$SPARKLE_DIR/bin/generate_appcast" --download-url-prefix "$DOWNLOAD_URL" --link "$FEED_URL" \
     --embed-release-notes -o "$OUT/appcast.xml" "$UPDATES"
 
-echo "✅ $DMG ($(du -h "$DMG" | cut -f1))"
-echo "   Upload $(basename "$DMG") and appcast.xml from $OUT to $UPDATE_URL"
+# --- GitHub release ---------------------------------------------------------------
+if [ -n "$PUBLISH" ]; then
+    echo "🚀 Publishing $TAG on GitHub…"
+    NOTES_ARGS=(--generate-notes)
+    [ -n "$RELEASE_NOTES" ] && NOTES_ARGS=(--notes-file "$RELEASE_NOTES")
+    gh release create "$TAG" "$DMG" --repo "$GITHUB_REPO" --target "$(git rev-parse HEAD)" \
+        --title "$APP_NAME $VERSION" "${NOTES_ARGS[@]}"
+    echo "✅ https://github.com/$GITHUB_REPO/releases/tag/$TAG"
+    echo "   Now upload $OUT/appcast.xml to $FEED_URL"
+else
+    echo "✅ $DMG ($(du -h "$DMG" | cut -f1))"
+    echo "   Not published (PUBLISH=1 creates the GitHub release); appcast points at $DOWNLOAD_URL"
+fi
