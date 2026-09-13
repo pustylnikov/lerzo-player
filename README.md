@@ -24,6 +24,8 @@
 
 Lerzo Player runs on macOS 14 or later (Apple silicon). Grab the DMG from the [releases page](../../releases) — the app is signed and notarized and updates itself.
 
+No account, no analytics: the only things the player ever sends over the network are the subtitle line you ask Gemini to explain (with your own key) and a daily update check. Details in the [privacy policy](https://lerzowords.com/player/privacy).
+
 ---
 
 ## ⌨️ Keyboard shortcuts

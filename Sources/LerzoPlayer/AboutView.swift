@@ -6,6 +6,7 @@ import AppKit
 /// bundles assembled by `scripts/release.sh`.
 enum AboutInfo {
     static let websiteURL = URL(string: "https://lerzowords.com/player")!
+    static let privacyURL = URL(string: "https://lerzowords.com/player/privacy")!
     static let repositoryURL: URL? = URL(string: "https://github.com/pustylnikov/lerzo-player")
 
     static var version: String {
@@ -119,6 +120,7 @@ struct AboutView: View {
                 if let repository = AboutInfo.repositoryURL {
                     Link("Source Code ↗", destination: repository)
                 }
+                Link("Privacy Policy ↗", destination: AboutInfo.privacyURL)
             }
             .font(.system(size: 12))
             Spacer()

@@ -289,6 +289,7 @@
 "Lerzo Player is free software under the GNU General Public License, version 3. The source code of this exact version ships in the download next to the app, in the “Source code” folder." = "Lerzo Player — свободное ПО под лицензией GNU General Public License версии 3. Исходный код именно этой версии лежит в образе рядом с приложением, в папке «Source code».";
 "Playback is powered by mpv and FFmpeg. The Libraries tab lists every open-source library included in this build." = "Воспроизведение построено на mpv и FFmpeg. На вкладке «Библиотеки» перечислены все open-source библиотеки, включённые в эту сборку.";
 "Website ↗" = "Сайт ↗";
+"Privacy Policy ↗" = "Конфиденциальность ↗";
 "Source Code ↗" = "Исходный код ↗";
 "Source ↗" = "Исходники ↗";
 "Recipe ↗" = "Рецепт ↗";
