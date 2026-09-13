@@ -20,9 +20,8 @@
       `build_app.sh`; `release.sh` подписывает DMG (`generate_appcast`) и пишет `dist/appcast.xml`.
 - [ ] **Первый деплой обновлений**: выложить `LerzoPlayer-<v>.dmg` и `appcast.xml` в
       `https://lerzowords.com/player/` и проверить «Check for Updates…» с предыдущей версии.
-- [ ] **Бэкап приватного ключа Sparkle** из keychain:
-      `.build/artifacts/sparkle/Sparkle/bin/generate_keys -x <файл>` — в надёжное место; без
-      него нельзя подписать следующее обновление.
+- [x] Бэкап приватного ключа Sparkle — в менеджере паролей автора (восстановить в keychain:
+      `.build/artifacts/sparkle/Sparkle/bin/generate_keys -i <файл>`).
 - [x] Окно About (`AboutView.swift`): версия, GPLv3 (текст из `Resources/LICENSE`),
       вкладка «Библиотеки» из `THIRD-PARTY-SOURCES.md` релизной сборки, ссылка на сайт.
       Ссылка на репозиторий появится, когда `AboutInfo.repositoryURL` получит адрес.
