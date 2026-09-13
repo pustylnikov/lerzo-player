@@ -88,5 +88,17 @@ cat << 'EOF' > "$CONTENTS/Info.plist"
 </plist>
 EOF
 
+# Sign with a real certificate when one is available. An ad-hoc signature
+# changes on every build, so the keychain would treat each build as a new
+# app and ask for the login password again whenever the Gemini key is read.
+IDENTITY="${SIGN_IDENTITY:-$(security find-identity -v -p codesigning 2>/dev/null \
+    | grep -o '"Developer ID Application: [^"]*"' | head -1 | tr -d '"')}"
+if [ -n "$IDENTITY" ]; then
+    echo "🔏 Signing with: $IDENTITY"
+    codesign --force --sign "$IDENTITY" "$APP_BUNDLE"
+else
+    echo "⚠️  No Developer ID certificate found — leaving the ad-hoc signature"
+fi
+
 echo "✅ Successfully built and packaged: $APP_BUNDLE"
 echo "👉 To launch: open \"$APP_BUNDLE\""

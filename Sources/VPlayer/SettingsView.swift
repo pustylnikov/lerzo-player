@@ -426,6 +426,8 @@ public struct SettingsView: View {
         }
         .padding(20)
         .frame(width: 520, height: sheetHeight)
+        // Otherwise the sheet focuses (and selects) the API key field on open.
+        .background(InitialFocusSink())
     }
     
     /// Quits and reopens the app so the new `AppleLanguages` takes effect.
@@ -471,4 +473,18 @@ public struct SettingsView: View {
             Spacer()
         }
     }
+}
+
+/// Invisible view that claims the sheet's initial first responder, so no
+/// text field gets focused and selected just because it comes first.
+private struct InitialFocusSink: NSViewRepresentable {
+    final class SinkView: NSView {
+        override var acceptsFirstResponder: Bool { true }
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            window?.initialFirstResponder = self
+        }
+    }
+    func makeNSView(context: Context) -> SinkView { SinkView(frame: .zero) }
+    func updateNSView(_ nsView: SinkView, context: Context) {}
 }

@@ -3,25 +3,42 @@ import Foundation
 public final class GeminiService: ObservableObject {
     public static let shared = GeminiService()
     
+    /// The user's Gemini key. Persisted in the login keychain, never in
+    /// UserDefaults (which is a plain plist anyone can read).
     @Published public var apiKey: String = "" {
         didSet {
-            UserDefaults.standard.set(apiKey, forKey: "VPlayer.geminiApiKey")
+            guard !isLoadingKey, apiKey != oldValue else { return }
+            KeychainStore.write(apiKey.trimmingCharacters(in: .whitespacesAndNewlines), account: Self.keychainAccount)
         }
     }
-    
+    private static let keychainAccount = "gemini-api-key"
+    private static let legacyDefaultsKey = "VPlayer.geminiApiKey"
+    private var isLoadingKey = false
+
     @Published public var selectedModel: String = "gemini-2.5-flash"
     @Published public var isLoading: Bool = false
     @Published public var lastExplanation: SubtitleExplanation? = nil
     @Published public var errorMessage: String? = nil
-    
+
     public init() {
-        if let key = UserDefaults.standard.string(forKey: "VPlayer.geminiApiKey"), !key.isEmpty {
-            self.apiKey = key
+        isLoadingKey = true
+        defer { isLoadingKey = false }
+        let defaults = UserDefaults.standard
+        let legacy = defaults.string(forKey: Self.legacyDefaultsKey) ?? ""
+        if let key = KeychainStore.read(Self.keychainAccount), !key.isEmpty {
+            apiKey = key
+        } else if !legacy.isEmpty {
+            // Migrate from the old UserDefaults storage.
+            apiKey = legacy
+            // Keep the plist copy until the keychain actually has the key.
+            guard KeychainStore.write(legacy, account: Self.keychainAccount) else { return }
         } else if let envKey = ProcessInfo.processInfo.environment["GEMINI_API_KEY"], !envKey.isEmpty {
-            self.apiKey = envKey
+            // Development convenience; not persisted.
+            apiKey = envKey
         }
+        defaults.removeObject(forKey: Self.legacyDefaultsKey)
     }
-    
+
     public var hasApiKey: Bool {
         return !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }

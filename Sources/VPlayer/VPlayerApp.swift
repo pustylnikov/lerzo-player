@@ -5,6 +5,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
+        // Load the API key (and migrate it out of UserDefaults) right away
+        // rather than when Settings is first opened.
+        _ = GeminiService.shared
         
         let args = CommandLine.arguments
         for arg in args.dropFirst() {
