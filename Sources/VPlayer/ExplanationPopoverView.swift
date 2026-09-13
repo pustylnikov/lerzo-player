@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 public struct ExplanationPopoverView: View {
     @ObservedObject var gemini = GeminiService.shared
@@ -77,6 +78,7 @@ public struct ExplanationPopoverView: View {
                     errorView(err)
                 } else if let expl = explanation {
                     explanationContent(expl)
+                    if let usage = gemini.lastUsage { usageLine(usage) }
                 } else {
                     emptyStateView
                 }
@@ -124,7 +126,7 @@ public struct ExplanationPopoverView: View {
                 }
             }
             .padding(24)
-            .frame(maxWidth: 620)
+            .frame(maxWidth: 760)
             .background(
                 RoundedRectangle(cornerRadius: 18)
                     .fill(Color(red: 0.13, green: 0.13, blue: 0.16))
@@ -257,6 +259,21 @@ public struct ExplanationPopoverView: View {
         .buttonStyle(.plain)
     }
     
+    // MARK: - Token usage
+    private func usageLine(_ usage: GeminiService.TokenUsage) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: "number")
+            Text("\(usage.total) tokens")
+            if usage.thoughts > 0 { Text("· thinking \(usage.thoughts)") }
+            Text("· session \(gemini.sessionUsage.total)")
+            Spacer()
+            Text(gemini.selectedModel)
+        }
+        .font(.system(size: 10))
+        .foregroundColor(.white.opacity(0.45))
+        .help("Prompt \(usage.prompt), answer \(usage.output), thinking \(usage.thoughts) tokens")
+    }
+    
     // MARK: - Empty State
     private var emptyStateView: some View {
         VStack(spacing: 12) {
@@ -277,11 +294,11 @@ public struct ExplanationPopoverView: View {
                 // Original sentence
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Original:")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(.white.opacity(0.5))
                         .textCase(.uppercase)
                     Text("“\(expl.sentence)”")
-                        .font(.system(size: 17, weight: .semibold, design: .rounded))
+                        .font(.system(size: 20, weight: .semibold, design: .rounded))
                         .foregroundColor(.white)
                 }
                 .padding(12)
@@ -292,11 +309,11 @@ public struct ExplanationPopoverView: View {
                 // Translation
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Contextual translation:")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(.yellow)
                         .textCase(.uppercase)
                     Text(expl.translation)
-                        .font(.system(size: 16, weight: .medium))
+                        .font(.system(size: 18, weight: .medium))
                         .foregroundColor(.white)
                 }
                 .padding(12)
@@ -312,23 +329,23 @@ public struct ExplanationPopoverView: View {
                 if !expl.idioms.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Idioms and set phrases:")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(.system(size: 14, weight: .bold))
                             .foregroundColor(.white.opacity(0.8))
                         
                         ForEach(expl.idioms) { item in
                             VStack(alignment: .leading, spacing: 4) {
                                 HStack {
                                     Text("🎯 \(item.idiom)")
-                                        .font(.system(size: 13, weight: .bold))
+                                        .font(.system(size: 15, weight: .bold))
                                         .foregroundColor(.yellow)
                                     Spacer()
                                 }
                                 Text("Meaning: \(item.actualMeaning)")
-                                    .font(.system(size: 12, weight: .medium))
+                                    .font(.system(size: 14, weight: .medium))
                                     .foregroundColor(.white)
                                 if !item.literalMeaning.isEmpty {
                                     Text("Literally: \(item.literalMeaning)")
-                                        .font(.system(size: 11))
+                                        .font(.system(size: 13))
                                         .foregroundColor(.white.opacity(0.6))
                                 }
                             }
@@ -344,22 +361,22 @@ public struct ExplanationPopoverView: View {
                 if !expl.difficultWords.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Useful words from the line:")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(.system(size: 14, weight: .bold))
                             .foregroundColor(.white.opacity(0.8))
                         
                         FlowLayout(horizontalSpacing: 8, verticalSpacing: 8, alignment: .leading) {
                             ForEach(expl.difficultWords) { word in
                                 HStack(spacing: 4) {
                                     Text(word.word)
-                                        .font(.system(size: 12, weight: .bold))
+                                        .font(.system(size: 14, weight: .bold))
                                         .foregroundColor(.white)
                                     if let pos = word.partOfSpeech, !pos.isEmpty {
                                         Text("(\(pos))")
-                                            .font(.system(size: 10))
+                                            .font(.system(size: 12))
                                             .foregroundColor(.white.opacity(0.5))
                                     }
                                     Text("— \(word.translation)")
-                                        .font(.system(size: 12))
+                                        .font(.system(size: 14))
                                         .foregroundColor(.white.opacity(0.85))
                                 }
                                 .padding(.horizontal, 10)
@@ -375,10 +392,10 @@ public struct ExplanationPopoverView: View {
                 if let note = expl.contextNote, !note.isEmpty {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("💡 Scene context and tone:")
-                            .font(.system(size: 11, weight: .bold))
+                            .font(.system(size: 13, weight: .bold))
                             .foregroundColor(.white.opacity(0.7))
                         Text(note)
-                            .font(.system(size: 12))
+                            .font(.system(size: 14))
                             .foregroundColor(.white.opacity(0.85))
                             .lineSpacing(3)
                     }
@@ -389,7 +406,8 @@ public struct ExplanationPopoverView: View {
                 }
             }
         }
-        .frame(maxHeight: 360)
+        // Use the window: a tall screen should show the whole breakdown without scrolling.
+        .frame(maxHeight: max(360, (NSApp.keyWindow?.contentView?.bounds.height ?? 800) * 0.6))
     }
     
     private func fetchExplanation() {

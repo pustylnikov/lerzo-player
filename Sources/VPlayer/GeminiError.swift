@@ -22,6 +22,9 @@ public enum GeminiError: LocalizedError, Equatable {
     case blocked
     /// 200 OK but not the JSON we asked for.
     case unreadableResponse
+    /// The API rejected the request itself (400) — usually a generation
+    /// parameter this model does not support.
+    case badRequest(String)
     /// Anything else, with Google's own message.
     case other(String)
 
@@ -47,7 +50,7 @@ public enum GeminiError: LocalizedError, Equatable {
             return String(localized: "Gemini declined to explain this line (safety filter).")
         case .unreadableResponse:
             return String(localized: "Gemini sent an answer VPlayer could not read.")
-        case .other(let message):
+        case .badRequest(let message), .other(let message):
             return String(localized: "Gemini error: \(message)")
         }
     }
@@ -70,7 +73,7 @@ public enum GeminiError: LocalizedError, Equatable {
             return String(localized: "Check the connection and try again.")
         case .blocked:
             return String(localized: "Try a different line.")
-        case .unreadableResponse, .other:
+        case .unreadableResponse, .badRequest, .other:
             return String(localized: "Try again; if it keeps failing, report the line to the developer.")
         }
     }
@@ -96,6 +99,8 @@ public enum GeminiError: LocalizedError, Equatable {
         switch status {
         case 400 where reasons.contains("API_KEY_INVALID") || message.localizedCaseInsensitiveContains("API key"):
             return .invalidKey
+        case 400:
+            return .badRequest(message)
         case 401:
             return .invalidKey
         case 403:

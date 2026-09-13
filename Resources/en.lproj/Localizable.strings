@@ -183,3 +183,7 @@
 "Flash models are the cheap, fast ones and have a free tier; Flash-Lite is cheaper still but explains idioms less well. Pro models are noticeably more expensive." = "Flash models are the cheap, fast ones and have a free tier; Flash-Lite is cheaper still but explains idioms less well. Pro models are noticeably more expensive.";
 "Deep analysis (slower and more expensive)" = "Deep analysis (slower and more expensive)";
 "Lets the model think longer before answering. Rarely needed for a single line." = "Lets the model think longer before answering. Rarely needed for a single line.";
+"%lld tokens" = "%lld tokens";
+"· thinking %lld" = "· thinking %lld";
+"· session %lld" = "· session %lld";
+"Prompt %lld, answer %lld, thinking %lld tokens" = "Prompt %1$lld, answer %2$lld, thinking %3$lld tokens";

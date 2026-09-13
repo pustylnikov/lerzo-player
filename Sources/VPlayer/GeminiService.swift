@@ -46,6 +46,29 @@ public final class GeminiService: ObservableObject {
     }
     @Published public var isLoading: Bool = false
     @Published public var lastExplanation: SubtitleExplanation? = nil
+    /// Token usage of the last request and the running total since launch.
+    @Published public var lastUsage: TokenUsage? = nil
+    @Published public var sessionUsage = TokenUsage()
+
+    public struct TokenUsage: Equatable {
+        public var prompt = 0
+        public var output = 0
+        public var thoughts = 0
+        public var total: Int { prompt + output + thoughts }
+
+        init() {}
+        /// From `usageMetadata` of a generateContent response.
+        init?(metadata: [String: Any]?) {
+            guard let metadata else { return nil }
+            prompt = metadata["promptTokenCount"] as? Int ?? 0
+            output = metadata["candidatesTokenCount"] as? Int ?? 0
+            thoughts = metadata["thoughtsTokenCount"] as? Int ?? 0
+            guard total > 0 else { return nil }
+        }
+        static func + (a: TokenUsage, b: TokenUsage) -> TokenUsage {
+            var r = a; r.prompt += b.prompt; r.output += b.output; r.thoughts += b.thoughts; return r
+        }
+    }
     @Published public var errorMessage: String? = nil
 
     public init() {
@@ -142,18 +165,23 @@ public final class GeminiService: ObservableObject {
         // model was retired (404 → discover a current one), or the model does
         // not accept a thinking config (400 → send the request without it).
         var model = selectedModel
-        var withThinking = true
+        var withThinking = !Self.thinkingUnsupported.contains(model)
         var data: Data
         while true {
             let request = try Self.generateRequest(model: model, key: cleanKey, prompt: prompt,
-                                                   thinking: withThinking ? Self.thinkingConfig(for: model, deep: deepThinking) : nil)
+                                                   thinking: withThinking ? Self.thinkingConfig(for: model, deep: deepThinking) : nil,
+                                                   deep: deepThinking)
             do {
                 data = try await Self.perform(request, model: model)
                 break
             } catch GeminiError.modelNotFound where model == selectedModel {
                 model = try await discoverModel(key: cleanKey)
-            } catch GeminiError.other(let message) where withThinking && message.localizedCaseInsensitiveContains("thinking") {
+                withThinking = !Self.thinkingUnsupported.contains(model)
+            } catch GeminiError.badRequest where withThinking {
+                // Whatever the wording, the only thing we send that varies by
+                // model is the thinking config — drop it for this model from now on.
                 withThinking = false
+                Self.thinkingUnsupported.insert(model)
             }
         }
         
@@ -192,8 +220,11 @@ public final class GeminiService: ObservableObject {
             throw GeminiError.unreadableResponse
         }
         
+        let usage = TokenUsage(metadata: jsonObject?["usageMetadata"] as? [String: Any])
         await MainActor.run {
             self.lastExplanation = explanation
+            self.lastUsage = usage
+            if let usage { self.sessionUsage = self.sessionUsage + usage }
         }
         
         return explanation
@@ -300,15 +331,16 @@ public final class GeminiService: ObservableObject {
         return request
     }
 
-    private static func generateRequest(model: String, key: String, prompt: String, thinking: [String: Any]?) throws -> URLRequest {
+    private static func generateRequest(model: String, key: String, prompt: String, thinking: [String: Any]?, deep: Bool) throws -> URLRequest {
         var request = try makeRequest(path: "models/\(model):generateContent", key: key)
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         var generationConfig: [String: Any] = [
             "temperature": 0.3,
             "responseMimeType": "application/json",
-            // The answer is a short JSON object; this only guards against runaway output.
-            "maxOutputTokens": 2048
+            // The answer is a short JSON object; this only guards against runaway
+            // output. The limit includes thinking tokens, so deep mode gets more room.
+            "maxOutputTokens": deep ? 16384 : 4096
         ]
         if let thinking { generationConfig["thinkingConfig"] = thinking }
         let body: [String: Any] = [
@@ -319,12 +351,29 @@ public final class GeminiService: ObservableObject {
         return request
     }
 
-    /// Gemini 3+ takes a level; 2.5 takes a token budget (-1 = dynamic, 0 = off).
-    static func thinkingConfig(for model: String, deep: Bool) -> [String: Any] {
-        if version(model) >= 3 {
-            return ["thinkingLevel": deep ? "high" : "low"]
+    /// Models that answered 400 to a thinking config; persisted so the extra
+    /// round trip happens once per model, not once per line.
+    private static var thinkingUnsupported: Set<String> = Set(UserDefaults.standard.stringArray(forKey: "VPlayer.geminiNoThinking") ?? []) {
+        didSet { UserDefaults.standard.set(Array(thinkingUnsupported).sorted(), forKey: "VPlayer.geminiNoThinking") }
+    }
+
+    /// Per the REST reference, `thinkingLevel` is for Gemini 3+ ("use with
+    /// earlier models results in an error"), `thinkingBudget` for 2.5, and
+    /// older models have no thinking at all. Of the levels, only LOW/HIGH are
+    /// accepted by every 3.x model (MINIMAL is not on 3.7/3.8 Flash and Pro).
+    /// Budgets: 2.5 Pro cannot go below 128, 2.5 Flash/Flash-Lite accept 0 = off,
+    /// -1 = dynamic on all of them. Anything the model still rejects is caught
+    /// by the 400 fallback in `explain`.
+    static func thinkingConfig(for model: String, deep: Bool) -> [String: Any]? {
+        let v = version(model)
+        if v >= 3 {
+            return ["thinkingLevel": deep ? "HIGH" : "LOW"]
         }
-        return ["thinkingBudget": deep ? -1 : 0]
+        if v >= 2.5 {
+            let minimum = model.contains("pro") ? 128 : 0
+            return ["thinkingBudget": deep ? -1 : minimum]
+        }
+        return nil
     }
 
     /// Runs the request and maps every failure — transport or HTTP — to `GeminiError`.

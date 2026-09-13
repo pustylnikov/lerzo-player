@@ -181,3 +181,7 @@
 "Flash models are the cheap, fast ones and have a free tier; Flash-Lite is cheaper still but explains idioms less well. Pro models are noticeably more expensive." = "Flash — быстрые и дешёвые модели с бесплатным лимитом; Flash-Lite ещё дешевле, но хуже объясняет идиомы. Pro заметно дороже.";
 "Deep analysis (slower and more expensive)" = "Глубокий разбор (медленнее и дороже)";
 "Lets the model think longer before answering. Rarely needed for a single line." = "Даёт модели дольше подумать перед ответом. Для одной реплики почти никогда не нужно.";
+"%lld tokens" = "%lld токенов";
+"· thinking %lld" = "· размышления %lld";
+"· session %lld" = "· за сеанс %lld";
+"Prompt %lld, answer %lld, thinking %lld tokens" = "Запрос %1$lld, ответ %2$lld, размышления %3$lld токенов";
