@@ -12,14 +12,16 @@
 #
 # Sparkle: after notarization the DMG is EdDSA-signed with the key in the keychain
 # (generate_keys, public half in build_app.sh) and dist/appcast.xml is written. The
-# appcast lives at $FEED_URL (SUFeedURL in build_app.sh) and points at the DMG under
+# appcast lives at $FEED_URL/appcast.xml (SUFeedURL in build_app.sh) and points at the DMG under
 # $DOWNLOAD_URL — by default the GitHub release for tag v$VERSION.
 # RELEASE_NOTES=notes.md (or .html/.txt) embeds release notes in the appcast entry and
 # on the GitHub release.
 #
 # PUBLISH=1 additionally creates the GitHub release with the DMG attached (needs `gh`
 # logged in and HEAD pushed to origin); only a notarized build can be published.
-# Afterwards upload dist/appcast.xml to $FEED_URL yourself.
+# Afterwards the appcast goes live through the landing site: copy dist/appcast.xml to
+# <landing>/public/player/appcast.xml, run `yarn sync:player` there, build and deploy
+# (see the "Lerzo Player page" section of the landing README).
 #
 # The DMG also carries a "Source code" folder: a `git archive` of the released commit
 # plus THIRD-PARTY-SOURCES.md listing every bundled library with its exact version and
@@ -39,7 +41,7 @@ SIGN_IDENTITY="${SIGN_IDENTITY:--}"
 NOTARY_PROFILE="${NOTARY_PROFILE:-}"
 BREW_PREFIX="$(brew --prefix)"
 GITHUB_REPO="pustylnikov/lerzo-player"
-FEED_URL="https://lerzowords.com/player/"
+FEED_URL="https://lerzowords.com/player"   # landing page; the appcast itself is $FEED_URL/appcast.xml
 RELEASE_NOTES="${RELEASE_NOTES:-}"
 PUBLISH="${PUBLISH:-}"
 SPARKLE_DIR="$DIR/.build/artifacts/sparkle/Sparkle"
@@ -239,7 +241,8 @@ if [ -n "$PUBLISH" ]; then
     gh release create "$TAG" "$DMG" --repo "$GITHUB_REPO" --target "$(git rev-parse HEAD)" \
         --title "$APP_NAME $VERSION" "${NOTES_ARGS[@]}"
     echo "✅ https://github.com/$GITHUB_REPO/releases/tag/$TAG"
-    echo "   Now upload $OUT/appcast.xml to $FEED_URL"
+    echo "   Now publish the appcast through the landing site:"
+    echo "     cp $OUT/appcast.xml <landing>/public/player/appcast.xml && yarn sync:player && yarn build && firebase deploy"
 else
     echo "✅ $DMG ($(du -h "$DMG" | cut -f1))"
     echo "   Not published (PUBLISH=1 creates the GitHub release); appcast points at $DOWNLOAD_URL"

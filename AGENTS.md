@@ -24,8 +24,12 @@
   install names, подписывает, ноутаризует, собирает DMG с папкой «Source code», затем
   подписывает DMG ключом Sparkle и пишет `dist/appcast.xml`; с `PUBLISH=1` создаёт релиз
   `v<версия>` на GitHub (`pustylnikov/lerzo-player`, через `gh`) с DMG. Appcast лежит на
-  лендинге (`https://lerzowords.com/player/appcast.xml`, выкладывается вручную), а
-  `enclosure url` в нём ведёт на GitHub Releases (см. шапку скрипта).
+  лендинге Lerzo (`https://lerzowords.com/player/appcast.xml`), а `enclosure url` в нём
+  ведёт на GitHub Releases (см. шапку скрипта). Лендинг — отдельный репозиторий
+  `/Volumes/MacDrive/Projects/anvilapp/projects/corewords/landing` (Next.js, статический
+  экспорт, Firebase Hosting): страница `/player` берёт версию, размер и ссылку на DMG
+  из `public/player/appcast.xml` через `yarn sync:player`; порядок публикации описан в
+  разделе «Lerzo Player page» его README.
 - Обновления: Sparkle 2 через SwiftPM (binary artifact в `.build/artifacts/sparkle`, там же
   `bin/generate_keys`, `sign_update`, `generate_appcast`). Фид
   `https://lerzowords.com/player/appcast.xml`, публичный ключ EdDSA — в шаблоне Info.plist

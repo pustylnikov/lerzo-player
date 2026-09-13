@@ -24,3 +24,5 @@ dist/
 
 # Author's private task list
 TODO.md
+.claude/launch.json
+test_media/sintel/
