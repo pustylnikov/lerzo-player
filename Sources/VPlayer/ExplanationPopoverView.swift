@@ -34,7 +34,7 @@ public struct ExplanationPopoverView: View {
                         Image(systemName: "sparkles")
                             .font(.system(size: 16, weight: .bold))
                             .foregroundColor(.yellow)
-                        Text("ИИ Разбор диалога")
+                        Text("AI Dialogue Breakdown")
                             .font(.system(size: 16, weight: .bold))
                             .foregroundColor(.white)
                     }
@@ -87,7 +87,7 @@ public struct ExplanationPopoverView: View {
                     }) {
                         HStack(spacing: 5) {
                             Image(systemName: "arrow.counterclockwise.circle")
-                            Text("Повторить фразу (R)")
+                            Text("Replay line (R)")
                         }
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundColor(.yellow)
@@ -106,7 +106,7 @@ public struct ExplanationPopoverView: View {
                     }) {
                         HStack(spacing: 5) {
                             Image(systemName: "play.fill")
-                            Text("Продолжить (Пробел)")
+                            Text("Continue (Space)")
                         }
                         .font(.system(size: 12, weight: .bold))
                         .foregroundColor(.black)
@@ -142,7 +142,7 @@ public struct ExplanationPopoverView: View {
                 .scaleEffect(1.2)
                 .colorInvert()
             
-            Text("Gemini анализирует контекст реплики и идиомы...")
+            Text("Gemini is analyzing the line's context and idioms...")
                 .font(.system(size: 13, weight: .medium))
                 .foregroundColor(.white.opacity(0.8))
         }
@@ -166,7 +166,7 @@ public struct ExplanationPopoverView: View {
                     isOpen = false
                     isSettingsOpen = true
                 }) {
-                    Text("Ввести Gemini API ключ в Настройках")
+                    Text("Enter Gemini API key in Settings")
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(.black)
                         .padding(.horizontal, 14)
@@ -176,7 +176,7 @@ public struct ExplanationPopoverView: View {
                 }
                 .buttonStyle(.plain)
             } else {
-                Button("Повторить запрос") {
+                Button("Try again") {
                     fetchExplanation()
                 }
                 .buttonStyle(.borderedProminent)
@@ -191,7 +191,7 @@ public struct ExplanationPopoverView: View {
             Image(systemName: "text.bubble")
                 .font(.system(size: 32))
                 .foregroundColor(.white.opacity(0.5))
-            Text("В данный момент нет активных субтитров.")
+            Text("No active subtitles right now.")
                 .font(.system(size: 13))
                 .foregroundColor(.white.opacity(0.7))
         }
@@ -204,7 +204,7 @@ public struct ExplanationPopoverView: View {
             VStack(alignment: .leading, spacing: 14) {
                 // Original sentence
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Оригинал:")
+                    Text("Original:")
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundColor(.white.opacity(0.5))
                         .textCase(.uppercase)
@@ -219,7 +219,7 @@ public struct ExplanationPopoverView: View {
                 
                 // Translation
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Контекстный перевод:")
+                    Text("Contextual translation:")
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundColor(.yellow)
                         .textCase(.uppercase)
@@ -239,7 +239,7 @@ public struct ExplanationPopoverView: View {
                 // Idioms & Slang (if any)
                 if !expl.idioms.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Идиомы и устойчивые выражения:")
+                        Text("Idioms and set phrases:")
                             .font(.system(size: 12, weight: .bold))
                             .foregroundColor(.white.opacity(0.8))
                         
@@ -251,11 +251,11 @@ public struct ExplanationPopoverView: View {
                                         .foregroundColor(.yellow)
                                     Spacer()
                                 }
-                                Text("Значение: \(item.actualMeaning)")
+                                Text("Meaning: \(item.actualMeaning)")
                                     .font(.system(size: 12, weight: .medium))
                                     .foregroundColor(.white)
                                 if !item.literalMeaning.isEmpty {
-                                    Text("Дословно: \(item.literalMeaning)")
+                                    Text("Literally: \(item.literalMeaning)")
                                         .font(.system(size: 11))
                                         .foregroundColor(.white.opacity(0.6))
                                 }
@@ -271,7 +271,7 @@ public struct ExplanationPopoverView: View {
                 // Difficult Words
                 if !expl.difficultWords.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Полезные слова из фразы:")
+                        Text("Useful words from the line:")
                             .font(.system(size: 12, weight: .bold))
                             .foregroundColor(.white.opacity(0.8))
                         
@@ -302,7 +302,7 @@ public struct ExplanationPopoverView: View {
                 // Context Note
                 if let note = expl.contextNote, !note.isEmpty {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("💡 Контекст и интонация сцены:")
+                        Text("💡 Scene context and tone:")
                             .font(.system(size: 11, weight: .bold))
                             .foregroundColor(.white.opacity(0.7))
                         Text(note)
@@ -323,7 +323,7 @@ public struct ExplanationPopoverView: View {
     private func fetchExplanation() {
         let sub = player.currentSubText.isEmpty ? (player.subtitleHistory.last ?? "") : player.currentSubText
         guard !sub.isEmpty else {
-            errorText = "Субтитры сейчас пусты. Включите видео и нажмите паузу на непонятной реплике."
+            errorText = String(localized: "There are no subtitles right now. Play the video and pause on a line you don't understand.")
             return
         }
         

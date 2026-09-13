@@ -1,0 +1,152 @@
+/* VPlayer — English UI strings (the source language). */
+
+/* VPlayer — Russian UI strings. Keys are the English source strings. */
+
+/* Menus */
+"Settings..." = "Settings...";
+"Open Video File..." = "Open Video File...";
+"Playback" = "Playback";
+"Play / Pause" = "Play / Pause";
+"Replay Line" = "Replay Line";
+"Next Line" = "Next Line";
+"Back 5 Seconds" = "Back 5 Seconds";
+"Forward 5 Seconds" = "Forward 5 Seconds";
+"Mute / Unmute" = "Mute / Unmute";
+"Language Learning (AI)" = "Language Learning (AI)";
+"Explain Line with Gemini" = "Explain Line with Gemini";
+
+/* Welcome screen */
+"Loading video..." = "Loading video...";
+"VPlayer — a player for language learning" = "VPlayer — a player for language learning";
+"Drop a movie here (MKV, MP4) or click the button below" = "Drop a movie here (MKV, MP4) or click the button below";
+"Choose a video..." = "Choose a video...";
+"Open the sample MKV with subtitles" = "Open the sample MKV with subtitles";
+"TAB: peek at the translation" = "TAB: peek at the translation";
+"Gemini: idioms and slang explained" = "Gemini: idioms and slang explained";
+"R: replay the current line" = "R: replay the current line";
+"Choose a video file" = "Choose a video file";
+
+/* Controls bar */
+"Open" = "Open";
+"Open a video file (Cmd + O)" = "Open a video file (Cmd + O)";
+"HDR video is output in HDR" = "HDR video is output in HDR";
+"HDR video is tone-mapped to SDR (the display does not support HDR, or HDR output is disabled in Settings)" = "HDR video is tone-mapped to SDR (the display does not support HDR, or HDR output is disabled in Settings)";
+"Primary track (original language):" = "Primary track (original language):";
+"✓ No subtitles" = "✓ No subtitles";
+"Turn off" = "Turn off";
+"✓ (Peek) %@" = "✓ (Peek) %@";
+"(Peek) %@" = "(Peek) %@";
+"Track %lld" = "Track %lld";
+"Second track (translation to peek at with TAB):" = "Second track (translation to peek at with TAB):";
+"✓ No second track" = "✓ No second track";
+"Subtitles" = "Subtitles";
+"Subtitles become available once a video with subtitle tracks is loaded" = "Subtitles become available once a video with subtitle tracks is loaded";
+"Choose a subtitle track" = "Choose a subtitle track";
+"Audio" = "Audio";
+"Audio tracks become available once a video is loaded" = "Audio tracks become available once a video is loaded";
+"Choose an audio track" = "Choose an audio track";
+"Explain line" = "Explain line";
+"Explain the current line and its idioms with Gemini (Cmd + G)" = "Explain the current line and its idioms with Gemini (Cmd + G)";
+"Subtitle and Gemini API settings (Cmd + ,)" = "Subtitle and Gemini API settings (Cmd + ,)";
+"Play / Pause (Space)" = "Play / Pause (Space)";
+"Replay" = "Replay";
+"Replay the current line from the start (R)" = "Replay the current line from the start (R)";
+"Back 5 seconds (Left Arrow)" = "Back 5 seconds (Left Arrow)";
+"Forward 5 seconds (Right Arrow)" = "Forward 5 seconds (Right Arrow)";
+"Jump to the next line (E)" = "Jump to the next line (E)";
+"Playback speed ([ slower, ] faster, Backspace — 1×)" = "Playback speed ([ slower, ] faster, Backspace — 1×)";
+"Peek translation" = "Peek translation";
+"Hold TAB to quickly see the translation from the second subtitle track" = "Hold TAB to quickly see the translation from the second subtitle track";
+"Full screen (F)" = "Full screen (F)";
+
+/* Subtitles layer */
+"AI" = "AI";
+"Explain this line with Gemini AI (Cmd + G)" = "Explain this line with Gemini AI (Cmd + G)";
+
+/* On-screen display */
+"Speed %@" = "Speed %@";
+"Muted" = "Muted";
+"Volume %lld%%" = "Volume %lld%%";
+"%@%lld s  ·  %@" = "%@%lld s  ·  %@";
+"Replay line" = "Replay line";
+"Next line" = "Next line";
+
+/* Explanation popover */
+"AI Dialogue Breakdown" = "AI Dialogue Breakdown";
+"Replay line (R)" = "Replay line (R)";
+"Continue (Space)" = "Continue (Space)";
+"Gemini is analyzing the line's context and idioms..." = "Gemini is analyzing the line's context and idioms...";
+"Enter Gemini API key in Settings" = "Enter Gemini API key in Settings";
+"Try again" = "Try again";
+"No active subtitles right now." = "No active subtitles right now.";
+"Original:" = "Original:";
+"Contextual translation:" = "Contextual translation:";
+"Idioms and set phrases:" = "Idioms and set phrases:";
+"Meaning: %@" = "Meaning: %@";
+"Literally: %@" = "Literally: %@";
+"Useful words from the line:" = "Useful words from the line:";
+"💡 Scene context and tone:" = "💡 Scene context and tone:";
+"There are no subtitles right now. Play the video and pause on a line you don't understand." = "There are no subtitles right now. Play the video and pause on a line you don't understand.";
+
+/* Gemini errors */
+"Gemini API key is not set. Please enter it in the player settings (⚙️ icon)." = "Gemini API key is not set. Please enter it in the player settings (⚙️ icon).";
+"Gemini API error (%lld): %@" = "Gemini API error (%lld): %@";
+"Could not read the Gemini response" = "Could not read the Gemini response";
+"JSON encoding error" = "JSON encoding error";
+
+/* Settings */
+"VPlayer Settings" = "VPlayer Settings";
+"Gemini API Integration" = "Gemini API Integration";
+"The key is used for contextual translation and for explaining slang and idioms from the movie." = "The key is used for contextual translation and for explaining slang and idioms from the movie.";
+"Get a free API key in Google AI Studio ↗" = "Get a free API key in Google AI Studio ↗";
+"Key is set" = "Key is set";
+"Google AI Studio API Key:" = "Google AI Studio API Key:";
+"Languages" = "Languages";
+"When a file opens, the player picks the audio and subtitles in the language you are learning, and subtitles in your native language for the TAB peek. The AI breakdown is in your native language too." = "When a file opens, the player picks the audio and subtitles in the language you are learning, and subtitles in your native language for the TAB peek. The AI breakdown is in your native language too.";
+"Interface language:" = "Interface language:";
+"The interface language changes after VPlayer is relaunched." = "The interface language changes after VPlayer is relaunched.";
+"Relaunch Now" = "Relaunch Now";
+"I'm learning:" = "I'm learning:";
+"Don't select automatically" = "Don't select automatically";
+"Native language:" = "Native language:";
+"Same as system" = "Same as system";
+"Same as system (%@)" = "Same as system (%@)";
+"Your native language is the same as the one you're learning — no translation subtitles will be selected." = "Your native language is the same as the one you're learning — no translation subtitles will be selected.";
+"Playback Behavior" = "Playback Behavior";
+"Pause while peeking at the translation (TAB)" = "Pause while peeking at the translation (TAB)";
+"While TAB is held the video pauses; it resumes when released." = "While TAB is held the video pauses; it resumes when released.";
+"Output HDR video in HDR" = "Output HDR video in HDR";
+"This display supports HDR. When off, HDR video is tone-mapped to SDR." = "This display supports HDR. When off, HDR video is tone-mapped to SDR.";
+"This display does not support HDR — video is tone-mapped to SDR. The setting takes effect on an HDR display." = "This display does not support HDR — video is tone-mapped to SDR. The setting takes effect on an HDR display.";
+"Subtitle Appearance" = "Subtitle Appearance";
+"Subtitle font size:" = "Subtitle font size:";
+"Translation size (TAB):" = "Translation size (TAB):";
+"%lld%% of primary" = "%lld%% of primary";
+"Font:" = "Font:";
+"System" = "System";
+"Text color:" = "Text color:";
+"Outline width:" = "Outline width:";
+"none" = "none";
+"Outline color:" = "Outline color:";
+"Background opacity:" = "Background opacity:";
+"no background" = "no background";
+"%lld%%" = "%lld%%";
+"Bottom inset:" = "Bottom inset:";
+"%lld%% of height" = "%lld%% of height";
+"On-screen preview:" = "On-screen preview:";
+"Reset style" = "Reset style";
+"Keyboard Shortcuts" = "Keyboard Shortcuts";
+"Hold: instantly peek at the translation (second subtitle track)" = "Hold: instantly peek at the translation (second subtitle track)";
+"Replay the current line from the start" = "Replay the current line from the start";
+"Jump to the next line of dialogue" = "Jump to the next line of dialogue";
+"AI breakdown of the current line with Gemini" = "AI breakdown of the current line with Gemini";
+"Space" = "Space";
+"Pause / Play" = "Pause / Play";
+"Seek 5 seconds back / forward" = "Seek 5 seconds back / forward";
+"Volume +5% / −5%" = "Volume +5% / −5%";
+"Mute / unmute" = "Mute / unmute";
+"Speed: slower / faster by 0.1×" = "Speed: slower / faster by 0.1×";
+"Reset speed to 1×" = "Reset speed to 1×";
+"Full screen" = "Full screen";
+"Open a video or an external subtitle file" = "Open a video or an external subtitle file";
+"Done" = "Done";

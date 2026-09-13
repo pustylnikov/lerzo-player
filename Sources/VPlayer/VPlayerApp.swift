@@ -53,55 +53,55 @@ struct VPlayerApp: App {
         .windowStyle(.hiddenTitleBar)
         .commands {
             CommandGroup(replacing: .appSettings) {
-                Button("Настройки...") {
+                Button("Settings...") {
                     NotificationCenter.default.post(name: NSNotification.Name("OpenSettings"), object: nil)
                 }
                 .keyboardShortcut(",", modifiers: .command)
             }
             
             CommandGroup(replacing: .newItem) {
-                Button("Открыть видеофайл...") {
+                Button("Open Video File...") {
                     KeyboardMonitor.shared.onOpenFileRequested?()
                 }
                 .keyboardShortcut("o", modifiers: .command)
             }
             
-            CommandMenu("Воспроизведение") {
-                Button("Воспроизведение / Пауза") {
+            CommandMenu("Playback") {
+                Button("Play / Pause") {
                     MPVPlayer.shared.togglePlayPause()
                 }
                 .keyboardShortcut(.space, modifiers: [])
                 
-                Button("Повторить реплику сначала") {
+                Button("Replay Line") {
                     MPVPlayer.shared.seekSubtitle(direction: 0)
                 }
                 .keyboardShortcut("r", modifiers: [])
                 
-                Button("Следующая реплика") {
+                Button("Next Line") {
                     MPVPlayer.shared.seekSubtitle(direction: 1)
                 }
                 .keyboardShortcut("e", modifiers: [])
                 
                 Divider()
                 
-                Button("Перемотка -5 сек") {
+                Button("Back 5 Seconds") {
                     MPVPlayer.shared.seekRelative(seconds: -5)
                 }
                 .keyboardShortcut(.leftArrow, modifiers: [])
                 
-                Button("Перемотка +5 сек") {
+                Button("Forward 5 Seconds") {
                     MPVPlayer.shared.seekRelative(seconds: 5)
                 }
                 .keyboardShortcut(.rightArrow, modifiers: [])
 
-                Button("Вкл/выкл звук") {
+                Button("Mute / Unmute") {
                     MPVPlayer.shared.toggleMute()
                 }
                 .keyboardShortcut("m", modifiers: [])
             }
             
-            CommandMenu("Изучение языка (ИИ)") {
-                Button("Разобрать реплику с Gemini") {
+            CommandMenu("Language Learning (AI)") {
+                Button("Explain Line with Gemini") {
                     KeyboardMonitor.shared.onExplainRequested?()
                 }
                 .keyboardShortcut("g", modifiers: .command)

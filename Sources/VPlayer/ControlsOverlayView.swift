@@ -80,7 +80,7 @@ public struct ControlsOverlayView: View {
             Button(action: onOpenFile) {
                 HStack(spacing: 6) {
                     Image(systemName: "folder.badge.plus")
-                    Text("Открыть")
+                    Text("Open")
                 }
                 .font(.system(size: 12, weight: .medium))
                 .foregroundColor(.white)
@@ -91,7 +91,7 @@ public struct ControlsOverlayView: View {
             }
             .buttonStyle(.plain)
             .keyboardShortcut("o", modifiers: .command)
-            .help("Открыть видеофайл (Cmd + O)")
+            .help("Open a video file (Cmd + O)")
             
             // Media Title
             if !player.mediaTitle.isEmpty {
@@ -114,15 +114,15 @@ public struct ControlsOverlayView: View {
                         RoundedRectangle(cornerRadius: 4)
                             .fill(passthrough ? Color.yellow : Color.white.opacity(0.15))
                     )
-                    .help(passthrough ? "HDR-видео выводится в HDR" : "HDR-видео преобразуется в SDR (дисплей не поддерживает HDR или вывод отключён в настройках)")
+                    .help(passthrough ? "HDR video is output in HDR" : "HDR video is tone-mapped to SDR (the display does not support HDR, or HDR output is disabled in Settings)")
             }
             
             Spacer()
             
             // Subtitle Selection Menu
             Menu {
-                Text("Основная дорожка (язык оригинала):").font(.caption)
-                Button(player.currentPrimarySubId == nil ? "✓ Без субтитров" : "Отключить") {
+                Text("Primary track (original language):").font(.caption)
+                Button(player.currentPrimarySubId == nil ? "✓ No subtitles" : "Turn off") {
                     player.setPrimarySubtitle(trackId: nil)
                 }
                 ForEach(player.subtitleTracks) { track in
@@ -137,8 +137,8 @@ public struct ControlsOverlayView: View {
                 
                 Divider()
                 
-                Text("Вторая дорожка (перевод для подглядывания по TAB):").font(.caption)
-                Button(player.currentSecondarySubId == nil ? "✓ Без вторичных" : "Отключить") {
+                Text("Second track (translation to peek at with TAB):").font(.caption)
+                Button(player.currentSecondarySubId == nil ? "✓ No second track" : "Turn off") {
                     player.setSecondarySubtitle(trackId: nil)
                 }
                 ForEach(player.subtitleTracks) { track in
@@ -153,7 +153,7 @@ public struct ControlsOverlayView: View {
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: "captions.bubble.fill")
-                    Text("Субтитры")
+                    Text("Subtitles")
                 }
                 .font(.system(size: 12, weight: .medium))
                 .foregroundColor(.white)
@@ -164,7 +164,7 @@ public struct ControlsOverlayView: View {
             }
             .menuStyle(.borderlessButton)
             .disabled(player.subtitleTracks.isEmpty)
-            .help(player.subtitleTracks.isEmpty ? "Субтитры станут доступны после загрузки видео с дорожками" : "Выбрать дорожку субтитров")
+            .help(player.subtitleTracks.isEmpty ? "Subtitles become available once a video with subtitle tracks is loaded" : "Choose a subtitle track")
             
             // Audio Track Selection Menu
             Menu {
@@ -180,7 +180,7 @@ public struct ControlsOverlayView: View {
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: "speaker.wave.2.fill")
-                    Text("Аудио")
+                    Text("Audio")
                 }
                 .font(.system(size: 12, weight: .medium))
                 .foregroundColor(.white)
@@ -191,7 +191,7 @@ public struct ControlsOverlayView: View {
             }
             .menuStyle(.borderlessButton)
             .disabled(player.audioTracks.isEmpty)
-            .help(player.audioTracks.isEmpty ? "Аудиодорожки станут доступны после загрузки видео" : "Выбрать аудиодорожку")
+            .help(player.audioTracks.isEmpty ? "Audio tracks become available once a video is loaded" : "Choose an audio track")
             
             // Gemini AI Explain Action Button
             Button(action: {
@@ -201,7 +201,7 @@ public struct ControlsOverlayView: View {
                 HStack(spacing: 5) {
                     Image(systemName: "sparkles")
                         .foregroundColor(.yellow)
-                    Text("Разбор реплики")
+                    Text("Explain line")
                         .foregroundColor(.white)
                 }
                 .font(.system(size: 12, weight: .semibold))
@@ -216,7 +216,7 @@ public struct ControlsOverlayView: View {
             }
             .buttonStyle(.plain)
             .keyboardShortcut("g", modifiers: .command)
-            .help("Разобрать текущую реплику и идиомы через Gemini (Cmd + G)")
+            .help("Explain the current line and its idioms with Gemini (Cmd + G)")
             .disabled(!canControlPlayback)
             
             // Settings Button
@@ -230,7 +230,7 @@ public struct ControlsOverlayView: View {
             }
             .buttonStyle(.plain)
             .keyboardShortcut(",", modifiers: .command)
-            .help("Настройки субтитров и Gemini API (Cmd + ,)")
+            .help("Subtitle and Gemini API settings (Cmd + ,)")
         }
     }
     
@@ -323,19 +323,19 @@ public struct ControlsOverlayView: View {
                         .frame(width: 22, height: 22)
                 }
                 .buttonStyle(.plain)
-                .help("Воспроизведение / Пауза (Пробел)")
+                .help("Play / Pause (Space)")
                 
                 // Replay Current Subtitle Line (Language Learning Feature!)
                 Button(action: { player.seekSubtitle(direction: 0) }) {
                     HStack(spacing: 3) {
                         Image(systemName: "arrow.counterclockwise.circle.fill")
-                        Text("Фраза")
+                        Text("Replay")
                             .font(.system(size: 11, weight: .bold))
                     }
                     .foregroundColor(.yellow)
                 }
                 .buttonStyle(.plain)
-                .help("Повторить текущую реплику сначала (клавиша R)")
+                .help("Replay the current line from the start (R)")
                 
                 // Skip -5s
                 Button(action: { player.seekRelative(seconds: -5) }) {
@@ -344,7 +344,7 @@ public struct ControlsOverlayView: View {
                         .foregroundColor(.white.opacity(0.85))
                 }
                 .buttonStyle(.plain)
-                .help("Назад на 5 секунд (Стрелка влево)")
+                .help("Back 5 seconds (Left Arrow)")
                 
                 // Skip +5s
                 Button(action: { player.seekRelative(seconds: 5) }) {
@@ -353,7 +353,7 @@ public struct ControlsOverlayView: View {
                         .foregroundColor(.white.opacity(0.85))
                 }
                 .buttonStyle(.plain)
-                .help("Вперед на 5 секунд (Стрелка вправо)")
+                .help("Forward 5 seconds (Right Arrow)")
                 
                 // Next Subtitle Line
                 Button(action: { player.seekSubtitle(direction: 1) }) {
@@ -362,7 +362,7 @@ public struct ControlsOverlayView: View {
                         .foregroundColor(.white.opacity(0.85))
                 }
                 .buttonStyle(.plain)
-                .help("К следующей реплике (клавиша E)")
+                .help("Jump to the next line (E)")
                 
                 // Volume Control
                 HStack(spacing: 6) {
@@ -404,7 +404,7 @@ public struct ControlsOverlayView: View {
                 .menuStyle(.borderlessButton)
                 .menuIndicator(.hidden)
                 .fixedSize()
-                .help("Скорость воспроизведения ([ медленнее, ] быстрее, Backspace — 1×)")
+                .help("Playback speed ([ slower, ] faster, Backspace — 1×)")
                 
                 Spacer()
                 
@@ -416,7 +416,7 @@ public struct ControlsOverlayView: View {
                         .padding(.vertical, 2)
                         .background(Color.white.opacity(0.2))
                         .cornerRadius(4)
-                    Text("Подглядеть перевод")
+                    Text("Peek translation")
                         .font(.system(size: 11, weight: .medium))
                 }
                 .foregroundColor(.white.opacity(0.8))
@@ -424,7 +424,7 @@ public struct ControlsOverlayView: View {
                 .padding(.vertical, 4)
                 .background(Color.white.opacity(0.1))
                 .cornerRadius(6)
-                .help("Зажмите и удерживайте TAB, чтобы быстро увидеть перевод со второй дорожки субтитров")
+                .help("Hold TAB to quickly see the translation from the second subtitle track")
                 
                 // Fullscreen Toggle
                 Button(action: {
@@ -435,7 +435,7 @@ public struct ControlsOverlayView: View {
                         .foregroundColor(.white.opacity(0.85))
                 }
                 .buttonStyle(.plain)
-                .help("Полноэкранный режим (F)")
+                .help("Full screen (F)")
             }
         }
         .frame(maxWidth: .infinity)

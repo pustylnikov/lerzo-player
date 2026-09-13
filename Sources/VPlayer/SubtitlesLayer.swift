@@ -97,7 +97,7 @@ public struct SubtitlesLayer: View {
             HStack(spacing: 4) {
                 Image(systemName: "sparkles")
                     .font(.system(size: 12, weight: .bold))
-                Text("ИИ")
+                Text("AI")
                     .font(.system(size: 11, weight: .bold))
             }
             .foregroundColor(.black)
@@ -107,7 +107,7 @@ public struct SubtitlesLayer: View {
             .shadow(color: .black.opacity(0.35), radius: 3, x: 0, y: 1)
         }
         .buttonStyle(.plain)
-        .help("Объяснить эту фразу через Gemini AI (Cmd + G)")
+        .help("Explain this line with Gemini AI (Cmd + G)")
     }
 
     private var primaryFontSize: CGFloat { CGFloat(player.subFontSize) }

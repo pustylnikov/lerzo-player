@@ -22,6 +22,9 @@ mkdir -p "$RESOURCES"
 cp "$DIR/.build/release/VPlayer" "$MACOS/$APP_NAME"
 chmod +x "$MACOS/$APP_NAME"
 
+# UI translations
+cp -R "$DIR"/Resources/*.lproj "$RESOURCES/"
+
 # Ensure rpath points to Homebrew lib
 install_name_tool -add_rpath "/opt/homebrew/lib" "$MACOS/$APP_NAME" 2>/dev/null || true
 
@@ -33,6 +36,11 @@ cat << 'EOF' > "$CONTENTS/Info.plist"
 <dict>
     <key>CFBundleDevelopmentRegion</key>
     <string>en</string>
+    <key>CFBundleLocalizations</key>
+    <array>
+        <string>en</string>
+        <string>ru</string>
+    </array>
     <key>CFBundleExecutable</key>
     <string>VPlayer</string>
     <key>CFBundleIdentifier</key>

@@ -33,7 +33,7 @@ public struct SettingsView: View {
                     Image(systemName: "gearshape.fill")
                         .font(.system(size: 18))
                         .foregroundColor(.yellow)
-                    Text("Настройки VPlayer")
+                    Text("VPlayer Settings")
                         .font(.system(size: 18, weight: .bold))
                 }
                 
@@ -56,11 +56,11 @@ public struct SettingsView: View {
                         HStack {
                             Image(systemName: "sparkles")
                                 .foregroundColor(.yellow)
-                            Text("Интеграция с Gemini API")
+                            Text("Gemini API Integration")
                                 .font(.system(size: 14, weight: .bold))
                         }
                         
-                        Text("Ключ используется для контекстного перевода и разбора сленга/идиом из фильма.")
+                        Text("The key is used for contextual translation and for explaining slang and idioms from the movie.")
                             .font(.system(size: 12))
                             .foregroundColor(.secondary)
                         
@@ -86,7 +86,7 @@ public struct SettingsView: View {
                         }
                         
                         HStack {
-                            Link("Получить бесплатный API ключ в Google AI Studio ↗",
+                            Link("Get a free API key in Google AI Studio ↗",
                                  destination: URL(string: "https://aistudio.google.com/app/apikey")!)
                                 .font(.system(size: 11))
                                 .foregroundColor(.blue)
@@ -97,7 +97,7 @@ public struct SettingsView: View {
                                 HStack(spacing: 4) {
                                     Image(systemName: "checkmark.circle.fill")
                                         .foregroundColor(.green)
-                                    Text("Ключ активен")
+                                    Text("Key is set")
                                         .font(.system(size: 11, weight: .medium))
                                         .foregroundColor(.green)
                                 }
@@ -113,17 +113,43 @@ public struct SettingsView: View {
                         HStack {
                             Image(systemName: "globe")
                                 .foregroundColor(.yellow)
-                            Text("Языки")
+                            Text("Languages")
                                 .font(.system(size: 14, weight: .bold))
                         }
 
-                        Text("При открытии файла плеер сам выберет аудио и субтитры на изучаемом языке, а для подглядывания по TAB — субтитры на родном. ИИ-разбор тоже будет на родном языке.")
+                        Text("When a file opens, the player picks the audio and subtitles in the language you are learning, and subtitles in your native language for the TAB peek. The AI breakdown is in your native language too.")
                             .font(.system(size: 12))
                             .foregroundColor(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
 
                         HStack {
-                            Text("Изучаю:")
+                            Text("Interface language:")
+                                .font(.system(size: 12, weight: .medium))
+                            Spacer()
+                            Picker("", selection: $languages.uiLanguage) {
+                                Text("Same as system").tag(LanguagePreferences.system)
+                                Divider()
+                                ForEach(LanguagePreferences.uiLanguages, id: \.self) { code in
+                                    Text(LanguagePreferences.nativeDisplayName(forUILanguage: code)).tag(code)
+                                }
+                            }
+                            .labelsHidden()
+                            .frame(maxWidth: 260, alignment: .trailing)
+                        }
+
+                        if languages.uiLanguageNeedsRelaunch {
+                            HStack(spacing: 10) {
+                                Text("The interface language changes after VPlayer is relaunched.")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.orange)
+                                Spacer()
+                                Button("Relaunch Now") { relaunchApp() }
+                                    .controlSize(.small)
+                            }
+                        }
+
+                        HStack {
+                            Text("I'm learning:")
                                 .font(.system(size: 12, weight: .medium))
                             Spacer()
                             Picker("", selection: $languages.learningLanguage) {
@@ -131,14 +157,14 @@ public struct SettingsView: View {
                                     Text(LanguagePreferences.displayName(for: code)).tag(code)
                                 }
                                 Divider()
-                                Text("Не выбирать автоматически").tag(LanguagePreferences.none)
+                                Text("Don't select automatically").tag(LanguagePreferences.none)
                             }
                             .labelsHidden()
                             .frame(maxWidth: 260, alignment: .trailing)
                         }
 
                         HStack {
-                            Text("Родной язык:")
+                            Text("Native language:")
                                 .font(.system(size: 12, weight: .medium))
                             Spacer()
                             Picker("", selection: $languages.nativeLanguage) {
@@ -148,7 +174,7 @@ public struct SettingsView: View {
                                     Text(LanguagePreferences.displayName(for: code)).tag(code)
                                 }
                                 Divider()
-                                Text("Не выбирать автоматически").tag(LanguagePreferences.none)
+                                Text("Don't select automatically").tag(LanguagePreferences.none)
                             }
                             .labelsHidden()
                             .frame(maxWidth: 260, alignment: .trailing)
@@ -157,7 +183,7 @@ public struct SettingsView: View {
                         if languages.nativeLanguage != LanguagePreferences.none,
                            languages.resolvedNativeCode == nil,
                            languages.resolvedLearningCode != nil {
-                            Text("Родной язык совпадает с изучаемым — субтитры перевода выбираться не будут.")
+                            Text("Your native language is the same as the one you're learning — no translation subtitles will be selected.")
                                 .font(.system(size: 11))
                                 .foregroundColor(.orange)
                         }
@@ -171,15 +197,15 @@ public struct SettingsView: View {
                         HStack {
                             Image(systemName: "play.circle")
                                 .foregroundColor(.yellow)
-                            Text("Поведение при просмотре")
+                            Text("Playback Behavior")
                                 .font(.system(size: 14, weight: .bold))
                         }
 
                         Toggle(isOn: $player.pauseWhilePeeking) {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("Пауза при подглядывании перевода (TAB)")
+                                Text("Pause while peeking at the translation (TAB)")
                                     .font(.system(size: 12, weight: .medium))
-                                Text("Пока TAB зажат, видео стоит; после отпускания продолжает играть.")
+                                Text("While TAB is held the video pauses; it resumes when released.")
                                     .font(.system(size: 11))
                                     .foregroundColor(.secondary)
                             }
@@ -190,11 +216,11 @@ public struct SettingsView: View {
 
                         Toggle(isOn: $player.hdrOutputEnabled) {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("Выводить HDR-видео в HDR")
+                                Text("Output HDR video in HDR")
                                     .font(.system(size: 12, weight: .medium))
                                 Text(player.displaySupportsHDR
-                                     ? "Текущий дисплей поддерживает HDR. Если выключить, HDR-видео будет преобразовано в SDR."
-                                     : "Текущий дисплей не поддерживает HDR — видео преобразуется в SDR. Настройка применится на HDR-дисплее.")
+                                     ? "This display supports HDR. When off, HDR video is tone-mapped to SDR."
+                                     : "This display does not support HDR — video is tone-mapped to SDR. The setting takes effect on an HDR display.")
                                     .font(.system(size: 11))
                                     .foregroundColor(.secondary)
                                     .fixedSize(horizontal: false, vertical: true)
@@ -213,14 +239,14 @@ public struct SettingsView: View {
                         HStack {
                             Image(systemName: "textformat.size")
                                 .foregroundColor(.yellow)
-                            Text("Отображение субтитров")
+                            Text("Subtitle Appearance")
                                 .font(.system(size: 14, weight: .bold))
                         }
                         
                         // Font Size Slider
                         VStack(alignment: .leading, spacing: 6) {
                             HStack {
-                                Text("Размер шрифта субтитров:")
+                                Text("Subtitle font size:")
                                     .font(.system(size: 12, weight: .medium))
                                 Spacer()
                                 Text("\(Int(player.subFontSize)) pt")
@@ -235,10 +261,10 @@ public struct SettingsView: View {
                         // Translation Size
                         VStack(alignment: .leading, spacing: 6) {
                             HStack {
-                                Text("Размер перевода (TAB):")
+                                Text("Translation size (TAB):")
                                     .font(.system(size: 12, weight: .medium))
                                 Spacer()
-                                Text("\(Int((style.translationScale * 100).rounded())) % от основных")
+                                Text("\(Int((style.translationScale * 100).rounded()))% of primary")
                                     .font(.system(size: 12, weight: .bold, design: .monospaced))
                                     .foregroundColor(.yellow)
                             }
@@ -248,11 +274,11 @@ public struct SettingsView: View {
 
                         // Font Family
                         HStack {
-                            Text("Шрифт:")
+                            Text("Font:")
                                 .font(.system(size: 12, weight: .medium))
                             Spacer()
                             Picker("", selection: $style.fontFamily) {
-                                Text("Системный").tag("")
+                                Text("System").tag("")
                                 Divider()
                                 ForEach(fontFamilies, id: \.self) { family in
                                     Text(family).tag(family)
@@ -264,7 +290,7 @@ public struct SettingsView: View {
 
                         // Text Color
                         HStack {
-                            Text("Цвет текста:")
+                            Text("Text color:")
                                 .font(.system(size: 12, weight: .medium))
                             Spacer()
                             ColorPicker("", selection: $style.textColor, supportsOpacity: false)
@@ -274,10 +300,10 @@ public struct SettingsView: View {
                         // Outline Width
                         VStack(alignment: .leading, spacing: 6) {
                             HStack {
-                                Text("Толщина обводки:")
+                                Text("Outline width:")
                                     .font(.system(size: 12, weight: .medium))
                                 Spacer()
-                                Text(style.outlineWidth == 0 ? "нет" : String(format: "%.1f pt", style.outlineWidth))
+                                Text(style.outlineWidth == 0 ? String(localized: "none") : String(format: "%.1f pt", style.outlineWidth))
                                     .font(.system(size: 12, weight: .bold, design: .monospaced))
                                     .foregroundColor(.yellow)
                             }
@@ -287,7 +313,7 @@ public struct SettingsView: View {
 
                         // Outline Color
                         HStack {
-                            Text("Цвет обводки:")
+                            Text("Outline color:")
                                 .font(.system(size: 12, weight: .medium))
                             Spacer()
                             ColorPicker("", selection: $style.outlineColor, supportsOpacity: false)
@@ -298,10 +324,10 @@ public struct SettingsView: View {
                         // Background Opacity
                         VStack(alignment: .leading, spacing: 6) {
                             HStack {
-                                Text("Прозрачность подложки:")
+                                Text("Background opacity:")
                                     .font(.system(size: 12, weight: .medium))
                                 Spacer()
-                                Text(style.backgroundOpacity == 0 ? "без подложки" : "\(Int(style.backgroundOpacity * 100)) %")
+                                Text(style.backgroundOpacity == 0 ? String(localized: "no background") : String(localized: "\(Int(style.backgroundOpacity * 100))%"))
                                     .font(.system(size: 12, weight: .bold, design: .monospaced))
                                     .foregroundColor(.yellow)
                             }
@@ -312,10 +338,10 @@ public struct SettingsView: View {
                         // Bottom Inset
                         VStack(alignment: .leading, spacing: 6) {
                             HStack {
-                                Text("Отступ снизу:")
+                                Text("Bottom inset:")
                                     .font(.system(size: 12, weight: .medium))
                                 Spacer()
-                                Text("\(Int((style.bottomInset * 100).rounded())) % высоты")
+                                Text("\(Int((style.bottomInset * 100).rounded()))% of height")
                                     .font(.system(size: 12, weight: .bold, design: .monospaced))
                                     .foregroundColor(.yellow)
                             }
@@ -326,11 +352,11 @@ public struct SettingsView: View {
                         // Live Preview Box
                         VStack(alignment: .center, spacing: 4) {
                             HStack {
-                                Text("Предпросмотр на экране:")
+                                Text("On-screen preview:")
                                     .font(.system(size: 10))
                                     .foregroundColor(.secondary)
                                 Spacer()
-                                Button("Сбросить стиль") { style.reset() }
+                                Button("Reset style") { style.reset() }
                                     .buttonStyle(.plain)
                                     .font(.system(size: 10))
                                     .foregroundColor(.yellow)
@@ -366,22 +392,22 @@ public struct SettingsView: View {
                         HStack {
                             Image(systemName: "keyboard")
                                 .foregroundColor(.yellow)
-                            Text("Горячие клавиши для изучения языка")
+                            Text("Keyboard Shortcuts")
                                 .font(.system(size: 14, weight: .bold))
                         }
                         
-                        shortcutRow(keys: "TAB", desc: "Зажать: мгновенно подглядеть перевод (вторая дорожка субтитров)")
-                        shortcutRow(keys: "R", desc: "Повторить текущую реплику сначала (sub-seek 0)")
-                        shortcutRow(keys: "E", desc: "Перейти к следующей реплике диалога")
-                        shortcutRow(keys: "⌘ + G", desc: "ИИ разбор текущей фразы через Gemini")
-                        shortcutRow(keys: "Пробел", desc: "Пауза / Воспроизведение")
-                        shortcutRow(keys: "←  /  →", desc: "Перемотка на 5 секунд назад / вперед")
-                        shortcutRow(keys: "↑  /  ↓", desc: "Громкость +5 % / −5 %")
-                        shortcutRow(keys: "M", desc: "Выключить / включить звук")
-                        shortcutRow(keys: "[  /  ]", desc: "Скорость: медленнее / быстрее на 0.1×")
-                        shortcutRow(keys: "⌫", desc: "Вернуть скорость 1×")
-                        shortcutRow(keys: "F", desc: "Полноэкранный режим")
-                        shortcutRow(keys: "⌘ + O", desc: "Открыть видео или внешний файл субтитров")
+                        shortcutRow(keys: "TAB", desc: "Hold: instantly peek at the translation (second subtitle track)")
+                        shortcutRow(keys: "R", desc: "Replay the current line from the start")
+                        shortcutRow(keys: "E", desc: "Jump to the next line of dialogue")
+                        shortcutRow(keys: "⌘ + G", desc: "AI breakdown of the current line with Gemini")
+                        shortcutRow(keys: "Space", desc: "Pause / Play")
+                        shortcutRow(keys: "←  /  →", desc: "Seek 5 seconds back / forward")
+                        shortcutRow(keys: "↑  /  ↓", desc: "Volume +5% / −5%")
+                        shortcutRow(keys: "M", desc: "Mute / unmute")
+                        shortcutRow(keys: "[  /  ]", desc: "Speed: slower / faster by 0.1×")
+                        shortcutRow(keys: "⌫", desc: "Reset speed to 1×")
+                        shortcutRow(keys: "F", desc: "Full screen")
+                        shortcutRow(keys: "⌘ + O", desc: "Open a video or an external subtitle file")
                     }
                     .padding(14)
                     .background(Color.white.opacity(0.04))
@@ -391,7 +417,7 @@ public struct SettingsView: View {
             
             HStack {
                 Spacer()
-                Button("Готово") {
+                Button("Done") {
                     isOpen = false
                 }
                 .buttonStyle(.borderedProminent)
@@ -402,14 +428,32 @@ public struct SettingsView: View {
         .frame(width: 520, height: sheetHeight)
     }
     
-    private var systemLanguageLabel: String {
-        if let code = LanguagePreferences.systemLanguageCode {
-            return "Как в системе (\(LanguagePreferences.displayName(for: code)))"
+    /// Quits and reopens the app so the new `AppleLanguages` takes effect.
+    private func relaunchApp() {
+        // A helper waits for this process to exit, then opens the bundle
+        // again — otherwise two instances would briefly run side by side.
+        let pid = ProcessInfo.processInfo.processIdentifier
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/bin/sh")
+        task.arguments = ["-c", "while kill -0 \(pid) 2>/dev/null; do sleep 0.1; done; open \"$0\"", Bundle.main.bundlePath]
+        try? task.run()
+
+        isOpen = false
+        DispatchQueue.main.async {
+            NSApp.terminate(nil)
+            // The sheet's modal session can swallow the quit; do not stay behind.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { exit(0) }
         }
-        return "Как в системе"
     }
 
-    private func shortcutRow(keys: String, desc: String) -> some View {
+    private var systemLanguageLabel: String {
+        if let code = LanguagePreferences.systemLanguageCode {
+            return String(localized: "Same as system (\(LanguagePreferences.displayName(for: code)))")
+        }
+        return String(localized: "Same as system")
+    }
+
+    private func shortcutRow(keys: LocalizedStringKey, desc: LocalizedStringKey) -> some View {
         HStack(spacing: 10) {
             Text(keys)
                 .font(.system(size: 11, weight: .bold, design: .monospaced))

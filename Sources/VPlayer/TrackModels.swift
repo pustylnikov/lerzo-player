@@ -19,7 +19,7 @@ public struct MediaTrack: Identifiable, Hashable {
     public var isForced: Bool = false
     
     public var displayName: String {
-        var name = title.isEmpty ? (lang?.uppercased() ?? "Track \(id)") : title
+        var name = title.isEmpty ? (lang?.uppercased() ?? String(localized: "Track \(id)")) : title
         if let lang = lang, !title.isEmpty {
             name += " (\(lang.uppercased()))"
         }

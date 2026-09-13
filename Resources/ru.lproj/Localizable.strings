@@ -1,0 +1,150 @@
+/* VPlayer — Russian UI strings. Keys are the English source strings. */
+
+/* Menus */
+"Settings..." = "Настройки...";
+"Open Video File..." = "Открыть видеофайл...";
+"Playback" = "Воспроизведение";
+"Play / Pause" = "Воспроизведение / Пауза";
+"Replay Line" = "Повторить реплику сначала";
+"Next Line" = "Следующая реплика";
+"Back 5 Seconds" = "Перемотка −5 сек";
+"Forward 5 Seconds" = "Перемотка +5 сек";
+"Mute / Unmute" = "Вкл/выкл звук";
+"Language Learning (AI)" = "Изучение языка (ИИ)";
+"Explain Line with Gemini" = "Разобрать реплику с Gemini";
+
+/* Welcome screen */
+"Loading video..." = "Загрузка видео...";
+"VPlayer — a player for language learning" = "VPlayer — плеер для изучения языка";
+"Drop a movie here (MKV, MP4) or click the button below" = "Перетащите сюда фильм (MKV, MP4) или нажмите кнопку ниже";
+"Choose a video..." = "Выбрать видео...";
+"Open the sample MKV with subtitles" = "Открыть тестовый MKV с субтитрами";
+"TAB: peek at the translation" = "TAB: быстро подглядеть перевод";
+"Gemini: idioms and slang explained" = "Gemini: разбор идиом и сленга";
+"R: replay the current line" = "R: повтор текущей реплики";
+"Choose a video file" = "Выберите видеофайл";
+
+/* Controls bar */
+"Open" = "Открыть";
+"Open a video file (Cmd + O)" = "Открыть видеофайл (Cmd + O)";
+"HDR video is output in HDR" = "HDR-видео выводится в HDR";
+"HDR video is tone-mapped to SDR (the display does not support HDR, or HDR output is disabled in Settings)" = "HDR-видео преобразуется в SDR (дисплей не поддерживает HDR или вывод отключён в настройках)";
+"Primary track (original language):" = "Основная дорожка (язык оригинала):";
+"✓ No subtitles" = "✓ Без субтитров";
+"Turn off" = "Отключить";
+"✓ (Peek) %@" = "✓ (Перевод) %@";
+"(Peek) %@" = "(Перевод) %@";
+"Track %lld" = "Дорожка %lld";
+"Second track (translation to peek at with TAB):" = "Вторая дорожка (перевод для подглядывания по TAB):";
+"✓ No second track" = "✓ Без вторичных";
+"Subtitles" = "Субтитры";
+"Subtitles become available once a video with subtitle tracks is loaded" = "Субтитры станут доступны после загрузки видео с дорожками";
+"Choose a subtitle track" = "Выбрать дорожку субтитров";
+"Audio" = "Аудио";
+"Audio tracks become available once a video is loaded" = "Аудиодорожки станут доступны после загрузки видео";
+"Choose an audio track" = "Выбрать аудиодорожку";
+"Explain line" = "Разбор реплики";
+"Explain the current line and its idioms with Gemini (Cmd + G)" = "Разобрать текущую реплику и идиомы через Gemini (Cmd + G)";
+"Subtitle and Gemini API settings (Cmd + ,)" = "Настройки субтитров и Gemini API (Cmd + ,)";
+"Play / Pause (Space)" = "Воспроизведение / Пауза (Пробел)";
+"Replay" = "Фраза";
+"Replay the current line from the start (R)" = "Повторить текущую реплику сначала (клавиша R)";
+"Back 5 seconds (Left Arrow)" = "Назад на 5 секунд (Стрелка влево)";
+"Forward 5 seconds (Right Arrow)" = "Вперёд на 5 секунд (Стрелка вправо)";
+"Jump to the next line (E)" = "К следующей реплике (клавиша E)";
+"Playback speed ([ slower, ] faster, Backspace — 1×)" = "Скорость воспроизведения ([ медленнее, ] быстрее, Backspace — 1×)";
+"Peek translation" = "Подглядеть перевод";
+"Hold TAB to quickly see the translation from the second subtitle track" = "Зажмите и удерживайте TAB, чтобы быстро увидеть перевод со второй дорожки субтитров";
+"Full screen (F)" = "Полноэкранный режим (F)";
+
+/* Subtitles layer */
+"AI" = "ИИ";
+"Explain this line with Gemini AI (Cmd + G)" = "Объяснить эту фразу через Gemini AI (Cmd + G)";
+
+/* On-screen display */
+"Speed %@" = "Скорость %@";
+"Muted" = "Без звука";
+"Volume %lld%%" = "Громкость %lld %%";
+"%@%lld s  ·  %@" = "%@%lld с  ·  %@";
+"Replay line" = "Повтор реплики";
+"Next line" = "Следующая реплика";
+
+/* Explanation popover */
+"AI Dialogue Breakdown" = "ИИ-разбор диалога";
+"Replay line (R)" = "Повторить фразу (R)";
+"Continue (Space)" = "Продолжить (Пробел)";
+"Gemini is analyzing the line's context and idioms..." = "Gemini анализирует контекст реплики и идиомы...";
+"Enter Gemini API key in Settings" = "Ввести Gemini API ключ в Настройках";
+"Try again" = "Повторить запрос";
+"No active subtitles right now." = "В данный момент нет активных субтитров.";
+"Original:" = "Оригинал:";
+"Contextual translation:" = "Контекстный перевод:";
+"Idioms and set phrases:" = "Идиомы и устойчивые выражения:";
+"Meaning: %@" = "Значение: %@";
+"Literally: %@" = "Дословно: %@";
+"Useful words from the line:" = "Полезные слова из фразы:";
+"💡 Scene context and tone:" = "💡 Контекст и интонация сцены:";
+"There are no subtitles right now. Play the video and pause on a line you don't understand." = "Субтитры сейчас пусты. Включите видео и нажмите паузу на непонятной реплике.";
+
+/* Gemini errors */
+"Gemini API key is not set. Please enter it in the player settings (⚙️ icon)." = "Gemini API ключ не задан. Пожалуйста, укажите его в настройках плеера (значок ⚙️).";
+"Gemini API error (%lld): %@" = "Ошибка Gemini API (%lld): %@";
+"Could not read the Gemini response" = "Не удалось прочитать ответ Gemini";
+"JSON encoding error" = "Ошибка кодировки JSON";
+
+/* Settings */
+"VPlayer Settings" = "Настройки VPlayer";
+"Gemini API Integration" = "Интеграция с Gemini API";
+"The key is used for contextual translation and for explaining slang and idioms from the movie." = "Ключ используется для контекстного перевода и разбора сленга/идиом из фильма.";
+"Get a free API key in Google AI Studio ↗" = "Получить бесплатный API ключ в Google AI Studio ↗";
+"Key is set" = "Ключ активен";
+"Google AI Studio API Key:" = "API-ключ Google AI Studio:";
+"Languages" = "Языки";
+"When a file opens, the player picks the audio and subtitles in the language you are learning, and subtitles in your native language for the TAB peek. The AI breakdown is in your native language too." = "При открытии файла плеер сам выберет аудио и субтитры на изучаемом языке, а для подглядывания по TAB — субтитры на родном. ИИ-разбор тоже будет на родном языке.";
+"Interface language:" = "Язык интерфейса:";
+"The interface language changes after VPlayer is relaunched." = "Язык интерфейса изменится после перезапуска VPlayer.";
+"Relaunch Now" = "Перезапустить";
+"I'm learning:" = "Изучаю:";
+"Don't select automatically" = "Не выбирать автоматически";
+"Native language:" = "Родной язык:";
+"Same as system" = "Как в системе";
+"Same as system (%@)" = "Как в системе (%@)";
+"Your native language is the same as the one you're learning — no translation subtitles will be selected." = "Родной язык совпадает с изучаемым — субтитры перевода выбираться не будут.";
+"Playback Behavior" = "Поведение при просмотре";
+"Pause while peeking at the translation (TAB)" = "Пауза при подглядывании перевода (TAB)";
+"While TAB is held the video pauses; it resumes when released." = "Пока TAB зажат, видео стоит; после отпускания продолжает играть.";
+"Output HDR video in HDR" = "Выводить HDR-видео в HDR";
+"This display supports HDR. When off, HDR video is tone-mapped to SDR." = "Текущий дисплей поддерживает HDR. Если выключить, HDR-видео будет преобразовано в SDR.";
+"This display does not support HDR — video is tone-mapped to SDR. The setting takes effect on an HDR display." = "Текущий дисплей не поддерживает HDR — видео преобразуется в SDR. Настройка применится на HDR-дисплее.";
+"Subtitle Appearance" = "Отображение субтитров";
+"Subtitle font size:" = "Размер шрифта субтитров:";
+"Translation size (TAB):" = "Размер перевода (TAB):";
+"%lld%% of primary" = "%lld %% от основных";
+"Font:" = "Шрифт:";
+"System" = "Системный";
+"Text color:" = "Цвет текста:";
+"Outline width:" = "Толщина обводки:";
+"none" = "нет";
+"Outline color:" = "Цвет обводки:";
+"Background opacity:" = "Прозрачность подложки:";
+"no background" = "без подложки";
+"%lld%%" = "%lld %%";
+"Bottom inset:" = "Отступ снизу:";
+"%lld%% of height" = "%lld %% высоты";
+"On-screen preview:" = "Предпросмотр на экране:";
+"Reset style" = "Сбросить стиль";
+"Keyboard Shortcuts" = "Горячие клавиши";
+"Hold: instantly peek at the translation (second subtitle track)" = "Зажать: мгновенно подглядеть перевод (вторая дорожка субтитров)";
+"Replay the current line from the start" = "Повторить текущую реплику сначала";
+"Jump to the next line of dialogue" = "Перейти к следующей реплике диалога";
+"AI breakdown of the current line with Gemini" = "ИИ-разбор текущей фразы через Gemini";
+"Space" = "Пробел";
+"Pause / Play" = "Пауза / Воспроизведение";
+"Seek 5 seconds back / forward" = "Перемотка на 5 секунд назад / вперёд";
+"Volume +5% / −5%" = "Громкость +5 % / −5 %";
+"Mute / unmute" = "Выключить / включить звук";
+"Speed: slower / faster by 0.1×" = "Скорость: медленнее / быстрее на 0.1×";
+"Reset speed to 1×" = "Вернуть скорость 1×";
+"Full screen" = "Полноэкранный режим";
+"Open a video or an external subtitle file" = "Открыть видео или внешний файл субтитров";
+"Done" = "Готово";

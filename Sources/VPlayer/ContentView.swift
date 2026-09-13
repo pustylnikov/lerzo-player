@@ -33,7 +33,7 @@ public struct ContentView: View {
                     ProgressView()
                         .scaleEffect(1.2)
                         .colorInvert()
-                    Text("Загрузка видео...")
+                    Text("Loading video...")
                         .font(.system(size: 13, weight: .medium))
                         .foregroundColor(.white.opacity(0.85))
                 }
@@ -149,11 +149,11 @@ public struct ContentView: View {
             }
             
             VStack(spacing: 6) {
-                Text("VPlayer — Плеер для изучения языка")
+                Text("VPlayer — a player for language learning")
                     .font(.system(size: 22, weight: .bold))
                     .foregroundColor(.white)
                 
-                Text("Перетащите сюда фильм (MKV, MP4) или нажмите кнопку ниже")
+                Text("Drop a movie here (MKV, MP4) or click the button below")
                     .font(.system(size: 14))
                     .foregroundColor(.white.opacity(0.7))
             }
@@ -162,7 +162,7 @@ public struct ContentView: View {
                 Button(action: openFileDialog) {
                     HStack(spacing: 8) {
                         Image(systemName: "folder.fill")
-                        Text("Выбрать видео...")
+                        Text("Choose a video...")
                     }
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.black)
@@ -180,7 +180,7 @@ public struct ContentView: View {
                     }) {
                         HStack(spacing: 6) {
                             Image(systemName: "play.circle.fill")
-                            Text("Открыть тестовый MKV с субтитрами")
+                            Text("Open the sample MKV with subtitles")
                         }
                         .font(.system(size: 13, weight: .medium))
                         .foregroundColor(.white)
@@ -195,9 +195,9 @@ public struct ContentView: View {
             
             // Feature Highlights
             HStack(spacing: 24) {
-                featureBadge(icon: "character.book.closed.fill", text: "TAB: Быстро подглядеть перевод")
-                featureBadge(icon: "sparkles", text: "Gemini: Разбор идиом и сленга")
-                featureBadge(icon: "arrow.counterclockwise.circle", text: "R: Повтор текущей реплики")
+                featureBadge(icon: "character.book.closed.fill", text: "TAB: peek at the translation")
+                featureBadge(icon: "sparkles", text: "Gemini: idioms and slang explained")
+                featureBadge(icon: "arrow.counterclockwise.circle", text: "R: replay the current line")
             }
             .padding(.top, 16)
         }
@@ -212,7 +212,7 @@ public struct ContentView: View {
         )
     }
     
-    private func featureBadge(icon: String, text: String) -> some View {
+    private func featureBadge(icon: String, text: LocalizedStringKey) -> some View {
         HStack(spacing: 6) {
             Image(systemName: icon)
                 .foregroundColor(.yellow)
@@ -265,7 +265,7 @@ public struct ContentView: View {
     
     public func openFileDialog() {
         let panel = NSOpenPanel()
-        panel.title = "Выберите видеофайл"
+        panel.title = String(localized: "Choose a video file")
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
         panel.allowsMultipleSelection = false

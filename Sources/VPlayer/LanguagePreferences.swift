@@ -18,16 +18,59 @@ public final class LanguagePreferences: ObservableObject {
     @Published public var nativeLanguage: String {
         didSet { defaults.set(nativeLanguage, forKey: Keys.native) }
     }
+    /// UI language: `system`, or one of `uiLanguages`. Applied through the
+    /// per-app `AppleLanguages` override, so it takes effect on relaunch.
+    @Published public var uiLanguage: String {
+        didSet {
+            defaults.set(uiLanguage, forKey: Keys.ui)
+            if uiLanguage == Self.system {
+                defaults.removeObject(forKey: "AppleLanguages")
+            } else {
+                defaults.set([uiLanguage], forKey: "AppleLanguages")
+            }
+        }
+    }
+
+    /// Languages the app itself is translated into (the `.lproj` folders).
+    public static let uiLanguages = ["en", "ru"]
 
     private let defaults = UserDefaults.standard
     private enum Keys {
         static let learning = "VPlayer.learningLanguage"
         static let native = "VPlayer.nativeLanguage"
+        static let ui = "VPlayer.uiLanguage"
     }
 
     private init() {
         learningLanguage = defaults.string(forKey: Keys.learning) ?? "en"
         nativeLanguage = defaults.string(forKey: Keys.native) ?? Self.system
+        uiLanguage = defaults.string(forKey: Keys.ui) ?? Self.system
+    }
+
+    // MARK: - UI language
+
+    /// The language the UI is actually showing right now (fixed at launch).
+    public static var activeUILanguage: String {
+        Bundle.main.preferredLocalizations.first ?? "en"
+    }
+
+    /// The language the UI would show after a relaunch with the current choice.
+    public var pendingUILanguage: String {
+        if uiLanguage != Self.system, Self.uiLanguages.contains(uiLanguage) { return uiLanguage }
+        return Bundle.preferredLocalizations(from: Self.uiLanguages, forPreferences: Self.systemPreferredLanguages).first ?? "en"
+    }
+
+    public var uiLanguageNeedsRelaunch: Bool { pendingUILanguage != Self.activeUILanguage }
+
+    /// Name of a UI language in that language itself ("English", "Русский").
+    public static func nativeDisplayName(forUILanguage code: String) -> String {
+        (Locale(identifier: code).localizedString(forLanguageCode: code) ?? code).capitalized(with: Locale(identifier: code))
+    }
+
+    /// The user's macOS language list, ignoring this app's own `AppleLanguages` override.
+    private static var systemPreferredLanguages: [String] {
+        (UserDefaults.standard.persistentDomain(forName: UserDefaults.globalDomain)?["AppleLanguages"] as? [String])
+            ?? Locale.preferredLanguages
     }
 
     // MARK: - Resolved codes
@@ -52,7 +95,7 @@ public final class LanguagePreferences: ObservableObject {
     }
 
     public static var systemLanguageCode: String? {
-        Locale.preferredLanguages.first.flatMap { Locale(identifier: $0).language.languageCode?.identifier }
+        systemPreferredLanguages.first.flatMap { Locale(identifier: $0).language.languageCode?.identifier }
     }
 
     // MARK: - Language list for the pickers
@@ -64,7 +107,7 @@ public final class LanguagePreferences: ObservableObject {
         return codes.sorted { displayName(for: $0).localizedCaseInsensitiveCompare(displayName(for: $1)) == .orderedAscending }
     }()
 
-    /// Language name in the UI language, e.g. "Английский".
+    /// Language name in the UI language, e.g. "English" or "Английский".
     public static func displayName(for code: String) -> String {
         (Locale.current.localizedString(forLanguageCode: code) ?? code).capitalized(with: Locale.current)
     }

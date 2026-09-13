@@ -88,16 +88,16 @@ public struct OSDView: View {
     private func text(for item: OSDItem) -> String {
         switch item {
         case .speed:
-            return "Скорость \(Self.speedLabel(player.playbackSpeed))"
+            return String(localized: "Speed \(Self.speedLabel(player.playbackSpeed))")
         case .volume:
-            return player.isMuted ? "Без звука" : "Громкость \(Int(player.volume.rounded())) %"
+            return player.isMuted ? String(localized: "Muted") : String(localized: "Volume \(Int(player.volume.rounded()))%")
         case .seek(let s):
             let sign = s < 0 ? "−" : "+"
-            return "\(sign)\(Int(abs(s))) с  ·  \(Self.formatTime(player.currentTime))"
+            return String(localized: "\(sign)\(Int(abs(s))) s  ·  \(Self.formatTime(player.currentTime))")
         case .replayLine:
-            return "Повтор реплики"
+            return String(localized: "Replay line")
         case .nextLine:
-            return "Следующая реплика"
+            return String(localized: "Next line")
         }
     }
 

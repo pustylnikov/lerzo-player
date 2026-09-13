@@ -34,7 +34,7 @@ public final class GeminiService: ObservableObject {
         let cleanKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !cleanKey.isEmpty else {
             throw NSError(domain: "GeminiService", code: 401, userInfo: [
-                NSLocalizedDescriptionKey: "Gemini API ключ не задан. Пожалуйста, укажите его в настройках плеера (значок ⚙️)."
+                NSLocalizedDescriptionKey: String(localized: "Gemini API key is not set. Please enter it in the player settings (⚙️ icon).")
             ])
         }
         
@@ -128,7 +128,7 @@ public final class GeminiService: ObservableObject {
         guard httpResponse.statusCode == 200 else {
             let errorText = String(data: data, encoding: .utf8) ?? "HTTP \(httpResponse.statusCode)"
             throw NSError(domain: "GeminiService", code: httpResponse.statusCode, userInfo: [
-                NSLocalizedDescriptionKey: "Ошибка Gemini API (\(httpResponse.statusCode)): \(errorText)"
+                NSLocalizedDescriptionKey: String(localized: "Gemini API error (\(httpResponse.statusCode)): \(errorText)")
             ])
         }
         
@@ -139,7 +139,7 @@ public final class GeminiService: ObservableObject {
               let parts = content["parts"] as? [[String: Any]],
               let firstPart = parts.first,
               let textResponse = firstPart["text"] as? String else {
-            throw NSError(domain: "GeminiService", code: 502, userInfo: [NSLocalizedDescriptionKey: "Не удалось прочитать ответ Gemini"])
+            throw NSError(domain: "GeminiService", code: 502, userInfo: [NSLocalizedDescriptionKey: String(localized: "Could not read the Gemini response")])
         }
         
         // Clean markdown backticks if any
@@ -155,7 +155,7 @@ public final class GeminiService: ObservableObject {
         cleanJson = cleanJson.trimmingCharacters(in: .whitespacesAndNewlines)
         
         guard let jsonData = cleanJson.data(using: .utf8) else {
-            throw NSError(domain: "GeminiService", code: 502, userInfo: [NSLocalizedDescriptionKey: "Ошибка кодировки JSON"])
+            throw NSError(domain: "GeminiService", code: 502, userInfo: [NSLocalizedDescriptionKey: String(localized: "JSON encoding error")])
         }
         
         let explanation = try JSONDecoder().decode(SubtitleExplanation.self, from: jsonData)
