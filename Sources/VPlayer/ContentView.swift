@@ -178,40 +178,19 @@ public struct ContentView: View {
                     .foregroundColor(.white.opacity(0.7))
             }
             
-            HStack(spacing: 16) {
-                Button(action: openFileDialog) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "folder.fill")
-                        Text("Choose a video...")
-                    }
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.black)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 10)
-                    .background(Color.yellow)
-                    .cornerRadius(10)
+            Button(action: openFileDialog) {
+                HStack(spacing: 8) {
+                    Image(systemName: "folder.fill")
+                    Text("Choose a video...")
                 }
-                .buttonStyle(.plain)
-                
-                let sampleURL = URL(fileURLWithPath: "/Users/yurii/Desktop/vplayer/test_media/sample_dialogue.mkv")
-                if FileManager.default.fileExists(atPath: sampleURL.path) {
-                    Button(action: {
-                        player.loadFile(url: sampleURL)
-                    }) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "play.circle.fill")
-                            Text("Open the sample MKV with subtitles")
-                        }
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
-                        .background(Color.white.opacity(0.15))
-                        .cornerRadius(10)
-                    }
-                    .buttonStyle(.plain)
-                }
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(.black)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 10)
+                .background(Color.yellow)
+                .cornerRadius(10)
             }
+            .buttonStyle(.plain)
             
             // Feature Highlights
             HStack(spacing: 24) {
