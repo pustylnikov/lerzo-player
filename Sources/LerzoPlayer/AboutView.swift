@@ -6,8 +6,7 @@ import AppKit
 /// bundles assembled by `scripts/release.sh`.
 enum AboutInfo {
     static let websiteURL = URL(string: "https://lerzowords.com/player")!
-    /// Public repository; nil hides the button until the repository exists.
-    static let repositoryURL: URL? = nil
+    static let repositoryURL: URL? = URL(string: "https://github.com/pustylnikov/lerzo-player")
 
     static var version: String {
         let info = Bundle.main.infoDictionary ?? [:]
