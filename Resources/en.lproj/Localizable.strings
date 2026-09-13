@@ -1,6 +1,6 @@
-/* VPlayer — English UI strings (the source language). */
+/* Lerzo Player — English UI strings (the source language). */
 
-/* VPlayer — Russian UI strings. Keys are the English source strings. */
+/* Lerzo Player — Russian UI strings. Keys are the English source strings. */
 
 /* Menus */
 "Settings..." = "Settings...";
@@ -18,7 +18,7 @@
 
 /* Welcome screen */
 "Loading video..." = "Loading video...";
-"VPlayer — a player for language learning" = "VPlayer — a player for language learning";
+"Lerzo Player — a player for language learning" = "Lerzo Player — a player for language learning";
 "Drop a movie here (MKV, MP4) or click the button below" = "Drop a movie here (MKV, MP4) or click the button below";
 "Choose a video..." = "Choose a video...";
 "TAB: peek at the translation" = "TAB: peek at the translation";
@@ -89,7 +89,7 @@
 
 
 /* Settings */
-"VPlayer Settings" = "VPlayer Settings";
+"Lerzo Player Settings" = "Lerzo Player Settings";
 "Gemini API Integration" = "Gemini API Integration";
 "The key is used for contextual translation and for explaining slang and idioms from the movie." = "The key is used for contextual translation and for explaining slang and idioms from the movie.";
 "Key is set" = "Key is set";
@@ -97,7 +97,7 @@
 "Languages" = "Languages";
 "When a file opens, the player picks the audio and subtitles in the language you are learning, and subtitles in your native language for the TAB peek. The AI breakdown is in your native language too." = "When a file opens, the player picks the audio and subtitles in the language you are learning, and subtitles in your native language for the TAB peek. The AI breakdown is in your native language too.";
 "Interface language:" = "Interface language:";
-"The interface language changes after VPlayer is relaunched." = "The interface language changes after VPlayer is relaunched.";
+"The interface language changes after Lerzo Player is relaunched." = "The interface language changes after Lerzo Player is relaunched.";
 "Relaunch Now" = "Relaunch Now";
 "I'm learning:" = "I'm learning:";
 "Don't select automatically" = "Don't select automatically";
@@ -146,12 +146,12 @@
 
 /* First run & Gemini errors */
 "Set up AI explanations" = "Set up AI explanations";
-"VPlayer explains idioms, slang and context with Google Gemini. It needs a free API key — getting one takes a minute, no card required." = "VPlayer explains idioms, slang and context with Google Gemini. It needs a free API key — getting one takes a minute, no card required.";
+"Lerzo Player explains idioms, slang and context with Google Gemini. It needs a free API key — getting one takes a minute, no card required." = "Lerzo Player explains idioms, slang and context with Google Gemini. It needs a free API key — getting one takes a minute, no card required.";
 "1. Get a free key" = "1. Get a free key";
 "2. Paste it in Settings" = "2. Paste it in Settings";
 "Open Settings" = "Open Settings";
 "1. Open Google AI Studio and create a key (free, no card needed)" = "1. Open Google AI Studio and create a key (free, no card needed)";
-"2. Paste it into the field above — VPlayer keeps it in your keychain." = "2. Paste it into the field above — VPlayer keeps it in your keychain.";
+"2. Paste it into the field above — Lerzo Player keeps it in your keychain." = "2. Paste it into the field above — Lerzo Player keeps it in your keychain.";
 "Google AI Studio ↗" = "Google AI Studio ↗";
 "Check key" = "Check key";
 "Key works" = "Key works";
@@ -165,14 +165,14 @@
 "No internet connection." = "No internet connection.";
 "Gemini took too long to answer." = "Gemini took too long to answer.";
 "Gemini declined to explain this line (safety filter)." = "Gemini declined to explain this line (safety filter).";
-"Gemini sent an answer VPlayer could not read." = "Gemini sent an answer VPlayer could not read.";
+"Gemini sent an answer Lerzo Player could not read." = "Gemini sent an answer Lerzo Player could not read.";
 "Gemini error: %@" = "Gemini error: %@";
 "HTTP %lld" = "HTTP %lld";
 "Get a free key in Google AI Studio (it takes a minute), then paste it in Settings." = "Get a free key in Google AI Studio (it takes a minute), then paste it in Settings.";
 "Check the key in Settings — it should start with “AIza”. If you regenerated it, paste the new one." = "Check the key in Settings — it should start with “AIza”. If you regenerated it, paste the new one.";
 "Open Google AI Studio and make sure the key has access to the Gemini API." = "Open Google AI Studio and make sure the key has access to the Gemini API.";
 "Wait a minute and try again, or create a new key in Google AI Studio." = "Wait a minute and try again, or create a new key in Google AI Studio.";
-"Try again later; if it keeps failing, update VPlayer." = "Try again later; if it keeps failing, update VPlayer.";
+"Try again later; if it keeps failing, update Lerzo Player." = "Try again later; if it keeps failing, update Lerzo Player.";
 "Try again in a moment." = "Try again in a moment.";
 "Check the connection and try again." = "Check the connection and try again.";
 "Try a different line." = "Try a different line.";

@@ -40,13 +40,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 }
 
 @main
-struct VPlayerApp: App {
+struct LerzoPlayerApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     /// Observed so the Video menu's Fit/Fill title follows the player.
     @ObservedObject private var player = MPVPlayer.shared
     
     var body: some Scene {
-        Window("VPlayer", id: "main") {
+        Window("Lerzo Player", id: "main") {
             ContentView()
                 .frame(minWidth: 800, maxWidth: .infinity, minHeight: 480, maxHeight: .infinity)
                 .preferredColorScheme(.dark)

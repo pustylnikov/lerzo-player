@@ -1,4 +1,4 @@
-# VPlayer — заметки для агентов и разработчиков
+# Lerzo Player — заметки для агентов и разработчиков
 
 Нативный macOS-видеоплеер для изучения языков: SwiftUI-интерфейс поверх libmpv,
 разбор реплик через Gemini. Общение с автором — на русском; код, комментарии и
@@ -6,19 +6,24 @@
 
 ## Стек и сборка
 
-- SwiftPM, один executable-таргет `VPlayer` + системные модули `Cmpv` (libmpv) и
+- Имя продукта — «Lerzo Player» (бандл `Lerzo Player.app`, bundle id `com.lerzo.player`),
+  исполняемый файл и SwiftPM-таргет — `LerzoPlayer`; папка репозитория историческая
+  (`vplayer`). Общий бренд с мобильным приложением Lerzo — только имя и домен, ни кода,
+  ни подписки общих нет.
+- SwiftPM, один executable-таргет `LerzoPlayer` + системные модули `Cmpv` (libmpv) и
   `Cavformat` (libavformat/libavcodec/libavutil). Xcode-проекта нет. macOS 14+.
 - Зависимости из Homebrew: `mpv` (0.41, `vo=gpu-next`, Vulkan через MoltenVK) и его
   дерево, включая ffmpeg. Заголовки и библиотеки берутся из `/opt/homebrew`.
-- Dev-цикл: `./build_app.sh` → `build/VPlayer.app` (линкуется с Homebrew, подписывается
-  Developer ID). Запуск для проверки:
-  `pkill -x VPlayer; sleep 1; open -a "$PWD/build/VPlayer.app" "$PWD/test_media/sample_dialogue.mkv"`
+- Dev-цикл: `./build_app.sh` → `build/Lerzo Player.app` (линкуется с Homebrew,
+  подписывается Developer ID). Запуск для проверки:
+  `pkill -x LerzoPlayer; sleep 1; open -a "$PWD/build/Lerzo Player.app" "$PWD/test_media/sample_dialogue.mkv"`
 - Релиз: `scripts/release.sh` копирует libmpv и все dylib в бандл, переписывает
   install names, подписывает, ноутаризует, собирает DMG (см. шапку скрипта).
-- Отладка mpv: `VPLAYER_MPV_LOG=/path/log open -a build/VPlayer.app file.mkv` —
-  подробный лог mpv (команды, `Set property: …`).
+- Отладка mpv: `VPLAYER_MPV_LOG=/path/log open -a "build/Lerzo Player.app" file.mkv` —
+  подробный лог mpv (команды, `Set property: …`). Stderr приложения:
+  `open --stderr /path/log -a "build/Lerzo Player.app" file.mkv`.
 
-## Архитектура (Sources/VPlayer)
+## Архитектура (Sources/LerzoPlayer)
 
 - `MPVPlayer.swift` — синглтон над libmpv: свойства через `mpv_observe_property`
   (id 1–23), команды, дорожки, задержки, геометрия картинки (zoom/pan/crop), фильтры
@@ -29,6 +34,7 @@
   фон `Color.black.opacity(0.01)`, иначе клики проваливаются сквозь alpha-0 пиксели.
   Поведение окна mpv: `[.fullScreenAuxiliary, .moveToActiveSpace]`, никогда
   `.canJoinAllSpaces` (видео появлялось на других рабочих столах).
+- `LerzoPlayerApp.swift` — `@main`, меню приложения (`CommandMenu`), `AppDelegate`.
 - `ContentView.swift` — корневой экран, приветствие, диалоги открытия, связка колбэков
   `KeyboardMonitor`. `ControlsOverlayView.swift` — панель управления и её меню.
 - `KeyboardMonitor.swift` — глобальный локальный монитор NSEvent. Клавиши матчатся по
@@ -64,13 +70,22 @@ Swift-интерполяциях — одиночный `%`. Проверка: `
   `time-pos` и не открываются во время воспроизведения — пункты меню панели держать
   плоскими. В `CommandMenu` (меню приложения) подменю работают.
 - `Toggle` в `CommandMenu` даёт галочку; заголовки пунктов зависят от
-  `@ObservedObject player` в `VPlayerApp`.
+  `@ObservedObject player` в `LerzoPlayerApp`.
 - Открытие файлов из Finder/`open` приходит в SwiftUI `.onOpenURL`, а не только в
   `AppDelegate`; все пути ведут в `MPVPlayer.open(url:)` (видео или субтитры по расширению).
 - `screenshot-raw` работает с videotoolbox hwdec, `cropdetect` — нет (используется для
   «Убрать чёрные полосы»).
 - Не запрашивать и не выводить app-specific пароль Apple и ключ Gemini; не читать ключ
   из keychain в командах.
+
+## Лицензия и распространение
+
+- Homebrew-сборки mpv и ffmpeg — GPL (ffmpeg — GPLv3+ из-за `--enable-version3`), поэтому
+  плеер распространяется под GPLv3, а исходники кладутся в DMG рядом с приложением
+  (GPLv3 §6(a)) и линкуются из About. Мобильного приложения Lerzo это не касается.
+- Mac App Store с GPL-сборкой невозможен; при необходимости — своя LGPL-сборка mpv
+  (`-Dgpl=false`) и ffmpeg (без `--enable-gpl`): функциональность плеера не теряется,
+  меняются только скрипты сборки.
 
 ## Тестовые файлы
 

@@ -3,9 +3,9 @@ import Security
 
 /// Minimal wrapper over the login keychain for the few secrets the app keeps
 /// (currently just the Gemini API key). Items are generic passwords under the
-/// bundle identifier, so they show up in Keychain Access as "VPlayer".
+/// bundle identifier, so they show up in Keychain Access as "Lerzo Player".
 enum KeychainStore {
-    private static let service = Bundle.main.bundleIdentifier ?? "com.vplayer.mac"
+    private static let service = Bundle.main.bundleIdentifier ?? "com.lerzo.player"
 
     static func read(_ account: String) -> String? {
         var query = baseQuery(account)
@@ -28,7 +28,7 @@ enum KeychainStore {
         guard status == errSecItemNotFound else { return false }
         var add = baseQuery(account)
         add[kSecValueData] = data
-        add[kSecAttrLabel] = "VPlayer"
+        add[kSecAttrLabel] = "Lerzo Player"
         return SecItemAdd(add as CFDictionary, nil) == errSecSuccess
     }
 

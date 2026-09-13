@@ -167,7 +167,7 @@ public struct ExplanationPopoverView: View {
                 .font(.system(size: 15, weight: .bold))
                 .foregroundColor(.white)
             
-            Text("VPlayer explains idioms, slang and context with Google Gemini. It needs a free API key — getting one takes a minute, no card required.")
+            Text("Lerzo Player explains idioms, slang and context with Google Gemini. It needs a free API key — getting one takes a minute, no card required.")
                 .font(.system(size: 13))
                 .foregroundColor(.white.opacity(0.85))
                 .multilineTextAlignment(.center)

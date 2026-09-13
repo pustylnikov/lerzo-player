@@ -36,9 +36,9 @@ public final class LanguagePreferences: ObservableObject {
 
     private let defaults = UserDefaults.standard
     private enum Keys {
-        static let learning = "VPlayer.learningLanguage"
-        static let native = "VPlayer.nativeLanguage"
-        static let ui = "VPlayer.uiLanguage"
+        static let learning = "LerzoPlayer.learningLanguage"
+        static let native = "LerzoPlayer.nativeLanguage"
+        static let ui = "LerzoPlayer.uiLanguage"
     }
 
     private init() {

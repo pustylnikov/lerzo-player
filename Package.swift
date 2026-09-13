@@ -2,12 +2,12 @@
 import PackageDescription
 
 let package = Package(
-    name: "VPlayer",
+    name: "LerzoPlayer",
     platforms: [
         .macOS(.v14)
     ],
     products: [
-        .executable(name: "VPlayer", targets: ["VPlayer"])
+        .executable(name: "LerzoPlayer", targets: ["LerzoPlayer"])
     ],
     targets: [
         .target(
@@ -25,9 +25,9 @@ let package = Package(
             ]
         ),
         .executableTarget(
-            name: "VPlayer",
+            name: "LerzoPlayer",
             dependencies: ["Cmpv", "Cavformat"],
-            path: "Sources/VPlayer",
+            path: "Sources/LerzoPlayer",
             swiftSettings: [
                 .unsafeFlags(["-I/opt/homebrew/include"])
             ],

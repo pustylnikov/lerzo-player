@@ -39,7 +39,7 @@ public struct SettingsView: View {
                     Image(systemName: "gearshape.fill")
                         .font(.system(size: 18))
                         .foregroundColor(.yellow)
-                    Text("VPlayer Settings")
+                    Text("Lerzo Player Settings")
                         .font(.system(size: 18, weight: .bold))
                 }
                 
@@ -100,7 +100,7 @@ public struct SettingsView: View {
                                         .foregroundColor(.blue)
                                 } icon: { Image(systemName: "1.circle").foregroundColor(.yellow) }
                                 Label {
-                                    Text("2. Paste it into the field above — VPlayer keeps it in your keychain.")
+                                    Text("2. Paste it into the field above — Lerzo Player keeps it in your keychain.")
                                 } icon: { Image(systemName: "2.circle").foregroundColor(.yellow) }
                             }
                             .font(.system(size: 11))
@@ -197,7 +197,7 @@ public struct SettingsView: View {
 
                         if languages.uiLanguageNeedsRelaunch {
                             HStack(spacing: 10) {
-                                Text("The interface language changes after VPlayer is relaunched.")
+                                Text("The interface language changes after Lerzo Player is relaunched.")
                                     .font(.system(size: 11))
                                     .foregroundColor(.orange)
                                 Spacer()

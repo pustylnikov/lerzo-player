@@ -169,7 +169,7 @@ public struct ContentView: View {
             }
             
             VStack(spacing: 6) {
-                Text("VPlayer — a player for language learning")
+                Text("Lerzo Player — a player for language learning")
                     .font(.system(size: 22, weight: .bold))
                     .foregroundColor(.white)
                 

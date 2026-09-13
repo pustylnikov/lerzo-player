@@ -4,10 +4,13 @@ set -e
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 cd "$DIR"
 
-echo "🔨 Building VPlayer (Release)..."
+# Bundle and display name carry a space; the executable and SwiftPM product do not.
+APP_NAME="Lerzo Player"
+EXECUTABLE="LerzoPlayer"
+
+echo "🔨 Building $APP_NAME (Release)..."
 swift build -c release
 
-APP_NAME="VPlayer"
 APP_BUNDLE="$DIR/build/$APP_NAME.app"
 CONTENTS="$APP_BUNDLE/Contents"
 MACOS="$CONTENTS/MacOS"
@@ -19,14 +22,14 @@ mkdir -p "$MACOS"
 mkdir -p "$RESOURCES"
 
 # Copy binary
-cp "$DIR/.build/release/VPlayer" "$MACOS/$APP_NAME"
-chmod +x "$MACOS/$APP_NAME"
+cp "$DIR/.build/release/$EXECUTABLE" "$MACOS/$EXECUTABLE"
+chmod +x "$MACOS/$EXECUTABLE"
 
 # UI translations
 cp -R "$DIR"/Resources/*.lproj "$RESOURCES/"
 
 # Ensure rpath points to Homebrew lib
-install_name_tool -add_rpath "/opt/homebrew/lib" "$MACOS/$APP_NAME" 2>/dev/null || true
+install_name_tool -add_rpath "/opt/homebrew/lib" "$MACOS/$EXECUTABLE" 2>/dev/null || true
 
 # Generate Info.plist
 cat << 'EOF' > "$CONTENTS/Info.plist"
@@ -42,13 +45,15 @@ cat << 'EOF' > "$CONTENTS/Info.plist"
         <string>ru</string>
     </array>
     <key>CFBundleExecutable</key>
-    <string>VPlayer</string>
+    <string>LerzoPlayer</string>
     <key>CFBundleIdentifier</key>
-    <string>com.vplayer.mac</string>
+    <string>com.lerzo.player</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>VPlayer</string>
+    <string>Lerzo Player</string>
+    <key>CFBundleDisplayName</key>
+    <string>Lerzo Player</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
@@ -60,7 +65,7 @@ cat << 'EOF' > "$CONTENTS/Info.plist"
     <key>NSHighResolutionCapable</key>
     <true/>
     <key>NSHumanReadableCopyright</key>
-    <string>Copyright © 2026. All rights reserved.</string>
+    <string>Copyright © 2026 Yurii Pustylnikov. Licensed under the GNU GPL v3.</string>
     <key>CFBundleDocumentTypes</key>
     <array>
         <dict>

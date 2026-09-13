@@ -72,6 +72,9 @@ public struct ControlsOverlayView: View {
                 startPoint: .top,
                 endPoint: .bottom
             )
+            // The window has a hidden title bar; without this the gradient
+            // would start below its safe-area inset, leaving an untinted strip.
+            .ignoresSafeArea()
             .allowsHitTesting(false)
         )
     }

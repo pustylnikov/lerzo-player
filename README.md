@@ -1,6 +1,6 @@
-# VPlayer 🎬
+# Lerzo Player 🎬
 
-**VPlayer** — специализированный нативный видеоплеер для macOS, созданный на связке **SwiftUI + libmpv + Google Gemini API**. Разработан специально для комфортного просмотра фильмов на английском языке с целью изучения и эффективной языковой практики.
+**Lerzo Player** — специализированный нативный видеоплеер для macOS, созданный на связке **SwiftUI + libmpv + Google Gemini API**. Разработан специально для комфортного просмотра фильмов на английском языке с целью изучения и эффективной языковой практики.
 
 ---
 
@@ -47,7 +47,7 @@ brew install mpv
 Сборка выполняется с помощью встроенного скрипта:
 ```bash
 ./build_app.sh
-open build/VPlayer.app
+open "build/Lerzo Player.app"
 ```
 
 ---
@@ -55,5 +55,5 @@ open build/VPlayer.app
 ## 🧪 Тестовые медиафайлы
 В репозитории включен тестовый видеоролик с цветными калибровочными полосами и английскими/русскими субтитрами:
 ```bash
-open build/VPlayer.app --args test_media/sample_dialogue.mkv
+open -a "build/Lerzo Player.app" test_media/sample_dialogue.mkv
 ```

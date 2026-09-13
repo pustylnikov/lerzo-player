@@ -1,20 +1,21 @@
 #!/bin/bash
-# Builds a self-contained, signed (and optionally notarized) VPlayer.app and a
+# Builds a self-contained, signed (and optionally notarized) "Lerzo Player.app" and a
 # DMG. Unlike build_app.sh (which links against Homebrew for fast dev cycles)
 # this copies libmpv and its whole dependency tree into the bundle.
 #
 #   scripts/release.sh                       # ad-hoc signed, for local testing
 #   SIGN_IDENTITY="Developer ID Application: Name (TEAMID)" scripts/release.sh
-#   SIGN_IDENTITY=... NOTARY_PROFILE=VPlayer scripts/release.sh   # + notarize
+#   SIGN_IDENTITY=... NOTARY_PROFILE=<profile> scripts/release.sh   # + notarize
 #
 # NOTARY_PROFILE is a keychain profile created once with
-#   xcrun notarytool store-credentials VPlayer --apple-id ... --team-id ... --password <app-specific>
+#   xcrun notarytool store-credentials <profile> --apple-id ... --team-id ... --password <app-specific>
 set -euo pipefail
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$DIR"
 
-APP_NAME="VPlayer"
+APP_NAME="Lerzo Player"
+EXECUTABLE="LerzoPlayer"
 VERSION="${VERSION:-$(grep -A1 CFBundleShortVersionString build_app.sh | grep -o '[0-9][0-9.]*')}"
 BUILD_NUMBER="${BUILD_NUMBER:-$(git rev-list --count HEAD 2>/dev/null || echo 1)}"
 SIGN_IDENTITY="${SIGN_IDENTITY:--}"
@@ -26,14 +27,14 @@ APP="$OUT/$APP_NAME.app"
 CONTENTS="$APP/Contents"
 FRAMEWORKS="$CONTENTS/Frameworks"
 RESOURCES="$CONTENTS/Resources"
-DMG="$OUT/$APP_NAME-$VERSION.dmg"
+DMG="$OUT/$EXECUTABLE-$VERSION.dmg"
 
 echo "🔨 Building $APP_NAME $VERSION ($BUILD_NUMBER), release…"
 swift build -c release 2>&1 | tail -1
 
 echo "📦 Assembling bundle…"
 rm -rf "$OUT"; mkdir -p "$CONTENTS/MacOS" "$FRAMEWORKS" "$RESOURCES"
-cp ".build/release/$APP_NAME" "$CONTENTS/MacOS/$APP_NAME"
+cp ".build/release/$EXECUTABLE" "$CONTENTS/MacOS/$EXECUTABLE"
 
 # Reuse the Info.plist template from the dev script, then stamp the version.
 ./build_app.sh >/dev/null
@@ -48,7 +49,7 @@ cp -R "$DIR"/Resources/*.lproj "$RESOURCES/"
 # Each library is copied under its real file name, its install name becomes
 # @rpath/<name>, and every reference to a Homebrew path is rewritten to match.
 echo "📚 Bundling dylibs…"
-python3 - "$CONTENTS/MacOS/$APP_NAME" "$FRAMEWORKS" "$BREW_PREFIX" <<'PY'
+python3 - "$CONTENTS/MacOS/$EXECUTABLE" "$FRAMEWORKS" "$BREW_PREFIX" <<'PY'
 import os, shutil, subprocess, sys
 exe, frameworks, brew = sys.argv[1:]
 
@@ -89,7 +90,7 @@ fix(exe, False)
 print(f"   {len(copied)} libraries")
 PY
 # The dev build added a Homebrew rpath; a release bundle must not have one.
-install_name_tool -delete_rpath "$BREW_PREFIX/lib" "$CONTENTS/MacOS/$APP_NAME" 2>/dev/null || true
+install_name_tool -delete_rpath "$BREW_PREFIX/lib" "$CONTENTS/MacOS/$EXECUTABLE" 2>/dev/null || true
 
 # Vulkan ICD manifest pointing at the bundled MoltenVK (path is relative to the JSON).
 mkdir -p "$RESOURCES/vulkan/icd.d"
@@ -105,13 +106,13 @@ cat > "$RESOURCES/vulkan/icd.d/MoltenVK_icd.json" <<'JSON'
 JSON
 
 # Sanity check: nothing may still point at Homebrew.
-if otool -L "$CONTENTS/MacOS/$APP_NAME" "$FRAMEWORKS"/*.dylib | grep -q "$BREW_PREFIX"; then
-    echo "❌ Homebrew references remain:"; otool -L "$CONTENTS/MacOS/$APP_NAME" "$FRAMEWORKS"/*.dylib | grep "$BREW_PREFIX"; exit 1
+if otool -L "$CONTENTS/MacOS/$EXECUTABLE" "$FRAMEWORKS"/*.dylib | grep -q "$BREW_PREFIX"; then
+    echo "❌ Homebrew references remain:"; otool -L "$CONTENTS/MacOS/$EXECUTABLE" "$FRAMEWORKS"/*.dylib | grep "$BREW_PREFIX"; exit 1
 fi
 
 # --- Sign -----------------------------------------------------------------------
 echo "✍️  Signing with: $SIGN_IDENTITY"
-ENTITLEMENTS="$DIR/scripts/VPlayer.entitlements"
+ENTITLEMENTS="$DIR/scripts/LerzoPlayer.entitlements"
 for lib in "$FRAMEWORKS"/*.dylib; do
     codesign --force --options runtime --timestamp --sign "$SIGN_IDENTITY" "$lib" 2>&1 | grep -v "replacing existing signature" || true
 done

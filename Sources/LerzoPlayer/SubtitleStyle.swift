@@ -47,13 +47,13 @@ public final class SubtitleStyle: ObservableObject {
 
     private let defaults = UserDefaults.standard
     private enum Keys {
-        static let fontFamily = "VPlayer.subFontFamily"
-        static let textColor = "VPlayer.subTextColor"
-        static let outlineWidth = "VPlayer.subOutlineWidth"
-        static let outlineColor = "VPlayer.subOutlineColor"
-        static let backgroundOpacity = "VPlayer.subBackgroundOpacity"
-        static let bottomInset = "VPlayer.subBottomInset"
-        static let translationScale = "VPlayer.subTranslationScale"
+        static let fontFamily = "LerzoPlayer.subFontFamily"
+        static let textColor = "LerzoPlayer.subTextColor"
+        static let outlineWidth = "LerzoPlayer.subOutlineWidth"
+        static let outlineColor = "LerzoPlayer.subOutlineColor"
+        static let backgroundOpacity = "LerzoPlayer.subBackgroundOpacity"
+        static let bottomInset = "LerzoPlayer.subBottomInset"
+        static let translationScale = "LerzoPlayer.subTranslationScale"
     }
 
     private init() {

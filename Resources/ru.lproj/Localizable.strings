@@ -1,4 +1,4 @@
-/* VPlayer — Russian UI strings. Keys are the English source strings. */
+/* Lerzo Player — Russian UI strings. Keys are the English source strings. */
 
 /* Menus */
 "Settings..." = "Настройки...";
@@ -16,7 +16,7 @@
 
 /* Welcome screen */
 "Loading video..." = "Загрузка видео...";
-"VPlayer — a player for language learning" = "VPlayer — плеер для изучения языка";
+"Lerzo Player — a player for language learning" = "Lerzo Player — плеер для изучения языка";
 "Drop a movie here (MKV, MP4) or click the button below" = "Перетащите сюда фильм (MKV, MP4) или нажмите кнопку ниже";
 "Choose a video..." = "Выбрать видео...";
 "TAB: peek at the translation" = "TAB: быстро подглядеть перевод";
@@ -87,7 +87,7 @@
 
 
 /* Settings */
-"VPlayer Settings" = "Настройки VPlayer";
+"Lerzo Player Settings" = "Настройки Lerzo Player";
 "Gemini API Integration" = "Интеграция с Gemini API";
 "The key is used for contextual translation and for explaining slang and idioms from the movie." = "Ключ используется для контекстного перевода и разбора сленга/идиом из фильма.";
 "Key is set" = "Ключ активен";
@@ -95,7 +95,7 @@
 "Languages" = "Языки";
 "When a file opens, the player picks the audio and subtitles in the language you are learning, and subtitles in your native language for the TAB peek. The AI breakdown is in your native language too." = "При открытии файла плеер сам выберет аудио и субтитры на изучаемом языке, а для подглядывания по TAB — субтитры на родном. ИИ-разбор тоже будет на родном языке.";
 "Interface language:" = "Язык интерфейса:";
-"The interface language changes after VPlayer is relaunched." = "Язык интерфейса изменится после перезапуска VPlayer.";
+"The interface language changes after Lerzo Player is relaunched." = "Язык интерфейса изменится после перезапуска Lerzo Player.";
 "Relaunch Now" = "Перезапустить";
 "I'm learning:" = "Изучаю:";
 "Don't select automatically" = "Не выбирать автоматически";
@@ -144,12 +144,12 @@
 
 /* First run & Gemini errors */
 "Set up AI explanations" = "Настройте ИИ-разбор";
-"VPlayer explains idioms, slang and context with Google Gemini. It needs a free API key — getting one takes a minute, no card required." = "VPlayer объясняет идиомы, сленг и контекст через Google Gemini. Для этого нужен бесплатный API-ключ — получить его можно за минуту, карта не нужна.";
+"Lerzo Player explains idioms, slang and context with Google Gemini. It needs a free API key — getting one takes a minute, no card required." = "Lerzo Player объясняет идиомы, сленг и контекст через Google Gemini. Для этого нужен бесплатный API-ключ — получить его можно за минуту, карта не нужна.";
 "1. Get a free key" = "1. Получить ключ";
 "2. Paste it in Settings" = "2. Вставить в Настройках";
 "Open Settings" = "Открыть настройки";
 "1. Open Google AI Studio and create a key (free, no card needed)" = "1. Откройте Google AI Studio и создайте ключ (бесплатно, карта не нужна)";
-"2. Paste it into the field above — VPlayer keeps it in your keychain." = "2. Вставьте его в поле выше — VPlayer хранит его в вашей связке ключей.";
+"2. Paste it into the field above — Lerzo Player keeps it in your keychain." = "2. Вставьте его в поле выше — Lerzo Player хранит его в вашей связке ключей.";
 "Google AI Studio ↗" = "Google AI Studio ↗";
 "Check key" = "Проверить ключ";
 "Key works" = "Ключ работает";
@@ -163,14 +163,14 @@
 "No internet connection." = "Нет подключения к интернету.";
 "Gemini took too long to answer." = "Gemini слишком долго не отвечает.";
 "Gemini declined to explain this line (safety filter)." = "Gemini отказался разбирать эту реплику (фильтр безопасности).";
-"Gemini sent an answer VPlayer could not read." = "Gemini прислал ответ, который VPlayer не смог прочитать.";
+"Gemini sent an answer Lerzo Player could not read." = "Gemini прислал ответ, который Lerzo Player не смог прочитать.";
 "Gemini error: %@" = "Ошибка Gemini: %@";
 "HTTP %lld" = "HTTP %lld";
 "Get a free key in Google AI Studio (it takes a minute), then paste it in Settings." = "Получите бесплатный ключ в Google AI Studio (это займёт минуту) и вставьте его в Настройках.";
 "Check the key in Settings — it should start with “AIza”. If you regenerated it, paste the new one." = "Проверьте ключ в Настройках — он должен начинаться с «AIza». Если вы пересоздали ключ, вставьте новый.";
 "Open Google AI Studio and make sure the key has access to the Gemini API." = "Откройте Google AI Studio и убедитесь, что у ключа есть доступ к Gemini API.";
 "Wait a minute and try again, or create a new key in Google AI Studio." = "Подождите минуту и попробуйте снова или создайте новый ключ в Google AI Studio.";
-"Try again later; if it keeps failing, update VPlayer." = "Попробуйте позже; если не помогает — обновите VPlayer.";
+"Try again later; if it keeps failing, update Lerzo Player." = "Попробуйте позже; если не помогает — обновите Lerzo Player.";
 "Try again in a moment." = "Попробуйте ещё раз через минуту.";
 "Check the connection and try again." = "Проверьте подключение и попробуйте снова.";
 "Try a different line." = "Попробуйте другую реплику.";

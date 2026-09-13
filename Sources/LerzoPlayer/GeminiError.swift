@@ -49,7 +49,7 @@ public enum GeminiError: LocalizedError, Equatable {
         case .blocked:
             return String(localized: "Gemini declined to explain this line (safety filter).")
         case .unreadableResponse:
-            return String(localized: "Gemini sent an answer VPlayer could not read.")
+            return String(localized: "Gemini sent an answer Lerzo Player could not read.")
         case .badRequest(let message), .other(let message):
             return String(localized: "Gemini error: \(message)")
         }
@@ -66,7 +66,7 @@ public enum GeminiError: LocalizedError, Equatable {
         case .quotaExceeded:
             return String(localized: "Wait a minute and try again, or create a new key in Google AI Studio.")
         case .modelNotFound:
-            return String(localized: "Try again later; if it keeps failing, update VPlayer.")
+            return String(localized: "Try again later; if it keeps failing, update Lerzo Player.")
         case .serviceUnavailable, .timedOut:
             return String(localized: "Try again in a moment.")
         case .offline:

@@ -74,15 +74,15 @@ public final class MPVPlayer: ObservableObject {
     }
     public static let defaultSubFontSize = 30.0
     public static let subFontSizeRange = 16.0...60.0
-    private static let subFontSizeKey = "VPlayer.subFontSizePt"
+    private static let subFontSizeKey = "LerzoPlayer.subFontSizePt"
     /// Pre-1.x key that stored a nominal mpv size; the words were drawn at 65 % of it.
-    private static let legacySubFontSizeKey = "VPlayer.subFontSize"
+    private static let legacySubFontSizeKey = "LerzoPlayer.subFontSize"
     
     @Published public var subtitleHistory: [String] = []
     /// Hold-to-peek pauses playback so the translation can actually be read
     /// before the next line or scene arrives; playback resumes on release.
     @Published public var pauseWhilePeeking: Bool = true {
-        didSet { UserDefaults.standard.set(pauseWhilePeeking, forKey: "VPlayer.pauseWhilePeeking") }
+        didSet { UserDefaults.standard.set(pauseWhilePeeking, forKey: "LerzoPlayer.pauseWhilePeeking") }
     }
     private var didPauseForPeek = false
     /// Speech-first audio: lifts the centre channel when downmixing (film
@@ -90,7 +90,7 @@ public final class MPVPlayer: ObservableObject {
     /// and levels the volume so whispers and explosions land close together.
     @Published public var boostDialogue: Bool = false {
         didSet {
-            UserDefaults.standard.set(boostDialogue, forKey: "VPlayer.boostDialogue")
+            UserDefaults.standard.set(boostDialogue, forKey: "LerzoPlayer.boostDialogue")
             applyAudioFilters()
         }
     }
@@ -109,7 +109,7 @@ public final class MPVPlayer: ObservableObject {
     /// tone-mapping it to SDR. Only takes effect on displays that support EDR.
     @Published public var hdrOutputEnabled: Bool = true {
         didSet {
-            UserDefaults.standard.set(hdrOutputEnabled, forKey: "VPlayer.hdrOutputEnabled")
+            UserDefaults.standard.set(hdrOutputEnabled, forKey: "LerzoPlayer.hdrOutputEnabled")
             updateHDROutput()
         }
     }
@@ -162,19 +162,19 @@ public final class MPVPlayer: ObservableObject {
             defaults.set(self.subFontSize, forKey: Self.subFontSizeKey)
             defaults.removeObject(forKey: Self.legacySubFontSizeKey)
         }
-        if let saved = UserDefaults.standard.object(forKey: "VPlayer.pauseWhilePeeking") as? Bool {
+        if let saved = UserDefaults.standard.object(forKey: "LerzoPlayer.pauseWhilePeeking") as? Bool {
             self.pauseWhilePeeking = saved
         }
-        if let saved = UserDefaults.standard.object(forKey: "VPlayer.hdrOutputEnabled") as? Bool {
+        if let saved = UserDefaults.standard.object(forKey: "LerzoPlayer.hdrOutputEnabled") as? Bool {
             self.hdrOutputEnabled = saved
         }
-        if let saved = UserDefaults.standard.object(forKey: "VPlayer.boostDialogue") as? Bool {
+        if let saved = UserDefaults.standard.object(forKey: "LerzoPlayer.boostDialogue") as? Bool {
             self.boostDialogue = saved
         }
-        self.brightness = defaults.double(forKey: "VPlayer.picture.brightness")
-        self.contrast = defaults.double(forKey: "VPlayer.picture.contrast")
-        self.saturation = defaults.double(forKey: "VPlayer.picture.saturation")
-        self.gamma = defaults.double(forKey: "VPlayer.picture.gamma")
+        self.brightness = defaults.double(forKey: "LerzoPlayer.picture.brightness")
+        self.contrast = defaults.double(forKey: "LerzoPlayer.picture.contrast")
+        self.saturation = defaults.double(forKey: "LerzoPlayer.picture.saturation")
+        self.gamma = defaults.double(forKey: "LerzoPlayer.picture.gamma")
     }
     
     deinit {
@@ -276,7 +276,7 @@ public final class MPVPlayer: ObservableObject {
         eventThread = Thread { [weak self] in
             self?.runEventLoop()
         }
-        eventThread?.name = "VPlayer.MPVEventThread"
+        eventThread?.name = "LerzoPlayer.MPVEventThread"
         eventThread?.start()
     }
     
@@ -365,7 +365,7 @@ public final class MPVPlayer: ObservableObject {
     }
 
     private func applyPictureSetting(_ property: String, _ value: Double) {
-        UserDefaults.standard.set(value, forKey: "VPlayer.picture.\(property)")
+        UserDefaults.standard.set(value, forKey: "LerzoPlayer.picture.\(property)")
         setPropertyAsync(property, "\(Int(value.rounded()))")
     }
 

@@ -12,19 +12,19 @@ public final class GeminiService: ObservableObject {
         }
     }
     private static let keychainAccount = "gemini-api-key"
-    private static let legacyDefaultsKey = "VPlayer.geminiApiKey"
+    private static let legacyDefaultsKey = "LerzoPlayer.geminiApiKey"
     private var isLoadingKey = false
 
     /// Google retires model names for new keys every few months, so the
     /// model is discovered from the API on a 404 and remembered.
-    @Published public var selectedModel: String = UserDefaults.standard.string(forKey: "VPlayer.geminiModel") ?? defaultModel {
-        didSet { UserDefaults.standard.set(selectedModel, forKey: "VPlayer.geminiModel") }
+    @Published public var selectedModel: String = UserDefaults.standard.string(forKey: "LerzoPlayer.geminiModel") ?? defaultModel {
+        didSet { UserDefaults.standard.set(selectedModel, forKey: "LerzoPlayer.geminiModel") }
     }
     public static let defaultModel = "gemini-3.6-flash"
     /// Let the model think hard before answering. Off by default: for one
     /// subtitle line it mostly adds seconds of waiting and paid tokens.
-    @Published public var deepThinking: Bool = UserDefaults.standard.bool(forKey: "VPlayer.geminiDeepThinking") {
-        didSet { UserDefaults.standard.set(deepThinking, forKey: "VPlayer.geminiDeepThinking") }
+    @Published public var deepThinking: Bool = UserDefaults.standard.bool(forKey: "LerzoPlayer.geminiDeepThinking") {
+        didSet { UserDefaults.standard.set(deepThinking, forKey: "LerzoPlayer.geminiDeepThinking") }
     }
     /// Text models the key can use. Cached for a day — new models do not
     /// appear every minute, and the list call counts against the quota too.
@@ -34,8 +34,8 @@ public final class GeminiService: ObservableObject {
             UserDefaults.standard.set(Date(), forKey: Self.modelsFetchedAtKey)
         }
     }
-    private static let modelsCacheKey = "VPlayer.geminiModels"
-    private static let modelsFetchedAtKey = "VPlayer.geminiModelsFetchedAt"
+    private static let modelsCacheKey = "LerzoPlayer.geminiModels"
+    private static let modelsFetchedAtKey = "LerzoPlayer.geminiModelsFetchedAt"
     private static let modelsCacheLifetime: TimeInterval = 24 * 60 * 60
 
     /// True when the cached list is missing or older than a day.
@@ -353,8 +353,8 @@ public final class GeminiService: ObservableObject {
 
     /// Models that answered 400 to a thinking config; persisted so the extra
     /// round trip happens once per model, not once per line.
-    private static var thinkingUnsupported: Set<String> = Set(UserDefaults.standard.stringArray(forKey: "VPlayer.geminiNoThinking") ?? []) {
-        didSet { UserDefaults.standard.set(Array(thinkingUnsupported).sorted(), forKey: "VPlayer.geminiNoThinking") }
+    private static var thinkingUnsupported: Set<String> = Set(UserDefaults.standard.stringArray(forKey: "LerzoPlayer.geminiNoThinking") ?? []) {
+        didSet { UserDefaults.standard.set(Array(thinkingUnsupported).sorted(), forKey: "LerzoPlayer.geminiNoThinking") }
     }
 
     /// Per the REST reference, `thinkingLevel` is for Gemini 3+ ("use with
