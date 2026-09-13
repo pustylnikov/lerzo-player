@@ -206,3 +206,13 @@
 "Subtitle delay: earlier / later by 0.1 s" = "Subtitle delay: earlier / later by 0.1 s";
 "Audio delay: earlier / later by 0.1 s" = "Audio delay: earlier / later by 0.1 s";
 "Reset delay" = "Reset delay";
+
+/* Shortcuts cheat sheet */
+"Language learning" = "Language learning";
+"Sync" = "Sync";
+"General" = "General";
+"Settings" = "Settings";
+"Show / hide this cheat sheet" = "Show / hide this cheat sheet";
+"Close a panel, or leave full screen" = "Close a panel, or leave full screen";
+"H or Esc to close" = "H or Esc to close";
+"Keyboard shortcuts (H)" = "Keyboard shortcuts (H)";

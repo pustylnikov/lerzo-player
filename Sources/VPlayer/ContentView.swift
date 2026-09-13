@@ -10,6 +10,7 @@ public struct ContentView: View {
     @State private var showControls: Bool = true
     @State private var isSettingsOpen: Bool = false
     @State private var isExplanationOpen: Bool = false
+    @State private var isShortcutsOpen: Bool = false
     @State private var selectedWordToExplain: String? = nil
     @State private var hideTimer: Timer? = nil
     
@@ -68,9 +69,16 @@ public struct ContentView: View {
                 ControlsOverlayView(
                     isSettingsOpen: $isSettingsOpen,
                     isExplanationOpen: $isExplanationOpen,
+                    isShortcutsOpen: $isShortcutsOpen,
                     onOpenFile: openFileDialog
                 )
                 .transition(.opacity.animation(.easeInOut(duration: 0.2)))
+            }
+
+            // Keyboard cheat sheet (H)
+            if isShortcutsOpen {
+                ShortcutsOverlayView(isOpen: $isShortcutsOpen)
+                    .transition(.opacity.combined(with: .scale(scale: 0.97)))
             }
             
             // LAYER 6: Gemini AI Explanation Popover
@@ -101,6 +109,10 @@ public struct ContentView: View {
             setupKeyboardBindings()
             keyboardMonitor.isExplanationOpen = isExplanationOpen
             keyboardMonitor.isSettingsOpen = isSettingsOpen
+            keyboardMonitor.isShortcutsOpen = isShortcutsOpen
+        }
+        .onChange(of: isShortcutsOpen) { _, isOpen in
+            keyboardMonitor.isShortcutsOpen = isOpen
         }
         .onChange(of: player.playbackState) { _, state in
             // Playback can start without a mouse event (for example after opening
@@ -126,6 +138,9 @@ public struct ContentView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("OpenSettings"))) { _ in
             isSettingsOpen = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ToggleShortcuts"))) { _ in
+            keyboardMonitor.onToggleShortcutsRequested?()
         }
     }
     
@@ -280,6 +295,11 @@ public struct ContentView: View {
         }
         keyboardMonitor.onDismissSettingsRequested = {
             self.isSettingsOpen = false
+        }
+        keyboardMonitor.onToggleShortcutsRequested = {
+            withAnimation(.easeOut(duration: 0.15)) {
+                self.isShortcutsOpen.toggle()
+            }
         }
     }
     

@@ -131,6 +131,13 @@ struct VPlayerApp: App {
                 }
                 .keyboardShortcut("g", modifiers: .command)
             }
+
+            CommandGroup(replacing: .help) {
+                Button("Keyboard Shortcuts") {
+                    NotificationCenter.default.post(name: NSNotification.Name("ToggleShortcuts"), object: nil)
+                }
+                .keyboardShortcut("h", modifiers: [])
+            }
         }
     }
 

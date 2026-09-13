@@ -4,6 +4,7 @@ public struct ControlsOverlayView: View {
     @ObservedObject var player = MPVPlayer.shared
     @Binding var isSettingsOpen: Bool
     @Binding var isExplanationOpen: Bool
+    @Binding var isShortcutsOpen: Bool
     var onOpenFile: () -> Void
     
     @State private var isHoveringSeeker: Bool = false
@@ -15,9 +16,11 @@ public struct ControlsOverlayView: View {
     
     public init(isSettingsOpen: Binding<Bool>,
                 isExplanationOpen: Binding<Bool>,
+                isShortcutsOpen: Binding<Bool>,
                 onOpenFile: @escaping () -> Void) {
         self._isSettingsOpen = isSettingsOpen
         self._isExplanationOpen = isExplanationOpen
+        self._isShortcutsOpen = isShortcutsOpen
         self.onOpenFile = onOpenFile
     }
     
@@ -225,6 +228,18 @@ public struct ControlsOverlayView: View {
             .help("Explain the current line and its idioms with Gemini (Cmd + G)")
             .disabled(!canControlPlayback)
             
+            // Keyboard cheat sheet
+            Button(action: { withAnimation(.easeOut(duration: 0.15)) { isShortcutsOpen.toggle() } }) {
+                Image(systemName: "keyboard")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.white)
+                    .padding(8)
+                    .background(Color.white.opacity(isShortcutsOpen ? 0.3 : 0.15))
+                    .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .help("Keyboard shortcuts (H)")
+
             // Settings Button
             Button(action: { isSettingsOpen.toggle() }) {
                 Image(systemName: "gearshape.fill")

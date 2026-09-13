@@ -204,3 +204,13 @@
 "Subtitle delay: earlier / later by 0.1 s" = "Задержка субтитров: раньше / позже на 0,1 с";
 "Audio delay: earlier / later by 0.1 s" = "Задержка звука: раньше / позже на 0,1 с";
 "Reset delay" = "Сбросить задержку";
+
+/* Shortcuts cheat sheet */
+"Language learning" = "Изучение языка";
+"Sync" = "Синхронизация";
+"General" = "Общие";
+"Settings" = "Настройки";
+"Show / hide this cheat sheet" = "Показать / скрыть эту шпаргалку";
+"Close a panel, or leave full screen" = "Закрыть панель или выйти из полноэкранного режима";
+"H or Esc to close" = "H или Esc — закрыть";
+"Keyboard shortcuts (H)" = "Горячие клавиши (H)";

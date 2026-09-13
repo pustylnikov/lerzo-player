@@ -10,7 +10,9 @@ public final class KeyboardMonitor: ObservableObject {
     public var onOpenSettingsRequested: (() -> Void)?
     public var onDismissExplanationRequested: (() -> Void)?
     public var onDismissSettingsRequested: (() -> Void)?
+    public var onToggleShortcutsRequested: (() -> Void)?
     public var isExplanationOpen: Bool = false
+    public var isShortcutsOpen: Bool = false
     /// While the settings sheet is up, player shortcuts must not fire from
     /// its sliders and pickers; only Escape (close) and Cmd+, are handled.
     public var isSettingsOpen: Bool = false
@@ -74,9 +76,18 @@ public final class KeyboardMonitor: ObservableObject {
         }
         
         if event.type == .keyDown {
-            // ESCAPE KEY (keyCode 53) -> Dismiss popover or exit fullscreen
+            // H (keyCode 4) -> toggle the shortcuts cheat sheet
+            if event.keyCode == 4 && flags.isEmpty {
+                onToggleShortcutsRequested?()
+                return nil
+            }
+
+            // ESCAPE KEY (keyCode 53) -> Dismiss cheat sheet / popover or exit fullscreen
             if event.keyCode == 53 {
-                if isExplanationOpen {
+                if isShortcutsOpen {
+                    onToggleShortcutsRequested?()
+                    return nil
+                } else if isExplanationOpen {
                     onDismissExplanationRequested?()
                     return nil
                 } else if player.isFullscreen {

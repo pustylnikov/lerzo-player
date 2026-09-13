@@ -454,20 +454,15 @@ public struct SettingsView: View {
                                 .font(.system(size: 14, weight: .bold))
                         }
                         
-                        shortcutRow(keys: "TAB", desc: "Hold: instantly peek at the translation (second subtitle track)")
-                        shortcutRow(keys: "R", desc: "Replay the current line from the start")
-                        shortcutRow(keys: "E", desc: "Jump to the next line of dialogue")
-                        shortcutRow(keys: "⌘ + G", desc: "AI breakdown of the current line with Gemini")
-                        shortcutRow(keys: "Space", desc: "Pause / Play")
-                        shortcutRow(keys: "←  /  →", desc: "Seek 5 seconds back / forward")
-                        shortcutRow(keys: "↑  /  ↓", desc: "Volume +5% / −5%")
-                        shortcutRow(keys: "M", desc: "Mute / unmute")
-                        shortcutRow(keys: "[  /  ]", desc: "Speed: slower / faster by 0.1×")
-                        shortcutRow(keys: "⌫", desc: "Reset speed to 1×")
-                        shortcutRow(keys: "Z  /  X", desc: "Subtitle delay: earlier / later by 0.1 s")
-                        shortcutRow(keys: "⇧ + Z  /  ⇧ + X", desc: "Audio delay: earlier / later by 0.1 s")
-                        shortcutRow(keys: "F", desc: "Full screen")
-                        shortcutRow(keys: "⌘ + O", desc: "Open a video or an external subtitle file")
+                        ForEach(ShortcutsReference.groups) { group in
+                            Text(group.title)
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(.white.opacity(0.5))
+                                .padding(.top, 4)
+                            ForEach(group.entries) { entry in
+                                ShortcutRowView(entry: entry)
+                            }
+                        }
                     }
                     .padding(14)
                     .background(Color.white.opacity(0.04))
@@ -565,24 +560,6 @@ public struct SettingsView: View {
         return String(localized: "Same as system")
     }
 
-    private func shortcutRow(keys: LocalizedStringKey, desc: LocalizedStringKey) -> some View {
-        HStack(spacing: 10) {
-            Text(keys)
-                .font(.system(size: 11, weight: .bold, design: .monospaced))
-                .foregroundColor(.white)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 3)
-                .background(Color.white.opacity(0.15))
-                .cornerRadius(5)
-                .frame(minWidth: 65, alignment: .center)
-            
-            Text(desc)
-                .font(.system(size: 12))
-                .foregroundColor(.white.opacity(0.85))
-            
-            Spacer()
-        }
-    }
 }
 
 /// Invisible view that claims the sheet's initial first responder, so no
