@@ -44,6 +44,7 @@ struct LerzoPlayerApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     /// Observed so the Video menu's Fit/Fill title follows the player.
     @ObservedObject private var player = MPVPlayer.shared
+    @Environment(\.openWindow) private var openWindow
     
     var body: some Scene {
         Window("Lerzo Player", id: "main") {
@@ -56,6 +57,12 @@ struct LerzoPlayerApp: App {
         }
         .windowStyle(.hiddenTitleBar)
         .commands {
+            CommandGroup(replacing: .appInfo) {
+                Button("About Lerzo Player") {
+                    openWindow(id: AboutView.windowID)
+                }
+            }
+
             CommandGroup(replacing: .appSettings) {
                 Button("Settings...") {
                     NotificationCenter.default.post(name: NSNotification.Name("OpenSettings"), object: nil)
@@ -194,6 +201,17 @@ struct LerzoPlayerApp: App {
                 .keyboardShortcut("h", modifiers: [])
             }
         }
+
+        aboutWindow
+    }
+
+    /// The About window; `KeyboardMonitor` leaves keys alone while it is in front.
+    private var aboutWindow: some Scene {
+        Window("About Lerzo Player", id: AboutView.windowID) {
+            AboutView()
+                .preferredColorScheme(.dark)
+        }
+        .windowResizability(.contentSize)
     }
 
     /// `nil` resets the delay. Shows the OSD so the menu gives the same feedback as the keys.

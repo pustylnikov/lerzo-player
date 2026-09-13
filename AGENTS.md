@@ -57,6 +57,9 @@
   клавиш для шпаргалки (H) и настроек: новая клавиша добавляется туда.
 - `GeminiService.swift`, `GeminiError.swift`, `KeychainStore.swift`,
   `ExplanationPopoverView.swift` — разбор реплики через Gemini; ключ в keychain.
+- `AboutView.swift` — окно About (отдельная `Window`-сцена `about`): версия, текст GPLv3 из
+  `Resources/LICENSE`, список библиотек из `THIRD-PARTY-SOURCES.md` (есть только в релизной
+  сборке), ссылки `AboutInfo`. Пока оно ключевое, `KeyboardMonitor` не перехватывает клавиши.
 - `SettingsView.swift` — лист настроек 640 pt; `LanguagePreferences.swift` — автовыбор
   дорожек по языкам; `TrackModels.swift` — модели дорожек.
 

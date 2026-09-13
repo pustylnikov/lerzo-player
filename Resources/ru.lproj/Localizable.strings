@@ -278,3 +278,21 @@
 "Subtitles become available once a video is loaded" = "Субтитры станут доступны после загрузки видео";
 "Choose a subtitle track or load a subtitle file" = "Выбрать дорожку субтитров или загрузить файл";
 "Load an external subtitle file" = "Загрузить внешний файл субтитров";
+
+/* About window */
+"About Lerzo Player" = "О Lerzo Player";
+"About" = "О программе";
+"License" = "Лицензия";
+"Libraries" = "Библиотеки";
+"Version %@" = "Версия %@";
+"A video player for learning languages: clickable subtitles, line-by-line seeking and AI explanations of dialogue." = "Видеоплеер для изучения языков: кликабельные субтитры, перемотка по репликам и разбор диалогов с помощью ИИ.";
+"Lerzo Player is free software under the GNU General Public License, version 3. The source code of this exact version ships in the download next to the app, in the “Source code” folder." = "Lerzo Player — свободное ПО под лицензией GNU General Public License версии 3. Исходный код именно этой версии лежит в образе рядом с приложением, в папке «Source code».";
+"Playback is powered by mpv and FFmpeg. The Libraries tab lists every open-source library included in this build." = "Воспроизведение построено на mpv и FFmpeg. На вкладке «Библиотеки» перечислены все open-source библиотеки, включённые в эту сборку.";
+"Website ↗" = "Сайт ↗";
+"Source Code ↗" = "Исходный код ↗";
+"Source ↗" = "Исходники ↗";
+"Recipe ↗" = "Рецепт ↗";
+"The license text is missing from this build." = "В этой сборке нет текста лицензии.";
+"This development build links the libraries installed by Homebrew." = "Эта dev-сборка использует библиотеки, установленные через Homebrew.";
+"Release builds bundle them and list each one here with its version, license and source." = "Релизные сборки включают их в приложение и показывают здесь каждую с версией, лицензией и исходниками.";
+"%lld libraries built by Homebrew are bundled with the app. Links lead to each library's source code and build recipe." = "В приложение включены библиотеки, собранные Homebrew: %lld. Ссылки ведут к исходному коду и рецепту сборки каждой.";

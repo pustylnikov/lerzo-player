@@ -280,3 +280,21 @@
 "Subtitles become available once a video is loaded" = "Subtitles become available once a video is loaded";
 "Choose a subtitle track or load a subtitle file" = "Choose a subtitle track or load a subtitle file";
 "Load an external subtitle file" = "Load an external subtitle file";
+
+/* About window */
+"About Lerzo Player" = "About Lerzo Player";
+"About" = "About";
+"License" = "License";
+"Libraries" = "Libraries";
+"Version %@" = "Version %@";
+"A video player for learning languages: clickable subtitles, line-by-line seeking and AI explanations of dialogue." = "A video player for learning languages: clickable subtitles, line-by-line seeking and AI explanations of dialogue.";
+"Lerzo Player is free software under the GNU General Public License, version 3. The source code of this exact version ships in the download next to the app, in the “Source code” folder." = "Lerzo Player is free software under the GNU General Public License, version 3. The source code of this exact version ships in the download next to the app, in the “Source code” folder.";
+"Playback is powered by mpv and FFmpeg. The Libraries tab lists every open-source library included in this build." = "Playback is powered by mpv and FFmpeg. The Libraries tab lists every open-source library included in this build.";
+"Website ↗" = "Website ↗";
+"Source Code ↗" = "Source Code ↗";
+"Source ↗" = "Source ↗";
+"Recipe ↗" = "Recipe ↗";
+"The license text is missing from this build." = "The license text is missing from this build.";
+"This development build links the libraries installed by Homebrew." = "This development build links the libraries installed by Homebrew.";
+"Release builds bundle them and list each one here with its version, license and source." = "Release builds bundle them and list each one here with its version, license and source.";
+"%lld libraries built by Homebrew are bundled with the app. Links lead to each library's source code and build recipe." = "%lld libraries built by Homebrew are bundled with the app. Links lead to each library's source code and build recipe.";

@@ -11,14 +11,15 @@
       релизного коммита, `THIRD-PARTY-SOURCES.md` со всеми встроенными библиотеками и их
       исходниками, `LICENSE`); требует чистого рабочего дерева.
 - [x] `LICENSE` (GPLv3) в корне репозитория; копия — в `Contents/Resources` бандла.
-- [ ] **Публичный репозиторий** (например, `lerzo-player`), ссылка на него — в About.
+- [ ] **Публичный репозиторий** (например, `lerzo-player`); адрес — в
+      `AboutInfo.repositoryURL`, тогда в About появится кнопка «Исходный код».
 - [ ] **Страница плеера на лендинге Lerzo** — отдельный бесплатный open-source плеер для
       macOS, без связи с подпиской приложения; там же DMG и `appcast.xml` для Sparkle.
 - [ ] **Sparkle-автообновления** — подключить Sparkle 2, ключ EdDSA, `SUFeedURL`,
       генерировать appcast при релизе (`scripts/release.sh` уже делает DMG).
-- [ ] **Окно About с лицензиями** — плеер под GPLv3; в бандл входят libmpv (GPL) и ffmpeg
-      (GPLv3+), libass, libplacebo, MoltenVK и др. — показать тексты лицензий и ссылку на
-      репозиторий.
+- [x] Окно About (`AboutView.swift`): версия, GPLv3 (текст из `Resources/LICENSE`),
+      вкладка «Библиотеки» из `THIRD-PARTY-SOURCES.md` релизной сборки, ссылка на сайт.
+      Ссылка на репозиторий появится, когда `AboutInfo.repositoryURL` получит адрес.
 - [ ] **Прогнать `scripts/release.sh`** после того, как бинарник стал линковаться с ffmpeg
       напрямую (модуль `Cavformat`): убедиться, что проверка «Homebrew references remain»
       проходит, и ноутаризация проходит.

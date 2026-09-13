@@ -17,6 +17,8 @@ public final class KeyboardMonitor: ObservableObject {
     /// While the settings sheet is up, player shortcuts must not fire from
     /// its sliders and pickers; only Escape (close) and Cmd+, are handled.
     public var isSettingsOpen: Bool = false
+    /// Set by `AboutView` while its window exists; keys are not intercepted there.
+    public weak var aboutWindow: NSWindow?
     
     public init() {
         startMonitoring()
@@ -45,6 +47,11 @@ public final class KeyboardMonitor: ObservableObject {
     private func handleEvent(_ event: NSEvent) -> NSEvent? {
         // If a text field has focus (e.g. typing API key), do not intercept typing!
         if let responder = NSApp.keyWindow?.firstResponder, responder is NSTextView {
+            return event
+        }
+        // Player shortcuts belong to the player window; the About window keeps
+        // the standard behaviour (⌘W closes it, Space does nothing).
+        if let aboutWindow, NSApp.keyWindow === aboutWindow {
             return event
         }
         
