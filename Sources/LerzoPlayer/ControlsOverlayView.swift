@@ -582,9 +582,10 @@ struct ControlsBarHeightKey: PreferenceKey {
 }
 
 
-/// Edge darkening shown together with the controls for contrast. Drawn as a
-/// separate layer *below* the subtitles (see `ContentView`), so it tints the
-/// video but never the subtitle text.
+/// Darkening behind the top bar, shown together with the controls so its
+/// buttons and the file name stay readable on bright video. Fades out over
+/// the top third; the bottom bar has its own opaque background and the
+/// subtitles live there, so nothing is tinted below.
 struct ControlsBackdropView: View {
     var body: some View {
         LinearGradient(
@@ -592,7 +593,7 @@ struct ControlsBackdropView: View {
                 Color.black.opacity(0.6),
                 Color.clear,
                 Color.clear,
-                Color.black.opacity(0.7)
+                Color.clear
             ]),
             startPoint: .top,
             endPoint: .bottom
