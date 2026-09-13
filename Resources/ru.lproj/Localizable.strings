@@ -123,6 +123,11 @@
 "no background" = "без подложки";
 "%lld%%" = "%lld %%";
 "Bottom inset:" = "Отступ снизу:";
+"Playback controls:" = "Панель воспроизведения:";
+"Keep subtitles always above" = "Субтитры всегда выше панели";
+"Lift subtitles only while shown" = "Поднимать только пока панель видна";
+"The subtitles never sit under the controls bar, so the line stays put when the bar appears; the bottom inset acts as a minimum." = "Субтитры никогда не оказываются под панелью, и строка не сдвигается при её появлении; отступ снизу работает как минимальный.";
+"The bottom inset is used exactly, even right at the edge; the line moves up whenever the controls bar appears." = "Отступ снизу соблюдается точно, хоть у самого края; строка поднимается каждый раз, когда появляется панель.";
 "%lld%% of height" = "%lld %% высоты";
 "On-screen preview:" = "Предпросмотр на экране:";
 "Reset style" = "Сбросить стиль";

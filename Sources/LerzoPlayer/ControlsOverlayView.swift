@@ -56,6 +56,11 @@ public struct ControlsOverlayView: View {
             bottomBar
                 .padding(.horizontal, 16)
                 .padding(.bottom, 12)
+                // Reports how much of the window's bottom the bar takes, so
+                // the subtitle layer can stay clear of it (see SubtitleStyle).
+                .background(GeometryReader { geo in
+                    Color.clear.preference(key: ControlsBarHeightKey.self, value: geo.size.height)
+                })
                 .disabled(!canControlPlayback)
                 .opacity(canControlPlayback ? 1 : 0.42)
         }
@@ -582,5 +587,13 @@ public struct ControlsOverlayView: View {
         } else {
             return String(format: "%02d:%02d", m, s)
         }
+    }
+}
+
+/// Height of the bottom controls bar including its margin to the window edge.
+struct ControlsBarHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
     }
 }

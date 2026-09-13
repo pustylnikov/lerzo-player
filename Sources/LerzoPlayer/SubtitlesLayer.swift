@@ -4,19 +4,45 @@ public struct SubtitlesLayer: View {
     @ObservedObject var player = MPVPlayer.shared
     @ObservedObject var style = SubtitleStyle.shared
     @Binding var showExplanation: Bool
+    /// Height of the playback controls bar (with its bottom margin), measured
+    /// by `ControlsOverlayView`; 0 until it has been shown once.
+    var controlsBarHeight: CGFloat
+    var controlsShown: Bool
     var onExplainWord: ((String) -> Void)?
     
     @State private var hoveredWord: String? = nil
     @State private var isHoveringPill: Bool = false
     
-    public init(showExplanation: Binding<Bool>, onExplainWord: ((String) -> Void)? = nil) {
+    public init(showExplanation: Binding<Bool>,
+                controlsBarHeight: CGFloat = 0,
+                controlsShown: Bool = false,
+                onExplainWord: ((String) -> Void)? = nil) {
         self._showExplanation = showExplanation
+        self.controlsBarHeight = controlsBarHeight
+        self.controlsShown = controlsShown
         self.onExplainWord = onExplainWord
     }
     
     public var body: some View {
         GeometryReader { geo in
-            content(bottomInset: geo.size.height * style.bottomInset)
+            content(bottomInset: bottomInset(for: geo.size.height))
+                // Only the "lift while visible" mode ever changes the inset at
+                // runtime; window resizes must not animate.
+                .animation(.easeInOut(duration: 0.2), value: controlsShown)
+        }
+    }
+
+    /// The user's inset, raised above the controls bar when it would overlap:
+    /// permanently or only while the bar is on screen, per `SubtitleStyle`.
+    private func bottomInset(for height: CGFloat) -> CGFloat {
+        let requested = height * style.bottomInset
+        guard controlsBarHeight > 0 else { return requested }
+        let clearance = controlsBarHeight + SubtitleStyle.controlsClearanceGap
+        switch style.controlsClearance {
+        case .always:
+            return max(requested, clearance)
+        case .whileControlsVisible:
+            return controlsShown ? max(requested, clearance) : requested
         }
     }
 

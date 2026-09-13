@@ -30,6 +30,11 @@ public final class SubtitleStyle: ObservableObject {
     @Published public var bottomInset: Double {
         didSet { defaults.set(bottomInset, forKey: Keys.bottomInset) }
     }
+    /// How the subtitles stay clear of the playback controls bar, which
+    /// would otherwise cover them at the default inset in most window sizes.
+    @Published public var controlsClearance: ControlsClearance {
+        didSet { defaults.set(controlsClearance.rawValue, forKey: Keys.controlsClearance) }
+    }
     /// Size of the TAB translation line relative to the primary subtitles
     /// (1 = the same size).
     @Published public var translationScale: Double {
@@ -44,6 +49,20 @@ public final class SubtitleStyle: ObservableObject {
     public static let bottomInsetRange = 0.03...0.4
     public static let defaultTranslationScale = 1.0
     public static let translationScaleRange = 0.5...1.5
+    public static let defaultControlsClearance = ControlsClearance.always
+    /// Space between the top of the controls bar and the subtitle box.
+    public static let controlsClearanceGap: CGFloat = 12
+
+    public enum ControlsClearance: String, CaseIterable, Identifiable {
+        /// The resting position never goes below the bar, so the text never
+        /// moves when the bar appears; `bottomInset` acts as "at least".
+        case always
+        /// `bottomInset` is honoured exactly (even right at the edge) and the
+        /// text is lifted above the bar only while the bar is on screen.
+        case whileControlsVisible
+
+        public var id: String { rawValue }
+    }
 
     private let defaults = UserDefaults.standard
     private enum Keys {
@@ -54,6 +73,7 @@ public final class SubtitleStyle: ObservableObject {
         static let backgroundOpacity = "LerzoPlayer.subBackgroundOpacity"
         static let bottomInset = "LerzoPlayer.subBottomInset"
         static let translationScale = "LerzoPlayer.subTranslationScale"
+        static let controlsClearance = "LerzoPlayer.subControlsClearance"
     }
 
     private init() {
@@ -64,6 +84,8 @@ public final class SubtitleStyle: ObservableObject {
         backgroundOpacity = defaults.object(forKey: Keys.backgroundOpacity) as? Double ?? Self.defaultBackgroundOpacity
         bottomInset = defaults.object(forKey: Keys.bottomInset) as? Double ?? Self.defaultBottomInset
         translationScale = defaults.object(forKey: Keys.translationScale) as? Double ?? Self.defaultTranslationScale
+        controlsClearance = defaults.string(forKey: Keys.controlsClearance)
+            .flatMap(ControlsClearance.init(rawValue:)) ?? Self.defaultControlsClearance
     }
 
     public func reset() {
@@ -74,6 +96,7 @@ public final class SubtitleStyle: ObservableObject {
         backgroundOpacity = Self.defaultBackgroundOpacity
         bottomInset = Self.defaultBottomInset
         translationScale = Self.defaultTranslationScale
+        controlsClearance = Self.defaultControlsClearance
     }
 
     /// Font families installed on this Mac that can actually render

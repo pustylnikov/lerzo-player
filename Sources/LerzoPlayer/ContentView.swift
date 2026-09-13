@@ -13,6 +13,9 @@ public struct ContentView: View {
     @State private var isShortcutsOpen: Bool = false
     @State private var selectedWordToExplain: String? = nil
     @State private var hideTimer: Timer? = nil
+    /// Last measured height of the controls bar; kept while the bar is hidden
+    /// so the subtitles do not drop when it goes away in the "always" mode.
+    @State private var controlsBarHeight: CGFloat = 0
     
     public init() {}
     
@@ -50,9 +53,16 @@ public struct ContentView: View {
             // Keyboard feedback (speed, volume, seek) in the top-left corner.
             OSDView()
 
+            // Controls are hidden while peeking the translation: the peek pause
+            // would otherwise pop the controls and the big play button over the text.
+            let controlsWanted = showControls || player.playbackState == .paused || player.playbackState == .finished || player.playbackState == .idle
+            let controlsShown = controlsWanted && !player.isPeekingTranslation && !player.isResumingAfterPeek
+
             // LAYER 4: Interactive Subtitles Layer
             SubtitlesLayer(
                 showExplanation: $isExplanationOpen,
+                controlsBarHeight: controlsBarHeight,
+                controlsShown: controlsShown,
                 onExplainWord: { word in
                     player.pause()
                     selectedWordToExplain = word
@@ -62,10 +72,7 @@ public struct ContentView: View {
             .allowsHitTesting(true)
             
             // LAYER 5: Floating Controls Overlay
-            // Hidden while peeking the translation: the peek pause would
-            // otherwise pop the controls and the big play button over the text.
-            let controlsWanted = showControls || player.playbackState == .paused || player.playbackState == .finished || player.playbackState == .idle
-            if controlsWanted && !player.isPeekingTranslation && !player.isResumingAfterPeek {
+            if controlsShown {
                 ControlsOverlayView(
                     isSettingsOpen: $isSettingsOpen,
                     isExplanationOpen: $isExplanationOpen,
@@ -93,6 +100,10 @@ public struct ContentView: View {
             }
         }
         .frame(minWidth: 800, maxWidth: .infinity, minHeight: 480, maxHeight: .infinity)
+        .onPreferenceChange(ControlsBarHeightKey.self) { height in
+            // The preference resets to 0 when the overlay leaves the tree.
+            if height > 0 { controlsBarHeight = height }
+        }
         // The window itself is transparent (video renders in mpv's window
         // underneath), so paint a background until that surface exists and a
         // file is actually loaded; otherwise the desktop shows through.

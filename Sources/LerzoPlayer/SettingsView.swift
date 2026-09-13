@@ -447,6 +447,27 @@ public struct SettingsView: View {
                                 .accentColor(.yellow)
                         }
 
+                        // Clearance from the playback controls
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Text("Playback controls:")
+                                    .font(.system(size: 12, weight: .medium))
+                                Spacer()
+                                Picker("", selection: $style.controlsClearance) {
+                                    Text("Keep subtitles always above").tag(SubtitleStyle.ControlsClearance.always)
+                                    Text("Lift subtitles only while shown").tag(SubtitleStyle.ControlsClearance.whileControlsVisible)
+                                }
+                                .labelsHidden()
+                                .frame(maxWidth: 260, alignment: .trailing)
+                            }
+                            Text(style.controlsClearance == .always
+                                 ? "The subtitles never sit under the controls bar, so the line stays put when the bar appears; the bottom inset acts as a minimum."
+                                 : "The bottom inset is used exactly, even right at the edge; the line moves up whenever the controls bar appears.")
+                                .font(.system(size: 10))
+                                .foregroundColor(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
                         // Live Preview Box
                         VStack(alignment: .center, spacing: 4) {
                             HStack {

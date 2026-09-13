@@ -125,6 +125,11 @@
 "no background" = "no background";
 "%lld%%" = "%lld%%";
 "Bottom inset:" = "Bottom inset:";
+"Playback controls:" = "Playback controls:";
+"Keep subtitles always above" = "Keep subtitles always above";
+"Lift subtitles only while shown" = "Lift subtitles only while shown";
+"The subtitles never sit under the controls bar, so the line stays put when the bar appears; the bottom inset acts as a minimum." = "The subtitles never sit under the controls bar, so the line stays put when the bar appears; the bottom inset acts as a minimum.";
+"The bottom inset is used exactly, even right at the edge; the line moves up whenever the controls bar appears." = "The bottom inset is used exactly, even right at the edge; the line moves up whenever the controls bar appears.";
 "%lld%% of height" = "%lld%% of height";
 "On-screen preview:" = "On-screen preview:";
 "Reset style" = "Reset style";
