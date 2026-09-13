@@ -130,6 +130,19 @@ public struct SettingsView: View {
                                 .font(.system(size: 11))
                                 .foregroundColor(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
+
+                            Toggle(isOn: $gemini.deepThinking) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Deep analysis (slower and more expensive)")
+                                        .font(.system(size: 12, weight: .medium))
+                                    Text("Lets the model think longer before answering. Rarely needed for a single line.")
+                                        .font(.system(size: 11))
+                                        .foregroundColor(.secondary)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .toggleStyle(.switch)
+                            .controlSize(.small)
                         }
 
                         HStack {

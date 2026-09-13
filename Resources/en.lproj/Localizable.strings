@@ -181,3 +181,5 @@
 "Model:" = "Model:";
 "Reload the list of models available to this key" = "Reload the list of models available to this key";
 "Flash models are the cheap, fast ones and have a free tier; Flash-Lite is cheaper still but explains idioms less well. Pro models are noticeably more expensive." = "Flash models are the cheap, fast ones and have a free tier; Flash-Lite is cheaper still but explains idioms less well. Pro models are noticeably more expensive.";
+"Deep analysis (slower and more expensive)" = "Deep analysis (slower and more expensive)";
+"Lets the model think longer before answering. Rarely needed for a single line." = "Lets the model think longer before answering. Rarely needed for a single line.";

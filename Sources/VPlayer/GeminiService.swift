@@ -21,6 +21,11 @@ public final class GeminiService: ObservableObject {
         didSet { UserDefaults.standard.set(selectedModel, forKey: "VPlayer.geminiModel") }
     }
     public static let defaultModel = "gemini-3.6-flash"
+    /// Let the model think hard before answering. Off by default: for one
+    /// subtitle line it mostly adds seconds of waiting and paid tokens.
+    @Published public var deepThinking: Bool = UserDefaults.standard.bool(forKey: "VPlayer.geminiDeepThinking") {
+        didSet { UserDefaults.standard.set(deepThinking, forKey: "VPlayer.geminiDeepThinking") }
+    }
     /// Text models the key can use. Cached for a day — new models do not
     /// appear every minute, and the list call counts against the quota too.
     @Published public var availableModels: [String] = UserDefaults.standard.stringArray(forKey: modelsCacheKey) ?? [] {
@@ -133,37 +138,23 @@ public final class GeminiService: ObservableObject {
         }
         """
         
-        var request = try Self.makeRequest(path: "models/\(selectedModel):generateContent", key: cleanKey)
-        request.httpMethod = "POST"
-        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        let requestBody: [String: Any] = [
-            "contents": [
-                [
-                    "parts": [
-                        ["text": prompt]
-                    ]
-                ]
-            ],
-            "generationConfig": [
-                "temperature": 0.3,
-                "responseMimeType": "application/json"
-            ]
-        ]
-        
-        request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
-        
-        let data: Data
-        do {
-            data = try await Self.perform(request, model: selectedModel)
-        } catch GeminiError.modelNotFound {
-            // The remembered model was retired: find a current one and retry once.
-            let model = try await discoverModel(key: cleanKey)
-            var retry = try Self.makeRequest(path: "models/\(model):generateContent", key: cleanKey)
-            retry.httpMethod = "POST"
-            retry.addValue("application/json", forHTTPHeaderField: "Content-Type")
-            retry.httpBody = request.httpBody
-            data = try await Self.perform(retry, model: model)
+        // Retries handle two ways the request can be stale: the remembered
+        // model was retired (404 → discover a current one), or the model does
+        // not accept a thinking config (400 → send the request without it).
+        var model = selectedModel
+        var withThinking = true
+        var data: Data
+        while true {
+            let request = try Self.generateRequest(model: model, key: cleanKey, prompt: prompt,
+                                                   thinking: withThinking ? Self.thinkingConfig(for: model, deep: deepThinking) : nil)
+            do {
+                data = try await Self.perform(request, model: model)
+                break
+            } catch GeminiError.modelNotFound where model == selectedModel {
+                model = try await discoverModel(key: cleanKey)
+            } catch GeminiError.other(let message) where withThinking && message.localizedCaseInsensitiveContains("thinking") {
+                withThinking = false
+            }
         }
         
         let jsonObject = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
@@ -307,6 +298,33 @@ public final class GeminiService: ObservableObject {
         var request = URLRequest(url: url, timeoutInterval: 30)
         request.addValue(key, forHTTPHeaderField: "x-goog-api-key")
         return request
+    }
+
+    private static func generateRequest(model: String, key: String, prompt: String, thinking: [String: Any]?) throws -> URLRequest {
+        var request = try makeRequest(path: "models/\(model):generateContent", key: key)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        var generationConfig: [String: Any] = [
+            "temperature": 0.3,
+            "responseMimeType": "application/json",
+            // The answer is a short JSON object; this only guards against runaway output.
+            "maxOutputTokens": 2048
+        ]
+        if let thinking { generationConfig["thinkingConfig"] = thinking }
+        let body: [String: Any] = [
+            "contents": [["parts": [["text": prompt]]]],
+            "generationConfig": generationConfig
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        return request
+    }
+
+    /// Gemini 3+ takes a level; 2.5 takes a token budget (-1 = dynamic, 0 = off).
+    static func thinkingConfig(for model: String, deep: Bool) -> [String: Any] {
+        if version(model) >= 3 {
+            return ["thinkingLevel": deep ? "high" : "low"]
+        }
+        return ["thinkingBudget": deep ? -1 : 0]
     }
 
     /// Runs the request and maps every failure — transport or HTTP — to `GeminiError`.
