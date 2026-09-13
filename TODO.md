@@ -31,9 +31,7 @@
       проходит, и ноутаризация проходит.
       `SIGN_IDENTITY="Developer ID Application: Yurii Pustylnikov (JL43U9V85R)" NOTARY_PROFILE=VPlayer scripts/release.sh`
       (`VPlayer` — имя существующего keychain-профиля notarytool, его менять не нужно).
-- [ ] README: обновить таблицу горячих клавиш (сейчас перечислена только часть; полный
-      список — `ShortcutsReference` в `ShortcutsOverlayView.swift`), описать внешние
-      субтитры, задержки, масштабирование, Boost dialogue.
+- [x] README: таблица горячих клавиш по `ShortcutsReference`, возможности обновлены.
 - [ ] Landing/privacy policy (ключ Gemini хранится в keychain, наружу уходит только текст
       реплик в Gemini API).
 
