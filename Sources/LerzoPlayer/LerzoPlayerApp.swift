@@ -120,6 +120,14 @@ struct LerzoPlayerApp: App {
                 ))
                 .keyboardShortcut("p", modifiers: [])
 
+                Menu("Auto-Pause Delay") {
+                    Button("Later by 0.1 s") { adjustAutoPauseTail(by: MPVPlayer.autoPauseTailStep) }
+                        .keyboardShortcut("p", modifiers: .shift)
+                    Button("Earlier by 0.1 s") { adjustAutoPauseTail(by: -MPVPlayer.autoPauseTailStep) }
+                        .keyboardShortcut("o", modifiers: .shift)
+                    Button("Reset") { adjustAutoPauseTail(by: nil) }
+                }
+
                 Toggle("Repeat Current Line", isOn: Binding(
                     get: { player.isLoopingLine },
                     set: { _ in player.toggleLineLoop(); OSDController.shared.show(.loop) }
@@ -252,6 +260,15 @@ struct LerzoPlayerApp: App {
         case .ab: return "Clear A–B Loop"
         default: return "Mark Loop Start"
         }
+    }
+
+    private func adjustAutoPauseTail(by delta: Double?) {
+        if let delta {
+            MPVPlayer.shared.adjustAutoPauseTail(by: delta)
+        } else {
+            MPVPlayer.shared.setAutoPauseTail(0)
+        }
+        OSDController.shared.show(.autoPauseTail)
     }
 
     private func adjustDelay(_ stream: MPVPlayer.DelayStream, by delta: Double?) {

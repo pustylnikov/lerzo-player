@@ -17,6 +17,7 @@ public enum OSDItem: Equatable {
     case boostDialogue
     case translationMode
     case autoPause
+    case autoPauseTail
     case loop
 }
 
@@ -104,6 +105,7 @@ public struct OSDView: View {
             }
             return player.translationMode == .always ? "captions.bubble.fill" : "captions.bubble"
         case .autoPause: return player.autoPauseAfterLine ? "pause.circle.fill" : "pause.circle"
+        case .autoPauseTail: return "pause.circle"
         case .loop: return "repeat"
         }
     }
@@ -160,6 +162,14 @@ public struct OSDView: View {
             return player.autoPauseAfterLine
                 ? String(localized: "Pause after each line on")
                 : String(localized: "Pause after each line off")
+        case .autoPauseTail:
+            let tail = Self.tailLabel(player.autoPauseTail)
+            if !player.autoPauseAfterLine {
+                return String(localized: "Auto-pause \(tail) after the line (off — press P)")
+            }
+            return player.autoPauseTail == 0
+                ? String(localized: "Pause right at the line's end")
+                : String(localized: "Pause \(tail) after the line ends")
         case .loop:
             switch player.loopMode {
             case .off: return String(localized: "Loop off")
@@ -177,6 +187,13 @@ public struct OSDView: View {
         if px > 0 { parts.append((x > 0 ? "→ " : "← ") + "\(px)%") }
         if py > 0 { parts.append((y > 0 ? "↓ " : "↑ ") + "\(py)%") }
         return parts.joined(separator: "  ")
+    }
+
+    /// "0.3 s" for the auto-pause tail.
+    static func tailLabel(_ seconds: Double) -> String {
+        var text = String(format: "%.1f", seconds)
+        if text.hasSuffix(".0") { text.removeLast(2) }
+        return text + " s"
     }
 
     /// "+0.3 s", "−1.5 s" or "0 s"; the minus is typographic to match the seek OSD.

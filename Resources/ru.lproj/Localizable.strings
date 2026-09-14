@@ -57,8 +57,8 @@
 "Repeating this line; W and E move the loop, any other seek ends it (L)" = "Реплика повторяется; W и E переносят цикл на другую реплику, любая другая перемотка его выключает (L)";
 "Loop start marked; press ⇧L again at the end. Click to loop the current line instead (L)" = "Начало цикла отмечено; нажмите ⇧L ещё раз в конце. Клик — повторять текущую реплику (L)";
 "A–B loop on; ⇧L clears it. Click to loop the current line instead (L)" = "Цикл A–B включён; ⇧L его снимает. Клик — повторять текущую реплику (L)";
-"Pausing at the end of every line; Space plays on to the next one (P)" = "Пауза в конце каждой реплики; пробел продолжает до следующей (P)";
 "Pause at the end of every line (P)" = "Пауза в конце каждой реплики (P)";
+"Pausing at the end of every line; Space plays on to the next one (P). ⇧O / ⇧P pause earlier / later for subtitles that end mid-word" = "Пауза в конце каждой реплики; пробел продолжает до следующей (P). ⇧O / ⇧P — пауза раньше / позже, если субтитры обрываются на полуслове";
 "Playback speed ([ slower, ] faster, Backspace — 1×)" = "Скорость воспроизведения ([ медленнее, ] быстрее, Backspace — 1×)";
 "Peek translation" = "Подглядеть перевод";
 "Translation on" = "Перевод включён";
@@ -162,6 +162,7 @@
 "Previous / next line of dialogue" = "Предыдущая / следующая реплика диалога";
 "Pause at the end of every line on / off (R, W, E play on)" = "Пауза в конце каждой реплики: вкл / выкл (R, W, E продолжают)";
 "Repeat the current line on / off" = "Повтор текущей реплики: вкл / выкл";
+"Auto-pause earlier / later by 0.1 s after the line ends" = "Автопауза раньше / позже на 0,1 с после конца реплики";
 "A–B loop: mark the start, mark the end, clear" = "Цикл A–B: отметить начало, отметить конец, снять";
 "AI breakdown of the current line with Gemini" = "ИИ-разбор текущей фразы через Gemini";
 "Space" = "Пробел";
@@ -287,6 +288,7 @@
 "Boost Dialogue" = "Усилить речь";
 "Pause After Each Line" = "Пауза после каждой реплики";
 "Repeat Current Line" = "Повторять текущую реплику";
+"Auto-Pause Delay" = "Задержка автопаузы";
 "Mark Loop Start" = "Отметить начало цикла";
 "Mark Loop End" = "Отметить конец цикла";
 "Clear A–B Loop" = "Снять цикл A–B";
@@ -301,6 +303,9 @@
 "Boost dialogue off" = "Усиление речи выключено";
 "Pause after each line on" = "Пауза после каждой реплики вкл";
 "Pause after each line off" = "Пауза после каждой реплики выкл";
+"Auto-pause %@ after the line (off — press P)" = "Автопауза %@ после реплики (выключена — нажмите P)";
+"Pause right at the line's end" = "Пауза точно в конце реплики";
+"Pause %@ after the line ends" = "Пауза через %@ после конца реплики";
 "Loop off" = "Цикл выключен";
 "Repeating this line" = "Повтор этой реплики";
 "Loop start %@ — press ⇧L at the end" = "Начало цикла %@ — нажмите ⇧L в конце";

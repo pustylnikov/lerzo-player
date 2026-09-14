@@ -491,14 +491,20 @@ public struct ControlsOverlayView: View {
 
                 // Pause after each line
                 Button(action: { player.autoPauseAfterLine.toggle(); OSDController.shared.show(.autoPause) }) {
-                    Image(systemName: player.autoPauseAfterLine ? "pause.circle.fill" : "pause.circle")
-                        .font(.system(size: 13))
-                        .foregroundColor(player.autoPauseAfterLine ? .yellow : .white.opacity(0.85))
-                        .frame(width: 18, height: 18)
+                    HStack(spacing: 3) {
+                        Image(systemName: player.autoPauseAfterLine ? "pause.circle.fill" : "pause.circle")
+                            .font(.system(size: 13))
+                            .frame(width: 18, height: 18)
+                        if player.autoPauseTail > 0 {
+                            Text("+" + OSDView.tailLabel(player.autoPauseTail))
+                                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        }
+                    }
+                    .foregroundColor(player.autoPauseAfterLine ? .yellow : .white.opacity(0.85))
                 }
                 .buttonStyle(.plain)
                 .help(player.autoPauseAfterLine
-                      ? "Pausing at the end of every line; Space plays on to the next one (P)"
+                      ? "Pausing at the end of every line; Space plays on to the next one (P). ⇧O / ⇧P pause earlier / later for subtitles that end mid-word"
                       : "Pause at the end of every line (P)")
                 
                 // Skip -5s

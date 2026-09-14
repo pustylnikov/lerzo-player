@@ -43,6 +43,7 @@ Press **`H`** in the player for the built-in cheat sheet; in the source the list
 | **`R`** | Replay the current line from the start |
 | **`W` / `E`** | Previous / next line of dialogue |
 | **`P`** | Pause at the end of every line on / off |
+| **`⇧O` / `⇧P`** | Auto-pause earlier / later by 0.1 s, for subtitles that end mid-word |
 | **`L`** | Repeat the current line on / off |
 | **`⇧L`** | A–B loop: mark the start, mark the end, clear |
 | **`⌘ + G`** | AI breakdown of the current line with Gemini |

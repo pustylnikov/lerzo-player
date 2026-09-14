@@ -119,6 +119,14 @@ public final class MPVPlayer: ObservableObject {
     @Published public var autoPauseAfterLine: Bool = false {
         didSet { UserDefaults.standard.set(autoPauseAfterLine, forKey: "LerzoPlayer.autoPauseAfterLine") }
     }
+    /// How long after a line's end auto-pause waits before pausing, for
+    /// subtitles whose cues end on the last syllable. Per session and per
+    /// file (reset on load), like the delays: it compensates for the file.
+    @Published public private(set) var autoPauseTail: Double = 0
+    public static let autoPauseTailStep = 0.1
+    public static let autoPauseTailRange = 0.0...3.0
+    /// A line has ended and its pause is due at `at` (video clock).
+    private var pendingAutoPause: (cueIndex: Int, at: Double)?
     /// The line auto-pause last stopped at, so resuming does not stop there again.
     private var autoPausedCueIndex: Int?
     /// The line under playback at the previous `time-pos` tick; a change
@@ -729,6 +737,8 @@ public final class MPVPlayer: ObservableObject {
         self.subtitleTimelineCache.removeAll()
         clearLoop()
         autoPausedCueIndex = nil
+        pendingAutoPause = nil
+        autoPauseTail = 0
         
         guard mpv != nil, targetView?.window != nil else {
             return
@@ -747,6 +757,7 @@ public final class MPVPlayer: ObservableObject {
     
     public func togglePlayPause() {
         isAutoPaused = false
+        pendingAutoPause = nil
         if playbackState == .finished {
             restartFromBeginning()
             return
@@ -756,6 +767,8 @@ public final class MPVPlayer: ObservableObject {
     
     public func play() {
         isAutoPaused = false
+        // Resuming past a line's end means going on, not pausing for it.
+        pendingAutoPause = nil
         if playbackState == .finished {
             restartFromBeginning()
             return
@@ -832,21 +845,35 @@ public final class MPVPlayer: ObservableObject {
     private func checkLineEnd(at time: Double) {
         guard autoPauseAfterLine, loopMode == .off, let timeline = subtitleTimeline else {
             lineUnderPlayback = nil
+            pendingAutoPause = nil
             return
         }
         let subTime = time - subDelay
         let current = timeline.index(containing: subTime)
-        defer { lineUnderPlayback = current }
-        guard playbackState == .playing, let ended = lineUnderPlayback, ended != current,
-              ended != autoPausedCueIndex, subTime >= timeline.cues[ended].end else { return }
-        autoPausedCueIndex = ended
+        if let ended = lineUnderPlayback, ended != current, ended != autoPausedCueIndex,
+           subTime >= timeline.cues[ended].end {
+            pendingAutoPause = (ended, timeline.cues[ended].end + subDelay + autoPauseTail)
+        }
+        lineUnderPlayback = current
+        guard playbackState == .playing, let pending = pendingAutoPause, time >= pending.at else { return }
+        pendingAutoPause = nil
+        autoPausedCueIndex = pending.cueIndex
         pause()
         isAutoPaused = true
         // Keep the line readable unless the next one is already on screen.
         if current == nil {
-            let translation = translationSeen?.cueIndex == ended ? translationSeen?.text ?? "" : ""
-            heldLine = (timeline.cues[ended].text, translation)
+            let translation = translationSeen?.cueIndex == pending.cueIndex ? translationSeen?.text ?? "" : ""
+            heldLine = (timeline.cues[pending.cueIndex].text, translation)
         }
+    }
+
+    public func adjustAutoPauseTail(by delta: Double) {
+        setAutoPauseTail(autoPauseTail + delta)
+    }
+
+    public func setAutoPauseTail(_ seconds: Double) {
+        let clamped = min(max(seconds, Self.autoPauseTailRange.lowerBound), Self.autoPauseTailRange.upperBound)
+        autoPauseTail = (clamped * 10).rounded() / 10
     }
 
     /// Repeat the line on screen (or the last one shown) until turned off.
@@ -944,6 +971,7 @@ public final class MPVPlayer: ObservableObject {
             // under playback is whatever we land on, not the one we left.
             self.autoPausedCueIndex = nil
             self.lineUnderPlayback = nil
+            self.pendingAutoPause = nil
             if let optimisticTime {
                 self.currentTime = optimisticTime
             }

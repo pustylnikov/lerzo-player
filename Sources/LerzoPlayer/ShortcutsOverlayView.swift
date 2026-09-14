@@ -26,6 +26,7 @@ enum ShortcutsReference {
             ShortcutEntry(keys: "R", action: "Replay the current line from the start"),
             ShortcutEntry(keys: "W  /  E", action: "Previous / next line of dialogue"),
             ShortcutEntry(keys: "P", action: "Pause at the end of every line on / off (R, W, E play on)"),
+            ShortcutEntry(keys: "⇧ + O  /  ⇧ + P", action: "Auto-pause earlier / later by 0.1 s after the line ends"),
             ShortcutEntry(keys: "L", action: "Repeat the current line on / off"),
             ShortcutEntry(keys: "⇧ + L", action: "A–B loop: mark the start, mark the end, clear"),
             ShortcutEntry(keys: "⌘ + G", action: "AI breakdown of the current line with Gemini"),

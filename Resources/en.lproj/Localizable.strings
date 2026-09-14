@@ -59,8 +59,8 @@
 "Repeating this line; W and E move the loop, any other seek ends it (L)" = "Repeating this line; W and E move the loop, any other seek ends it (L)";
 "Loop start marked; press ⇧L again at the end. Click to loop the current line instead (L)" = "Loop start marked; press ⇧L again at the end. Click to loop the current line instead (L)";
 "A–B loop on; ⇧L clears it. Click to loop the current line instead (L)" = "A–B loop on; ⇧L clears it. Click to loop the current line instead (L)";
-"Pausing at the end of every line; Space plays on to the next one (P)" = "Pausing at the end of every line; Space plays on to the next one (P)";
 "Pause at the end of every line (P)" = "Pause at the end of every line (P)";
+"Pausing at the end of every line; Space plays on to the next one (P). ⇧O / ⇧P pause earlier / later for subtitles that end mid-word" = "Pausing at the end of every line; Space plays on to the next one (P). ⇧O / ⇧P pause earlier / later for subtitles that end mid-word";
 "Playback speed ([ slower, ] faster, Backspace — 1×)" = "Playback speed ([ slower, ] faster, Backspace — 1×)";
 "Peek translation" = "Peek translation";
 "Translation on" = "Translation on";
@@ -164,6 +164,7 @@
 "Previous / next line of dialogue" = "Previous / next line of dialogue";
 "Pause at the end of every line on / off (R, W, E play on)" = "Pause at the end of every line on / off (R, W, E play on)";
 "Repeat the current line on / off" = "Repeat the current line on / off";
+"Auto-pause earlier / later by 0.1 s after the line ends" = "Auto-pause earlier / later by 0.1 s after the line ends";
 "A–B loop: mark the start, mark the end, clear" = "A–B loop: mark the start, mark the end, clear";
 "AI breakdown of the current line with Gemini" = "AI breakdown of the current line with Gemini";
 "Space" = "Space";
@@ -289,6 +290,7 @@
 "Boost Dialogue" = "Boost Dialogue";
 "Pause After Each Line" = "Pause After Each Line";
 "Repeat Current Line" = "Repeat Current Line";
+"Auto-Pause Delay" = "Auto-Pause Delay";
 "Mark Loop Start" = "Mark Loop Start";
 "Mark Loop End" = "Mark Loop End";
 "Clear A–B Loop" = "Clear A–B Loop";
@@ -303,6 +305,9 @@
 "Boost dialogue off" = "Boost dialogue off";
 "Pause after each line on" = "Pause after each line on";
 "Pause after each line off" = "Pause after each line off";
+"Auto-pause %@ after the line (off — press P)" = "Auto-pause %@ after the line (off — press P)";
+"Pause right at the line's end" = "Pause right at the line's end";
+"Pause %@ after the line ends" = "Pause %@ after the line ends";
 "Loop off" = "Loop off";
 "Repeating this line" = "Repeating this line";
 "Loop start %@ — press ⇧L at the end" = "Loop start %@ — press ⇧L at the end";

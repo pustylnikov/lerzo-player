@@ -104,6 +104,18 @@ public final class KeyboardMonitor: ObservableObject {
                 }
             }
             
+            // SHIFT+O / SHIFT+P (keyCodes 31 / 35) -> auto-pause earlier / later
+            if event.keyCode == 31 && flags == [.shift] {
+                player.adjustAutoPauseTail(by: -MPVPlayer.autoPauseTailStep)
+                osd.show(.autoPauseTail)
+                return nil
+            }
+            if event.keyCode == 35 && flags == [.shift] {
+                player.adjustAutoPauseTail(by: MPVPlayer.autoPauseTailStep)
+                osd.show(.autoPauseTail)
+                return nil
+            }
+
             // SHIFT+L (keyCode 37) -> A–B loop: mark start, mark end, clear
             if event.keyCode == 37 && flags == [.shift] {
                 player.cycleABLoop()
