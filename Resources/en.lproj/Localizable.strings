@@ -55,6 +55,12 @@
 "Forward 5 seconds (Right Arrow)" = "Forward 5 seconds (Right Arrow)";
 "Jump to the previous line (W)" = "Jump to the previous line (W)";
 "Jump to the next line (E)" = "Jump to the next line (E)";
+"Repeat the current line until turned off (L). ⇧L marks an A–B loop by hand" = "Repeat the current line until turned off (L). ⇧L marks an A–B loop by hand";
+"Repeating this line; W and E move the loop, any other seek ends it (L)" = "Repeating this line; W and E move the loop, any other seek ends it (L)";
+"Loop start marked; press ⇧L again at the end. Click to loop the current line instead (L)" = "Loop start marked; press ⇧L again at the end. Click to loop the current line instead (L)";
+"A–B loop on; ⇧L clears it. Click to loop the current line instead (L)" = "A–B loop on; ⇧L clears it. Click to loop the current line instead (L)";
+"Pausing at the end of every line; Space plays on to the next one (P)" = "Pausing at the end of every line; Space plays on to the next one (P)";
+"Pause at the end of every line (P)" = "Pause at the end of every line (P)";
 "Playback speed ([ slower, ] faster, Backspace — 1×)" = "Playback speed ([ slower, ] faster, Backspace — 1×)";
 "Peek translation" = "Peek translation";
 "Translation on" = "Translation on";
@@ -118,6 +124,8 @@
 "The translation appears only while TAB is held, so the original is not spoiled. ⇧TAB switches to dual subtitles." = "The translation appears only while TAB is held, so the original is not spoiled. ⇧TAB switches to dual subtitles.";
 "Dual subtitles: the original and the translation are on screen together. ⇧TAB switches back to peeking with TAB." = "Dual subtitles: the original and the translation are on screen together. ⇧TAB switches back to peeking with TAB.";
 "Pause while peeking at the translation (TAB)" = "Pause while peeking at the translation (TAB)";
+"Pause after each line (P)" = "Pause after each line (P)";
+"The video stops just before every line leaves the screen; Space plays on to the next one. Needs text subtitles." = "The video stops just before every line leaves the screen; Space plays on to the next one. Needs text subtitles.";
 "While TAB is held the video pauses; it resumes when released." = "While TAB is held the video pauses; it resumes when released.";
 "Output HDR video in HDR" = "Output HDR video in HDR";
 "This display supports HDR. When off, HDR video is tone-mapped to SDR." = "This display supports HDR. When off, HDR video is tone-mapped to SDR.";
@@ -154,6 +162,9 @@
 "Keep the translation on screen on / off" = "Keep the translation on screen on / off";
 "Replay the current line from the start" = "Replay the current line from the start";
 "Previous / next line of dialogue" = "Previous / next line of dialogue";
+"Pause at the end of every line on / off" = "Pause at the end of every line on / off";
+"Repeat the current line on / off" = "Repeat the current line on / off";
+"A–B loop: mark the start, mark the end, clear" = "A–B loop: mark the start, mark the end, clear";
 "AI breakdown of the current line with Gemini" = "AI breakdown of the current line with Gemini";
 "Space" = "Space";
 "Pause / Play" = "Pause / Play";
@@ -276,6 +287,11 @@
 
 /* Boost dialogue */
 "Boost Dialogue" = "Boost Dialogue";
+"Pause After Each Line" = "Pause After Each Line";
+"Repeat Current Line" = "Repeat Current Line";
+"Mark Loop Start" = "Mark Loop Start";
+"Mark Loop End" = "Mark Loop End";
+"Clear A–B Loop" = "Clear A–B Loop";
 "Always Show Translation" = "Always Show Translation";
 "Boost dialogue  (B)" = "Boost dialogue  (B)";
 "✓ Boost dialogue  (B)" = "✓ Boost dialogue  (B)";
@@ -285,6 +301,12 @@
 "Translation always shown" = "Translation always shown";
 "Translation shown while TAB is held" = "Translation shown while TAB is held";
 "Boost dialogue off" = "Boost dialogue off";
+"Pause after each line on" = "Pause after each line on";
+"Pause after each line off" = "Pause after each line off";
+"Loop off" = "Loop off";
+"Repeating this line" = "Repeating this line";
+"Loop start %@ — press ⇧L at the end" = "Loop start %@ — press ⇧L at the end";
+"Loop %@ – %@" = "Loop %@ – %@";
 "Boost dialogue on / off" = "Boost dialogue on / off";
 
 /* Picture adjustments */

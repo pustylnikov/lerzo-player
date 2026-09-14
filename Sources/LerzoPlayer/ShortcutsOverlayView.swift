@@ -25,6 +25,9 @@ enum ShortcutsReference {
             ShortcutEntry(keys: "⇧ + TAB", action: "Keep the translation on screen on / off"),
             ShortcutEntry(keys: "R", action: "Replay the current line from the start"),
             ShortcutEntry(keys: "W  /  E", action: "Previous / next line of dialogue"),
+            ShortcutEntry(keys: "P", action: "Pause at the end of every line on / off"),
+            ShortcutEntry(keys: "L", action: "Repeat the current line on / off"),
+            ShortcutEntry(keys: "⇧ + L", action: "A–B loop: mark the start, mark the end, clear"),
             ShortcutEntry(keys: "⌘ + G", action: "AI breakdown of the current line with Gemini"),
         ]),
         ShortcutGroup(title: "Playback", icon: "play.fill", entries: [

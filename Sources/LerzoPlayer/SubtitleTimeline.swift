@@ -40,10 +40,24 @@ public final class SubtitleTimeline {
         return lo > 0 ? lo - 1 : nil
     }
 
-    /// Start time of the line `skip` lines away from the one at `time`
+    /// Index of the line whose span contains `time` (start ≤ time < end),
+    /// with no landing tolerance: for deciding whether a line is still on
+    /// screen, where the tolerance would hand the last tenth of a second of
+    /// one line to a tightly packed next one.
+    public func index(containing time: Double) -> Int? {
+        var lo = 0, hi = cues.count
+        while lo < hi {
+            let mid = (lo + hi) / 2
+            if cues[mid].start <= time { lo = mid + 1 } else { hi = mid }
+        }
+        guard lo > 0, time < cues[lo - 1].end else { return nil }
+        return lo - 1
+    }
+
+    /// Index of the line `skip` lines away from the one at `time`
     /// (0 = the current line, mpv's `sub-seek` semantics). `nil` when there is
     /// nothing to jump to in that direction.
-    public func seekTarget(from time: Double, skip: Int) -> Double? {
+    public func seekTargetIndex(from time: Double, skip: Int) -> Int? {
         guard !cues.isEmpty else { return nil }
         let current = currentIndex(at: time)
         let target: Int
@@ -54,8 +68,12 @@ public final class SubtitleTimeline {
         } else {
             return nil
         }
-        guard cues.indices.contains(target) else { return nil }
-        return cues[target].start
+        return cues.indices.contains(target) ? target : nil
+    }
+
+    /// Start time of the line `seekTargetIndex` picks.
+    public func seekTarget(from time: Double, skip: Int) -> Double? {
+        seekTargetIndex(from: time, skip: skip).map { cues[$0].start }
     }
 
     // MARK: - Loading

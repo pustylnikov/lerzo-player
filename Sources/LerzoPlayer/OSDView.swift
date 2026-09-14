@@ -16,6 +16,8 @@ public enum OSDItem: Equatable {
     case crop(MPVPlayer.CropResult)
     case boostDialogue
     case translationMode
+    case autoPause
+    case loop
 }
 
 /// Keyboard feedback shown in the top-left corner for a moment, so the user
@@ -101,6 +103,8 @@ public struct OSDView: View {
                 return "exclamationmark.bubble"
             }
             return player.translationMode == .always ? "captions.bubble.fill" : "captions.bubble"
+        case .autoPause: return player.autoPauseAfterLine ? "pause.circle.fill" : "pause.circle"
+        case .loop: return player.loopMode == .off ? "repeat" : "repeat.circle.fill"
         }
     }
 
@@ -152,6 +156,17 @@ public struct OSDView: View {
             return player.translationMode == .always
                 ? String(localized: "Translation always shown")
                 : String(localized: "Translation shown while TAB is held")
+        case .autoPause:
+            return player.autoPauseAfterLine
+                ? String(localized: "Pause after each line on")
+                : String(localized: "Pause after each line off")
+        case .loop:
+            switch player.loopMode {
+            case .off: return String(localized: "Loop off")
+            case .line: return String(localized: "Repeating this line")
+            case .ab(let a, nil): return String(localized: "Loop start \(Self.formatTime(a)) — press ⇧L at the end")
+            case .ab(let a, let b?): return String(localized: "Loop \(Self.formatTime(a)) – \(Self.formatTime(b))")
+            }
         }
     }
 

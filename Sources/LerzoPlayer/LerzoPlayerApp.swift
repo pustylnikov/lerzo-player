@@ -113,6 +113,26 @@ struct LerzoPlayerApp: App {
                 .keyboardShortcut("e", modifiers: [])
                 
                 Divider()
+
+                Toggle("Pause After Each Line", isOn: Binding(
+                    get: { player.autoPauseAfterLine },
+                    set: { player.autoPauseAfterLine = $0; OSDController.shared.show(.autoPause) }
+                ))
+                .keyboardShortcut("p", modifiers: [])
+
+                Toggle("Repeat Current Line", isOn: Binding(
+                    get: { player.isLoopingLine },
+                    set: { _ in player.toggleLineLoop(); OSDController.shared.show(.loop) }
+                ))
+                .keyboardShortcut("l", modifiers: [])
+
+                Button(abLoopTitle) {
+                    player.cycleABLoop()
+                    OSDController.shared.show(.loop)
+                }
+                .keyboardShortcut("l", modifiers: .shift)
+
+                Divider()
                 
                 Button("Back 5 Seconds") {
                     MPVPlayer.shared.seekRelative(seconds: -5)
@@ -226,6 +246,14 @@ struct LerzoPlayerApp: App {
     }
 
     /// `nil` resets the delay. Shows the OSD so the menu gives the same feedback as the keys.
+    private var abLoopTitle: LocalizedStringKey {
+        switch player.loopMode {
+        case .ab(_, nil): return "Mark Loop End"
+        case .ab: return "Clear A–B Loop"
+        default: return "Mark Loop Start"
+        }
+    }
+
     private func adjustDelay(_ stream: MPVPlayer.DelayStream, by delta: Double?) {
         if let delta {
             MPVPlayer.shared.adjustDelay(of: stream, by: delta)

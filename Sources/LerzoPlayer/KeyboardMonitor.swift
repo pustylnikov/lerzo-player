@@ -104,6 +104,13 @@ public final class KeyboardMonitor: ObservableObject {
                 }
             }
             
+            // SHIFT+L (keyCode 37) -> A–B loop: mark start, mark end, clear
+            if event.keyCode == 37 && flags == [.shift] {
+                player.cycleABLoop()
+                osd.show(.loop)
+                return nil
+            }
+
             // SHIFT+TAB (keyCode 48) -> pin / unpin the translation line
             if event.keyCode == 48 && flags == [.shift] {
                 player.toggleTranslationMode()
@@ -128,6 +135,10 @@ public final class KeyboardMonitor: ObservableObject {
                     player.adjustSpeed(by: MPVPlayer.speedStep); osd.show(.speed); return nil
                 case 51: // Backspace -> 1x
                     player.resetSpeed(); osd.show(.speed); return nil
+                case 35: // P -> pause after each line
+                    player.autoPauseAfterLine.toggle(); osd.show(.autoPause); return nil
+                case 37: // L -> repeat the current line (mpv's loop key)
+                    player.toggleLineLoop(); osd.show(.loop); return nil
                 case 46: // M -> mute, the desktop video player convention
                     player.toggleMute(); osd.show(.volume); return nil
                 case 6: // Z -> subtitles earlier (mpv convention)

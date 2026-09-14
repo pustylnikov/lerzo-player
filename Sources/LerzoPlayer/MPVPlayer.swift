@@ -113,6 +113,32 @@ public final class MPVPlayer: ObservableObject {
     private static let legacySubFontSizeKey = "LerzoPlayer.subFontSize"
     
     @Published public var subtitleHistory: [String] = []
+
+    /// Pause at the end of every subtitle line (just before it leaves the
+    /// screen, so it can still be read); Space carries on to the next one.
+    @Published public var autoPauseAfterLine: Bool = false {
+        didSet { UserDefaults.standard.set(autoPauseAfterLine, forKey: "LerzoPlayer.autoPauseAfterLine") }
+    }
+    /// The line auto-pause last stopped at, so resuming does not stop there again.
+    private var autoPausedCueIndex: Int?
+    /// How far before a line's end auto-pause fires. `time-pos` arrives once
+    /// per frame, so this must cover a couple of frames; pausing after the
+    /// end would leave the user looking at a blank screen.
+    private static let autoPauseLead = 0.1
+
+    /// What mpv's A–B loop is currently doing for us.
+    public enum LoopMode: Equatable {
+        case off
+        /// Repeating one line of the primary subtitle track (index into its timeline).
+        case line(cueIndex: Int)
+        /// Manual A–B loop; `b == nil` while only the start has been set.
+        case ab(a: Double, b: Double?)
+    }
+    @Published public private(set) var loopMode: LoopMode = .off
+    public var isLoopingLine: Bool {
+        if case .line = loopMode { return true }
+        return false
+    }
     /// Hold-to-peek pauses playback so the translation can actually be read
     /// before the next line or scene arrives; playback resumes on release.
     @Published public var pauseWhilePeeking: Bool = true {
@@ -200,6 +226,7 @@ public final class MPVPlayer: ObservableObject {
             .flatMap(TranslationMode.init(rawValue:)) {
             self.translationMode = saved
         }
+        self.autoPauseAfterLine = UserDefaults.standard.bool(forKey: "LerzoPlayer.autoPauseAfterLine")
         if let saved = UserDefaults.standard.object(forKey: "LerzoPlayer.pauseWhilePeeking") as? Bool {
             self.pauseWhilePeeking = saved
         }
@@ -681,6 +708,8 @@ public final class MPVPlayer: ObservableObject {
         self.subtitleTimeline = nil
         self.subtitleTimelineKey = nil
         self.subtitleTimelineCache.removeAll()
+        clearLoop()
+        autoPausedCueIndex = nil
         
         guard mpv != nil, targetView?.window != nil else {
             return
@@ -725,13 +754,20 @@ public final class MPVPlayer: ObservableObject {
         setPropertyAsync("pause", "yes")
     }
     
+    /// A user seek (scrubbing, jumping): leaving the line ends a line loop.
     public func seek(to seconds: Double) {
+        if isLoopingLine { clearLoop() }
+        performSeek(to: seconds)
+    }
+
+    private func performSeek(to seconds: Double) {
         let sec = max(0, min(seconds, duration))
         beginSeek(optimisticTime: sec)
         executeCommand(["seek", "\(sec)", "absolute+exact"])
     }
     
     public func seekRelative(seconds: Double) {
+        if isLoopingLine { clearLoop() }
         beginSeek(optimisticTime: max(0, min(currentTime + seconds, duration)))
         executeCommand(["seek", "\(seconds)", "relative"])
     }
@@ -743,13 +779,80 @@ public final class MPVPlayer: ObservableObject {
     public func seekSubtitle(direction: Int) {
         if let timeline = subtitleTimeline, !timeline.cues.isEmpty {
             // Subtitle clock -> video clock: a cue starting at s shows at s + sub-delay.
-            if let target = timeline.seekTarget(from: currentTime - subDelay, skip: direction) {
-                seek(to: target + subDelay)
+            if let target = timeline.seekTargetIndex(from: currentTime - subDelay, skip: direction) {
+                // A line loop follows the line the user moves to.
+                if isLoopingLine { bindLineLoop(to: target) }
+                performSeek(to: timeline.cues[target].start + subDelay)
             }
             return
         }
         beginSeek(optimisticTime: nil)
         executeCommand(["sub-seek", "\(direction)"])
+    }
+
+    // MARK: - Line auto-pause and loops
+
+    /// Called with every `time-pos` update. Pauses just before the current
+    /// line ends when auto-pause is on; a loop makes that moot (mpv jumps
+    /// back to the line's start on its own).
+    private func checkLineEnd(at time: Double) {
+        guard autoPauseAfterLine, loopMode == .off, playbackState == .playing,
+              let timeline = subtitleTimeline else { return }
+        let subTime = time - subDelay
+        guard let index = timeline.index(containing: subTime), index != autoPausedCueIndex,
+              subTime >= timeline.cues[index].end - Self.autoPauseLead else { return }
+        autoPausedCueIndex = index
+        pause()
+    }
+
+    /// Repeat the line on screen (or the last one shown) until turned off.
+    /// W/E/R move the loop to the new line; any other seek ends it.
+    public func toggleLineLoop() {
+        if isLoopingLine {
+            clearLoop()
+            return
+        }
+        guard let timeline = subtitleTimeline,
+              let index = timeline.currentIndex(at: currentTime - subDelay) else { return }
+        bindLineLoop(to: index)
+        // Past the line's end (in the gap before the next one) mpv would loop
+        // back only once it notices; start it over ourselves.
+        if currentTime - subDelay >= timeline.cues[index].end {
+            performSeek(to: timeline.cues[index].start + subDelay)
+        }
+    }
+
+    private func bindLineLoop(to index: Int) {
+        guard let cue = subtitleTimeline?.cues[index] else { return }
+        loopMode = .line(cueIndex: index)
+        setLoopPoints(a: cue.start + subDelay, b: cue.end + subDelay)
+    }
+
+    /// mpv's own A–B loop: the first call marks the start at the current
+    /// position, the second the end (and starts looping), the third clears.
+    public func cycleABLoop() {
+        switch loopMode {
+        case .ab(let a, nil) where currentTime > a + 0.5:
+            loopMode = .ab(a: a, b: currentTime)
+            setLoopPoints(a: a, b: currentTime)
+        case .ab(_, .some):
+            clearLoop()
+        default:
+            // Fresh start, a line loop, or an end no later than the start.
+            loopMode = .ab(a: currentTime, b: nil)
+            setLoopPoints(a: currentTime, b: nil)
+        }
+    }
+
+    public func clearLoop() {
+        guard loopMode != .off else { return }
+        loopMode = .off
+        setLoopPoints(a: nil, b: nil)
+    }
+
+    private func setLoopPoints(a: Double?, b: Double?) {
+        setPropertyAsync("ab-loop-a", a.map { "\($0)" } ?? "no")
+        setPropertyAsync("ab-loop-b", b.map { "\($0)" } ?? "no")
     }
 
     /// Reads the primary subtitle track's cues in the background (a full
@@ -793,6 +896,8 @@ public final class MPVPlayer: ObservableObject {
         let apply = { [weak self] in
             guard let self else { return }
             self.isSeekInFlight = true
+            // Replaying a line should pause at its end again.
+            self.autoPausedCueIndex = nil
             if let optimisticTime {
                 self.currentTime = optimisticTime
             }
@@ -1180,6 +1285,7 @@ public final class MPVPlayer: ObservableObject {
                     if self.playbackState == .loading {
                         self.playbackState = .playing
                     }
+                    self.checkLineEnd(at: time)
                 }
             }
             

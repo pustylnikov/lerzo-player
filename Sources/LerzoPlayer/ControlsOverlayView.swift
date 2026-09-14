@@ -71,6 +71,15 @@ public struct ControlsOverlayView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
+    private var loopHelp: LocalizedStringKey {
+        switch player.loopMode {
+        case .off: return "Repeat the current line until turned off (L). ⇧L marks an A–B loop by hand"
+        case .line: return "Repeating this line; W and E move the loop, any other seek ends it (L)"
+        case .ab(_, nil): return "Loop start marked; press ⇧L again at the end. Click to loop the current line instead (L)"
+        case .ab: return "A–B loop on; ⇧L clears it. Click to loop the current line instead (L)"
+        }
+    }
+
     // MARK: - Top Bar
     private var topBar: some View {
         HStack(spacing: 12) {
@@ -467,6 +476,26 @@ public struct ControlsOverlayView: View {
                 }
                 .buttonStyle(.plain)
                 .help("Jump to the next line (E)")
+
+                // Repeat the current line
+                Button(action: { player.toggleLineLoop(); OSDController.shared.show(.loop) }) {
+                    Image(systemName: player.loopMode == .off ? "repeat" : "repeat.circle.fill")
+                        .font(.system(size: 13))
+                        .foregroundColor(player.loopMode == .off ? .white.opacity(0.85) : .yellow)
+                }
+                .buttonStyle(.plain)
+                .help(loopHelp)
+
+                // Pause after each line
+                Button(action: { player.autoPauseAfterLine.toggle(); OSDController.shared.show(.autoPause) }) {
+                    Image(systemName: player.autoPauseAfterLine ? "pause.circle.fill" : "pause.circle")
+                        .font(.system(size: 13))
+                        .foregroundColor(player.autoPauseAfterLine ? .yellow : .white.opacity(0.85))
+                }
+                .buttonStyle(.plain)
+                .help(player.autoPauseAfterLine
+                      ? "Pausing at the end of every line; Space plays on to the next one (P)"
+                      : "Pause at the end of every line (P)")
                 
                 // Skip -5s
                 Button(action: { player.seekRelative(seconds: -5) }) {
