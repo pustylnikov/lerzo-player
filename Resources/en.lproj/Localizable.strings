@@ -138,6 +138,7 @@
 "Outline width:" = "Outline width:";
 "none" = "none";
 "Outline color:" = "Outline color:";
+"Highlight color:" = "Highlight color:";
 "Background opacity:" = "Background opacity:";
 "no background" = "no background";
 "%lld%%" = "%lld%%";

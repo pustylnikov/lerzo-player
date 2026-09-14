@@ -136,6 +136,7 @@
 "Outline width:" = "Толщина обводки:";
 "none" = "нет";
 "Outline color:" = "Цвет обводки:";
+"Highlight color:" = "Цвет выделения:";
 "Background opacity:" = "Прозрачность подложки:";
 "no background" = "без подложки";
 "%lld%%" = "%lld %%";

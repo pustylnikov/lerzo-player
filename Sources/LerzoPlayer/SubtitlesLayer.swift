@@ -217,17 +217,12 @@ public struct SubtitlesLayer: View {
         OutlinedText(
             word,
             font: style.font(size: primaryFontSize),
-            color: isHovered ? .yellow : style.textColor,
+            color: isHovered ? style.highlightColor : style.textColor,
             outlineColor: style.outlineColor,
             outlineWidth: CGFloat(style.outlineWidth)
         )
             .lineLimit(1)
             .fixedSize()
-            .overlay(alignment: .bottom) {
-                if isHovered {
-                    Rectangle().fill(Color.yellow).frame(height: 2)
-                }
-            }
             .onHover { isHover in
                 hoveredWord = isHover ? cleanWord : nil
             }

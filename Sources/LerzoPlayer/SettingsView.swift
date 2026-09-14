@@ -439,6 +439,15 @@ public struct SettingsView: View {
                                 .labelsHidden()
                                 .disabled(style.outlineWidth == 0)
                         }
+
+                        // Highlight Color (the word under the pointer)
+                        HStack {
+                            Text("Highlight color:")
+                                .font(.system(size: 12, weight: .medium))
+                            Spacer()
+                            ColorPicker("", selection: $style.highlightColor, supportsOpacity: false)
+                                .labelsHidden()
+                        }
                         
                         // Background Opacity
                         VStack(alignment: .leading, spacing: 6) {
@@ -524,13 +533,23 @@ public struct SettingsView: View {
                                     .foregroundColor(.yellow)
                             }
                             
-                            OutlinedText(
-                                "Hey John, are you feeling under the weather?",
-                                font: style.font(size: max(14, CGFloat(player.subFontSize * 0.75))),
-                                color: style.textColor,
-                                outlineColor: style.outlineColor,
-                                outlineWidth: CGFloat(style.outlineWidth)
-                            )
+                            // One word is drawn as if hovered so the highlight
+                            // colour can be judged against the text colour.
+                            let previewSize = max(14, CGFloat(player.subFontSize * 0.75))
+                            WrappingHStack(
+                                words: "Hey John, are you feeling under the weather?".split(separator: " ").map(String.init),
+                                horizontalSpacing: style.spaceWidth(size: previewSize)
+                            ) { word in
+                                OutlinedText(
+                                    word,
+                                    font: style.font(size: previewSize),
+                                    color: word == "weather?" ? style.highlightColor : style.textColor,
+                                    outlineColor: style.outlineColor,
+                                    outlineWidth: CGFloat(style.outlineWidth)
+                                )
+                                .lineLimit(1)
+                                .fixedSize()
+                            }
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 8)
                                 .frame(maxWidth: .infinity)

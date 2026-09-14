@@ -19,6 +19,11 @@ public final class SubtitleStyle: ObservableObject {
     @Published public var outlineColor: Color {
         didSet { defaults.set(outlineColor.hexString, forKey: Keys.outlineColor) }
     }
+    /// Colour of the word under the pointer. Separate from the text colour so
+    /// the hover stays visible with yellow (or any other) subtitles.
+    @Published public var highlightColor: Color {
+        didSet { defaults.set(highlightColor.hexString, forKey: Keys.highlightColor) }
+    }
     /// Opacity of the box behind the subtitles, 0...1. Zero removes the box
     /// (and its border and shadow) entirely, leaving bare text on the video.
     @Published public var backgroundOpacity: Double {
@@ -55,6 +60,7 @@ public final class SubtitleStyle: ObservableObject {
 
     public static let defaultTextColor = Color.white
     public static let defaultOutlineColor = Color.black
+    public static let defaultHighlightColor = Color.yellow
     public static let defaultOutlineWidth = 0.0
     public static let defaultBackgroundOpacity = 0.65
     public static let defaultEdgeInset = 0.08
@@ -89,6 +95,7 @@ public final class SubtitleStyle: ObservableObject {
         static let textColor = "LerzoPlayer.subTextColor"
         static let outlineWidth = "LerzoPlayer.subOutlineWidth"
         static let outlineColor = "LerzoPlayer.subOutlineColor"
+        static let highlightColor = "LerzoPlayer.subHighlightColor"
         static let backgroundOpacity = "LerzoPlayer.subBackgroundOpacity"
         static let edgeInset = "LerzoPlayer.subBottomInset"   // historical name, same meaning
         static let originalPosition = "LerzoPlayer.subOriginalPosition"
@@ -102,6 +109,7 @@ public final class SubtitleStyle: ObservableObject {
         textColor = Color(hexString: defaults.string(forKey: Keys.textColor)) ?? Self.defaultTextColor
         outlineWidth = defaults.object(forKey: Keys.outlineWidth) as? Double ?? Self.defaultOutlineWidth
         outlineColor = Color(hexString: defaults.string(forKey: Keys.outlineColor)) ?? Self.defaultOutlineColor
+        highlightColor = Color(hexString: defaults.string(forKey: Keys.highlightColor)) ?? Self.defaultHighlightColor
         backgroundOpacity = defaults.object(forKey: Keys.backgroundOpacity) as? Double ?? Self.defaultBackgroundOpacity
         edgeInset = defaults.object(forKey: Keys.edgeInset) as? Double ?? Self.defaultEdgeInset
         originalPosition = defaults.string(forKey: Keys.originalPosition)
@@ -118,6 +126,7 @@ public final class SubtitleStyle: ObservableObject {
         textColor = Self.defaultTextColor
         outlineWidth = Self.defaultOutlineWidth
         outlineColor = Self.defaultOutlineColor
+        highlightColor = Self.defaultHighlightColor
         backgroundOpacity = Self.defaultBackgroundOpacity
         edgeInset = Self.defaultEdgeInset
         originalPosition = Self.defaultOriginalPosition
