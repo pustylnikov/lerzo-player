@@ -90,9 +90,9 @@ public struct SubtitlesLayer: View {
 
     @ViewBuilder
     private var translationBlock: some View {
-        if player.isTranslationShown && !player.currentSecondarySubText.isEmpty {
+        if player.isTranslationShown && !player.secondarySubTextOnScreen.isEmpty {
             OutlinedText(
-                player.currentSecondarySubText,
+                player.secondarySubTextOnScreen,
                 font: style.font(size: max(12, primaryFontSize * CGFloat(style.translationScale)), weight: .medium),
                 color: style.textColor,
                 outlineColor: style.outlineColor,
@@ -137,8 +137,8 @@ public struct SubtitlesLayer: View {
 
     @ViewBuilder
     private var originalBlock: some View {
-        if !player.currentSubText.isEmpty {
-            let lines = player.currentSubText
+        if !player.subTextOnScreen.isEmpty {
+            let lines = player.subTextOnScreen
                 .components(separatedBy: .newlines)
                 .map { $0.trimmingCharacters(in: .whitespaces) }
                 .filter { !$0.isEmpty }

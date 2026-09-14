@@ -121,13 +121,29 @@ public final class MPVPlayer: ObservableObject {
     }
     /// The line auto-pause last stopped at, so resuming does not stop there again.
     private var autoPausedCueIndex: Int?
+    /// The line under playback at the previous `time-pos` tick; a change
+    /// means that line has ended. `nil` after a seek and while auto-pause is off.
+    private var lineUnderPlayback: Int?
+    /// Last translation text seen while `lineUnderPlayback` was on screen, so
+    /// the held line can keep its translation too.
+    private var translationSeen: (cueIndex: Int, text: String)?
     /// True while the current pause was made by auto-pause rather than the
     /// user: W/E then mean "go on", while a manual pause is left alone.
-    private var isAutoPaused = false
-    /// How far before a line's end auto-pause fires. `time-pos` arrives once
-    /// per frame, so this must cover a couple of frames; pausing after the
-    /// end would leave the user looking at a blank screen.
-    private static let autoPauseLead = 0.1
+    private var isAutoPaused = false {
+        didSet { if !isAutoPaused { heldLine = nil } }
+    }
+    /// The line auto-pause stopped at. Playback stands on the first frame
+    /// past its end, where mpv has already cleared `sub-text`, so the layer
+    /// draws this instead of a blank until playback moves on.
+    @Published public private(set) var heldLine: (text: String, translation: String)?
+    /// What the subtitle layer should draw: mpv's current text, or the
+    /// held line while auto-paused just past its end.
+    public var subTextOnScreen: String {
+        currentSubText.isEmpty ? heldLine?.text ?? "" : currentSubText
+    }
+    public var secondarySubTextOnScreen: String {
+        currentSecondarySubText.isEmpty ? heldLine?.translation ?? "" : currentSecondarySubText
+    }
 
     /// What mpv's A–B loop is currently doing for us.
     public enum LoopMode: Equatable {
@@ -808,18 +824,29 @@ public final class MPVPlayer: ObservableObject {
 
     // MARK: - Line auto-pause and loops
 
-    /// Called with every `time-pos` update. Pauses just before the current
-    /// line ends when auto-pause is on; a loop makes that moot (mpv jumps
-    /// back to the line's start on its own).
+    /// Called with every `time-pos` update. Pauses as soon as the line that
+    /// was on screen at the previous tick has ended, when auto-pause is on;
+    /// a loop makes that moot (mpv jumps back to the line's start on its
+    /// own). Pausing on the first tick past the end, rather than a little
+    /// before it, keeps the last syllable from being cut off.
     private func checkLineEnd(at time: Double) {
-        guard autoPauseAfterLine, loopMode == .off, playbackState == .playing,
-              let timeline = subtitleTimeline else { return }
+        guard autoPauseAfterLine, loopMode == .off, let timeline = subtitleTimeline else {
+            lineUnderPlayback = nil
+            return
+        }
         let subTime = time - subDelay
-        guard let index = timeline.index(containing: subTime), index != autoPausedCueIndex,
-              subTime >= timeline.cues[index].end - Self.autoPauseLead else { return }
-        autoPausedCueIndex = index
+        let current = timeline.index(containing: subTime)
+        defer { lineUnderPlayback = current }
+        guard playbackState == .playing, let ended = lineUnderPlayback, ended != current,
+              ended != autoPausedCueIndex, subTime >= timeline.cues[ended].end else { return }
+        autoPausedCueIndex = ended
         pause()
         isAutoPaused = true
+        // Keep the line readable unless the next one is already on screen.
+        if current == nil {
+            let translation = translationSeen?.cueIndex == ended ? translationSeen?.text ?? "" : ""
+            heldLine = (timeline.cues[ended].text, translation)
+        }
     }
 
     /// Repeat the line on screen (or the last one shown) until turned off.
@@ -913,8 +940,10 @@ public final class MPVPlayer: ObservableObject {
         let apply = { [weak self] in
             guard let self else { return }
             self.isSeekInFlight = true
-            // Replaying a line should pause at its end again.
+            // Replaying a line should pause at its end again; and the line
+            // under playback is whatever we land on, not the one we left.
             self.autoPausedCueIndex = nil
+            self.lineUnderPlayback = nil
             if let optimisticTime {
                 self.currentTime = optimisticTime
             }
@@ -1472,7 +1501,11 @@ public final class MPVPlayer: ObservableObject {
                 text = String(cString: cStr).trimmingCharacters(in: .whitespacesAndNewlines)
             }
             DispatchQueue.main.async { [weak self] in
-                self?.currentSecondarySubText = text
+                guard let self else { return }
+                self.currentSecondarySubText = text
+                if !text.isEmpty, let line = self.lineUnderPlayback {
+                    self.translationSeen = (line, text)
+                }
             }
             
         default:
