@@ -122,8 +122,6 @@
 "The translation appears only while TAB is held, so the original is not spoiled. ⇧TAB switches to dual subtitles." = "Перевод появляется только пока зажат TAB, и не подсказывает раньше времени. ⇧TAB включает двойные субтитры.";
 "Dual subtitles: the original and the translation are on screen together. ⇧TAB switches back to peeking with TAB." = "Двойные субтитры: оригинал и перевод на экране одновременно. ⇧TAB возвращает подглядывание по TAB.";
 "Pause while peeking at the translation (TAB)" = "Пауза при подглядывании перевода (TAB)";
-"Pause after each line (P)" = "Пауза после каждой реплики (P)";
-"The video stops just before every line leaves the screen; Space plays on to the next one. Needs text subtitles." = "Видео останавливается перед тем, как реплика исчезнет с экрана; пробел продолжает до следующей. Нужны текстовые субтитры.";
 "While TAB is held the video pauses; it resumes when released." = "Пока TAB зажат, видео стоит; после отпускания продолжает играть.";
 "Output HDR video in HDR" = "Выводить HDR-видео в HDR";
 "This display supports HDR. When off, HDR video is tone-mapped to SDR." = "Текущий дисплей поддерживает HDR. Если выключить, HDR-видео будет преобразовано в SDR.";

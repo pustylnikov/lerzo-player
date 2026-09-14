@@ -280,20 +280,6 @@ public struct SettingsView: View {
                                 .fixedSize(horizontal: false, vertical: true)
                         }
 
-                        Toggle(isOn: $player.autoPauseAfterLine) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Pause after each line (P)")
-                                    .font(.system(size: 12, weight: .medium))
-                                Text("The video stops just before every line leaves the screen; Space plays on to the next one. Needs text subtitles.")
-                                    .font(.system(size: 11))
-                                    .foregroundColor(.secondary)
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                        .toggleStyle(.switch)
-                        .controlSize(.small)
-
                         Toggle(isOn: $player.pauseWhilePeeking) {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Pause while peeking at the translation (TAB)")

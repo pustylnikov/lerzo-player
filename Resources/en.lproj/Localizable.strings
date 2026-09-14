@@ -124,8 +124,6 @@
 "The translation appears only while TAB is held, so the original is not spoiled. ⇧TAB switches to dual subtitles." = "The translation appears only while TAB is held, so the original is not spoiled. ⇧TAB switches to dual subtitles.";
 "Dual subtitles: the original and the translation are on screen together. ⇧TAB switches back to peeking with TAB." = "Dual subtitles: the original and the translation are on screen together. ⇧TAB switches back to peeking with TAB.";
 "Pause while peeking at the translation (TAB)" = "Pause while peeking at the translation (TAB)";
-"Pause after each line (P)" = "Pause after each line (P)";
-"The video stops just before every line leaves the screen; Space plays on to the next one. Needs text subtitles." = "The video stops just before every line leaves the screen; Space plays on to the next one. Needs text subtitles.";
 "While TAB is held the video pauses; it resumes when released." = "While TAB is held the video pauses; it resumes when released.";
 "Output HDR video in HDR" = "Output HDR video in HDR";
 "This display supports HDR. When off, HDR video is tone-mapped to SDR." = "This display supports HDR. When off, HDR video is tone-mapped to SDR.";

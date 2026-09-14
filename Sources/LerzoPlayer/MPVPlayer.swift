@@ -10,7 +10,12 @@ public final class MPVPlayer: ObservableObject {
     @Published public var playbackState: PlaybackState = .idle
     @Published public var currentTime: Double = 0
     @Published public var duration: Double = 0
-    @Published public var volume: Double = 80
+    /// Remembered between sessions; mute is not (a remembered mute reads as
+    /// "no sound, why?" on the next launch).
+    @Published public var volume: Double = 80 {
+        didSet { UserDefaults.standard.set(volume, forKey: Self.volumeKey) }
+    }
+    private static let volumeKey = "LerzoPlayer.volume"
     @Published public var isMuted: Bool = false
     /// Playback speed multiplier. Not persisted: slowing down is tied to a
     /// hard passage, not a preference, so every file starts at 1x.
@@ -114,11 +119,10 @@ public final class MPVPlayer: ObservableObject {
     
     @Published public var subtitleHistory: [String] = []
 
-    /// Pause at the end of every subtitle line (just before it leaves the
-    /// screen, so it can still be read); Space carries on to the next one.
-    @Published public var autoPauseAfterLine: Bool = false {
-        didSet { UserDefaults.standard.set(autoPauseAfterLine, forKey: "LerzoPlayer.autoPauseAfterLine") }
-    }
+    /// Pause at the end of every subtitle line; Space carries on to the
+    /// next one. A study-session mode: it survives opening another file but
+    /// not relaunching, so the player always starts in plain watching mode.
+    @Published public var autoPauseAfterLine: Bool = false
     /// How long after a line's end auto-pause waits before pausing, for
     /// subtitles whose cues end on the last syllable. Per session and per
     /// file (reset on load), like the delays: it compensates for the file.
@@ -253,7 +257,6 @@ public final class MPVPlayer: ObservableObject {
             .flatMap(TranslationMode.init(rawValue:)) {
             self.translationMode = saved
         }
-        self.autoPauseAfterLine = UserDefaults.standard.bool(forKey: "LerzoPlayer.autoPauseAfterLine")
         if let saved = UserDefaults.standard.object(forKey: "LerzoPlayer.pauseWhilePeeking") as? Bool {
             self.pauseWhilePeeking = saved
         }
@@ -346,6 +349,10 @@ public final class MPVPlayer: ObservableObject {
         
         // 2. High quality video & audio defaults
         mpv_set_option_string(handle, "keep-open", "yes")
+        if let saved = UserDefaults.standard.object(forKey: Self.volumeKey) as? Double {
+            volume = saved
+            mpv_set_option_string(handle, "volume", "\(Int(saved.rounded()))")
+        }
         mpv_set_option_string(handle, "sub-auto", "fuzzy")
         mpv_set_option_string(handle, "secondary-sub-visibility", "no")
         
