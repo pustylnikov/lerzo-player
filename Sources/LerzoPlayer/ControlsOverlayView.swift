@@ -30,6 +30,10 @@ public struct ControlsOverlayView: View {
             topBar
                 .padding(.horizontal, 16)
                 .padding(.top, 12)
+                // Same for the top bar, for subtitles placed at the top.
+                .background(GeometryReader { geo in
+                    Color.clear.preference(key: TopBarHeightKey.self, value: geo.size.height)
+                })
             
             Spacer()
             
@@ -133,18 +137,28 @@ public struct ControlsOverlayView: View {
                 
                 Divider()
                 
-                Text("Second track (translation to peek at with TAB):").font(.caption)
+                Text("Second track (translation):").font(.caption)
                 Button(player.currentSecondarySubId == nil ? "✓ No second track" : "Turn off") {
                     player.setSecondarySubtitle(trackId: nil)
                 }
                 ForEach(player.subtitleTracks) { track in
                     Button(action: { player.setSecondarySubtitle(trackId: track.id) }) {
                         if player.currentSecondarySubId == track.id {
-                            Text("✓ (Peek) \(track.displayName)")
+                            Text("✓ \(track.displayName)")
                         } else {
-                            Text("(Peek) \(track.displayName)")
+                            Text(track.displayName)
                         }
                     }
+                }
+                Divider()
+                // Flat on purpose: nested menus do not open during playback.
+                Button(player.translationMode == .peek ? "✓ Show while TAB is held" : "Show while TAB is held") {
+                    player.translationMode = .peek
+                    OSDController.shared.show(.translationMode)
+                }
+                Button(player.translationMode == .always ? "✓ Always show  (⇧TAB)" : "Always show  (⇧TAB)") {
+                    player.translationMode = .always
+                    OSDController.shared.show(.translationMode)
                 }
                 Divider()
                 delayMenu(for: .secondarySubtitle)
@@ -516,23 +530,32 @@ public struct ControlsOverlayView: View {
                 
                 Spacer()
                 
-                // Peek Hint Pill
-                HStack(spacing: 5) {
-                    Text("TAB")
-                        .font(.system(size: 9, weight: .bold, design: .monospaced))
-                        .padding(.horizontal, 4)
-                        .padding(.vertical, 2)
-                        .background(Color.white.opacity(0.2))
-                        .cornerRadius(4)
-                    Text("Peek translation")
-                        .font(.system(size: 11, weight: .medium))
+                // Translation mode: a TAB hint that doubles as the pin toggle
+                let pinned = player.translationMode == .always
+                Button(action: {
+                    player.toggleTranslationMode()
+                    OSDController.shared.show(.translationMode)
+                }) {
+                    HStack(spacing: 5) {
+                        Text(pinned ? "⇧TAB" : "TAB")
+                            .font(.system(size: 9, weight: .bold, design: .monospaced))
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 2)
+                            .background(Color.white.opacity(0.2))
+                            .cornerRadius(4)
+                        Text(pinned ? "Translation on" : "Peek translation")
+                            .font(.system(size: 11, weight: .medium))
+                    }
+                    .foregroundColor(pinned ? .yellow : .white.opacity(0.8))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(pinned ? Color.yellow.opacity(0.18) : Color.white.opacity(0.1))
+                    .cornerRadius(6)
                 }
-                .foregroundColor(.white.opacity(0.8))
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(Color.white.opacity(0.1))
-                .cornerRadius(6)
-                .help("Hold TAB to quickly see the translation from the second subtitle track")
+                .buttonStyle(.plain)
+                .help(pinned
+                      ? "The translation from the second subtitle track stays on screen. Click or press ⇧TAB to show it only while TAB is held"
+                      : "Hold TAB to quickly see the translation from the second subtitle track. Click or press ⇧TAB to keep it on screen")
                 
                 // Fullscreen Toggle
                 Button(action: {
@@ -575,6 +598,14 @@ public struct ControlsOverlayView: View {
 
 /// Height of the bottom controls bar including its margin to the window edge.
 struct ControlsBarHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+/// Height of the top header bar including its margin to the window edge.
+struct TopBarHeightKey: PreferenceKey {
     static let defaultValue: CGFloat = 0
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = max(value, nextValue())

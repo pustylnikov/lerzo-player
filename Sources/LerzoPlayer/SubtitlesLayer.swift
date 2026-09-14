@@ -7,6 +7,8 @@ public struct SubtitlesLayer: View {
     /// Height of the playback controls bar (with its bottom margin), measured
     /// by `ControlsOverlayView`; 0 until it has been shown once.
     var controlsBarHeight: CGFloat
+    /// Height of the top header bar (with its top margin), likewise.
+    var topBarHeight: CGFloat
     var controlsShown: Bool
     var onExplainWord: ((String) -> Void)?
     
@@ -15,29 +17,50 @@ public struct SubtitlesLayer: View {
     
     public init(showExplanation: Binding<Bool>,
                 controlsBarHeight: CGFloat = 0,
+                topBarHeight: CGFloat = 0,
                 controlsShown: Bool = false,
                 onExplainWord: ((String) -> Void)? = nil) {
         self._showExplanation = showExplanation
         self.controlsBarHeight = controlsBarHeight
+        self.topBarHeight = topBarHeight
         self.controlsShown = controlsShown
         self.onExplainWord = onExplainWord
     }
     
     public var body: some View {
         GeometryReader { geo in
-            content(bottomInset: bottomInset(for: geo.size.height))
+            ZStack {
+                // The original always sits next to its edge and the translation
+                // on the inner side (see `SubtitleStyle.translationPosition`),
+                // so the stacks read edge-inwards: bottom-up at the bottom,
+                // top-down at the top.
+                VStack(spacing: 0) {
+                    blocks(at: .top)
+                    Spacer(minLength: 0)
+                }
+                .padding(.top, inset(for: geo.size.height, clearing: topBarHeight))
                 // Only the "lift while visible" mode ever changes the inset at
                 // runtime; window resizes must not animate.
                 .animation(.easeInOut(duration: 0.2), value: controlsShown)
+
+                VStack(spacing: 0) {
+                    Spacer(minLength: 0)
+                    blocks(at: .bottom)
+                }
+                .padding(.bottom, inset(for: geo.size.height, clearing: controlsBarHeight))
+                .animation(.easeInOut(duration: 0.2), value: controlsShown)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 
-    /// The user's inset, raised above the controls bar when it would overlap:
-    /// permanently or only while the bar is on screen, per `SubtitleStyle`.
-    private func bottomInset(for height: CGFloat) -> CGFloat {
-        let requested = height * style.bottomInset
-        guard controlsBarHeight > 0 else { return requested }
-        let clearance = controlsBarHeight + SubtitleStyle.controlsClearanceGap
+    /// The user's inset, pushed clear of the controls bar at that edge when
+    /// it would overlap: permanently or only while the bar is on screen, per
+    /// `SubtitleStyle`.
+    private func inset(for height: CGFloat, clearing barHeight: CGFloat) -> CGFloat {
+        let requested = height * style.edgeInset
+        guard barHeight > 0 else { return requested }
+        let clearance = barHeight + SubtitleStyle.controlsClearanceGap
         switch style.controlsClearance {
         case .always:
             return max(requested, clearance)
@@ -46,73 +69,112 @@ public struct SubtitlesLayer: View {
         }
     }
 
-    private func content(bottomInset: CGFloat) -> some View {
+    /// The lines placed at that edge, ordered from the edge inwards.
+    @ViewBuilder
+    private func blocks(at edge: SubtitleStyle.Position) -> some View {
+        let original = style.originalPosition == edge
+        let translation = style.translationPosition == edge
         VStack(spacing: 8) {
-            Spacer()
-            
-            // Secondary (translation) Subtitle Peek Badge
-            if player.isPeekingTranslation && !player.currentSecondarySubText.isEmpty {
-                HStack(spacing: 8) {
-                    OutlinedText(
-                        player.currentSecondarySubText,
-                        font: style.font(size: max(12, primaryFontSize * CGFloat(style.translationScale)), weight: .medium),
-                        color: style.textColor,
-                        outlineColor: style.outlineColor,
-                        outlineWidth: CGFloat(style.outlineWidth)
-                    )
-                    .multilineTextAlignment(.center)
-                    .shadow(color: .black.opacity(0.8), radius: 3, x: 0, y: 1)
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(subtitleBox)
-                .shadow(color: .black.opacity(0.5 * boxOpacity), radius: 6, x: 0, y: 3)
-                .transition(.opacity.combined(with: .scale(scale: 0.96)))
-                .animation(.easeInOut(duration: 0.15), value: player.isPeekingTranslation)
+            if edge == .top {
+                if original { originalBlock }
+                if translation { translationBlock }
+            } else {
+                if translation { translationBlock }
+                if original { originalBlock }
             }
-            
-            // Interactive primary subtitle pill (active when paused or hovered)
-            if !player.currentSubText.isEmpty && player.showSubtitles {
-                let lines = player.currentSubText
-                    .components(separatedBy: .newlines)
-                    .map { $0.trimmingCharacters(in: .whitespaces) }
-                    .filter { !$0.isEmpty }
-                
-                VStack(alignment: .center, spacing: 4) {
-                    ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
-                        let words = line.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
-                        WrappingHStack(words: words, horizontalSpacing: style.spaceWidth(size: primaryFontSize)) { word in
-                            subtitleWordView(for: word)
-                        }
-                    }
-                }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - Translation line
+
+    @ViewBuilder
+    private var translationBlock: some View {
+        if player.isTranslationShown && !player.currentSecondarySubText.isEmpty {
+            OutlinedText(
+                player.currentSecondarySubText,
+                font: style.font(size: max(12, primaryFontSize * CGFloat(style.translationScale)), weight: .medium),
+                color: style.textColor,
+                outlineColor: style.outlineColor,
+                outlineWidth: CGFloat(style.outlineWidth)
+            )
+            .multilineTextAlignment(.center)
+            .shadow(color: .black.opacity(0.8), radius: 3, x: 0, y: 1)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .background(subtitleBox)
+            .shadow(color: .black.opacity(0.5 * boxOpacity), radius: 6, x: 0, y: 3)
+            .transition(.opacity.combined(with: .scale(scale: 0.96)))
+            .animation(.easeInOut(duration: 0.15), value: player.isPeekingTranslation)
+        } else if player.isPeekingTranslation, let reason = player.translationUnavailableReason {
+            // TAB pressed with nothing to reveal: say why, where the
+            // translation would have appeared, for as long as TAB is held.
+            Text(Self.unavailableMessage(for: reason))
+                .font(.system(size: max(12, primaryFontSize * 0.6), weight: .medium, design: .rounded))
+                .italic()
+                .foregroundColor(.white.opacity(0.75))
+                .multilineTextAlignment(.center)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
                 .background(subtitleBox)
-                .shadow(color: .black.opacity(0.5 * boxOpacity), radius: 6, x: 0, y: 3)
-                // Quick Explain badge: floats over the pill's top-right corner
-                // and only appears on hover, so it neither shifts the centred
-                // text nor sits on screen the whole time.
-                .overlay(alignment: .topTrailing) {
-                    explainBadge
-                        .offset(x: 10, y: -10)
-                        .opacity(isHoveringPill ? 1 : 0)
-                        .allowsHitTesting(isHoveringPill)
-                }
-                // Extra room so the hover region also covers the floating badge.
-                .padding(.horizontal, 10)
-                .padding(.top, 10)
-                .onHover { isHover in
-                    withAnimation(.easeInOut(duration: 0.15)) {
-                        isHoveringPill = isHover
+                .transition(.opacity)
+                .animation(.easeInOut(duration: 0.15), value: player.isPeekingTranslation)
+        }
+    }
+
+    static func unavailableMessage(for reason: MPVPlayer.TranslationUnavailableReason) -> String {
+        switch reason {
+        case .noSubtitleTracks:
+            return String(localized: "This file has no subtitles — load a subtitle file with ⌘⇧O")
+        case .singleTrack:
+            return String(localized: "This file has only one subtitle track — load a translation with ⌘⇧O")
+        case .noSecondaryTrack:
+            return String(localized: "No translation track selected — pick a second track in the Subtitles menu")
+        }
+    }
+
+    // MARK: - Original line (interactive words)
+
+    @ViewBuilder
+    private var originalBlock: some View {
+        if !player.currentSubText.isEmpty {
+            let lines = player.currentSubText
+                .components(separatedBy: .newlines)
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { !$0.isEmpty }
+
+            VStack(alignment: .center, spacing: 4) {
+                ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
+                    let words = line.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
+                    WrappingHStack(words: words, horizontalSpacing: style.spaceWidth(size: primaryFontSize)) { word in
+                        subtitleWordView(for: word)
                     }
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .background(subtitleBox)
+            .shadow(color: .black.opacity(0.5 * boxOpacity), radius: 6, x: 0, y: 3)
+            // Quick Explain badge: floats over the pill's top-right corner
+            // and only appears on hover, so it neither shifts the centred
+            // text nor sits on screen the whole time.
+            .overlay(alignment: .topTrailing) {
+                explainBadge
+                    .offset(x: 10, y: -10)
+                    .opacity(isHoveringPill ? 1 : 0)
+                    .allowsHitTesting(isHoveringPill)
+            }
+            // Extra room so the hover region also covers the floating badge.
+            .padding(.horizontal, 10)
+            .padding(.top, 10)
+            .onHover { isHover in
+                withAnimation(.easeInOut(duration: 0.15)) {
+                    isHoveringPill = isHover
                 }
             }
         }
-        .padding(.bottom, bottomInset)
-        .frame(maxWidth: .infinity)
     }
-    
+
     private var boxOpacity: Double { style.backgroundOpacity }
 
     private var explainBadge: some View {

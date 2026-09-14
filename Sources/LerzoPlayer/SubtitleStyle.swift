@@ -24,18 +24,30 @@ public final class SubtitleStyle: ObservableObject {
     @Published public var backgroundOpacity: Double {
         didSet { defaults.set(backgroundOpacity, forKey: Keys.backgroundOpacity) }
     }
-    /// Distance from the bottom of the video area to the subtitle box, as a
-    /// fraction of the area's height (0.03...0.4), so it looks the same in a
-    /// window and in fullscreen.
-    @Published public var bottomInset: Double {
-        didSet { defaults.set(bottomInset, forKey: Keys.bottomInset) }
+    /// Distance from the edge of the video area (top or bottom, whichever a
+    /// line is placed at) to the subtitle box, as a fraction of the area's
+    /// height (0.03...0.4), so it looks the same in a window and in fullscreen.
+    @Published public var edgeInset: Double {
+        didSet { defaults.set(edgeInset, forKey: Keys.edgeInset) }
+    }
+    /// Edge of the video the original-language subtitles sit at.
+    @Published public var originalPosition: Position {
+        didSet { defaults.set(originalPosition.rawValue, forKey: Keys.originalPosition) }
+    }
+    /// Edge of the video the translation line sits at. When it shares an
+    /// edge with the original, the original stays next to the edge and the
+    /// translation goes on the inner side: the two tracks' cues come and go
+    /// on their own timings, and this keeps the line the user reads (and
+    /// clicks words in) from jumping whenever the translation appears.
+    @Published public var translationPosition: Position {
+        didSet { defaults.set(translationPosition.rawValue, forKey: Keys.translationPosition) }
     }
     /// How the subtitles stay clear of the playback controls bar, which
     /// would otherwise cover them at the default inset in most window sizes.
     @Published public var controlsClearance: ControlsClearance {
         didSet { defaults.set(controlsClearance.rawValue, forKey: Keys.controlsClearance) }
     }
-    /// Size of the TAB translation line relative to the primary subtitles
+    /// Size of the translation line relative to the primary subtitles
     /// (1 = the same size).
     @Published public var translationScale: Double {
         didSet { defaults.set(translationScale, forKey: Keys.translationScale) }
@@ -45,19 +57,26 @@ public final class SubtitleStyle: ObservableObject {
     public static let defaultOutlineColor = Color.black
     public static let defaultOutlineWidth = 0.0
     public static let defaultBackgroundOpacity = 0.65
-    public static let defaultBottomInset = 0.08
-    public static let bottomInsetRange = 0.03...0.4
+    public static let defaultEdgeInset = 0.08
+    public static let edgeInsetRange = 0.03...0.4
+    public static let defaultOriginalPosition = Position.bottom
+    public static let defaultTranslationPosition = Position.bottom
     public static let defaultTranslationScale = 1.0
     public static let translationScaleRange = 0.5...1.5
     public static let defaultControlsClearance = ControlsClearance.always
     /// Space between the top of the controls bar and the subtitle box.
     public static let controlsClearanceGap: CGFloat = 12
 
+    public enum Position: String, CaseIterable, Identifiable {
+        case bottom, top
+        public var id: String { rawValue }
+    }
+
     public enum ControlsClearance: String, CaseIterable, Identifiable {
         /// The resting position never goes below the bar, so the text never
-        /// moves when the bar appears; `bottomInset` acts as "at least".
+        /// moves when the bar appears; `edgeInset` acts as "at least".
         case always
-        /// `bottomInset` is honoured exactly (even right at the edge) and the
+        /// `edgeInset` is honoured exactly (even right at the edge) and the
         /// text is lifted above the bar only while the bar is on screen.
         case whileControlsVisible
 
@@ -71,7 +90,9 @@ public final class SubtitleStyle: ObservableObject {
         static let outlineWidth = "LerzoPlayer.subOutlineWidth"
         static let outlineColor = "LerzoPlayer.subOutlineColor"
         static let backgroundOpacity = "LerzoPlayer.subBackgroundOpacity"
-        static let bottomInset = "LerzoPlayer.subBottomInset"
+        static let edgeInset = "LerzoPlayer.subBottomInset"   // historical name, same meaning
+        static let originalPosition = "LerzoPlayer.subOriginalPosition"
+        static let translationPosition = "LerzoPlayer.subTranslationPosition"
         static let translationScale = "LerzoPlayer.subTranslationScale"
         static let controlsClearance = "LerzoPlayer.subControlsClearance"
     }
@@ -82,7 +103,11 @@ public final class SubtitleStyle: ObservableObject {
         outlineWidth = defaults.object(forKey: Keys.outlineWidth) as? Double ?? Self.defaultOutlineWidth
         outlineColor = Color(hexString: defaults.string(forKey: Keys.outlineColor)) ?? Self.defaultOutlineColor
         backgroundOpacity = defaults.object(forKey: Keys.backgroundOpacity) as? Double ?? Self.defaultBackgroundOpacity
-        bottomInset = defaults.object(forKey: Keys.bottomInset) as? Double ?? Self.defaultBottomInset
+        edgeInset = defaults.object(forKey: Keys.edgeInset) as? Double ?? Self.defaultEdgeInset
+        originalPosition = defaults.string(forKey: Keys.originalPosition)
+            .flatMap(Position.init(rawValue:)) ?? Self.defaultOriginalPosition
+        translationPosition = defaults.string(forKey: Keys.translationPosition)
+            .flatMap(Position.init(rawValue:)) ?? Self.defaultTranslationPosition
         translationScale = defaults.object(forKey: Keys.translationScale) as? Double ?? Self.defaultTranslationScale
         controlsClearance = defaults.string(forKey: Keys.controlsClearance)
             .flatMap(ControlsClearance.init(rawValue:)) ?? Self.defaultControlsClearance
@@ -94,7 +119,9 @@ public final class SubtitleStyle: ObservableObject {
         outlineWidth = Self.defaultOutlineWidth
         outlineColor = Self.defaultOutlineColor
         backgroundOpacity = Self.defaultBackgroundOpacity
-        bottomInset = Self.defaultBottomInset
+        edgeInset = Self.defaultEdgeInset
+        originalPosition = Self.defaultOriginalPosition
+        translationPosition = Self.defaultTranslationPosition
         translationScale = Self.defaultTranslationScale
         controlsClearance = Self.defaultControlsClearance
     }

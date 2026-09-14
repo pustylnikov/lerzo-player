@@ -15,6 +15,7 @@ public enum OSDItem: Equatable {
     case fill
     case crop(MPVPlayer.CropResult)
     case boostDialogue
+    case translationMode
 }
 
 /// Keyboard feedback shown in the top-left corner for a moment, so the user
@@ -95,6 +96,11 @@ public struct OSDView: View {
         case .fill: return player.fillsWindow ? "arrow.up.left.and.arrow.down.right" : "arrow.down.right.and.arrow.up.left"
         case .crop: return "crop"
         case .boostDialogue: return player.boostDialogue ? "waveform.badge.plus" : "waveform"
+        case .translationMode:
+            if player.translationMode == .always && player.translationUnavailableReason != nil {
+                return "exclamationmark.bubble"
+            }
+            return player.translationMode == .always ? "captions.bubble.fill" : "captions.bubble"
         }
     }
 
@@ -137,6 +143,15 @@ public struct OSDView: View {
             }
         case .boostDialogue:
             return player.boostDialogue ? String(localized: "Boost dialogue on") : String(localized: "Boost dialogue off")
+        case .translationMode:
+            // Pinning the translation with no track to show would look broken;
+            // say why instead of confirming the mode.
+            if player.translationMode == .always, let reason = player.translationUnavailableReason {
+                return SubtitlesLayer.unavailableMessage(for: reason)
+            }
+            return player.translationMode == .always
+                ? String(localized: "Translation always shown")
+                : String(localized: "Translation shown while TAB is held")
         }
     }
 

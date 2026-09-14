@@ -259,6 +259,27 @@ public struct SettingsView: View {
                                 .font(.system(size: 14, weight: .bold))
                         }
 
+                        // Translation mode
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Text("Translation (second subtitle track):")
+                                    .font(.system(size: 12, weight: .medium))
+                                Spacer()
+                                Picker("", selection: $player.translationMode) {
+                                    Text("Show while TAB is held").tag(MPVPlayer.TranslationMode.peek)
+                                    Text("Always show").tag(MPVPlayer.TranslationMode.always)
+                                }
+                                .labelsHidden()
+                                .frame(maxWidth: 260, alignment: .trailing)
+                            }
+                            Text(player.translationMode == .peek
+                                 ? "The translation appears only while TAB is held, so the original is not spoiled. ⇧TAB switches to dual subtitles."
+                                 : "Dual subtitles: the original and the translation are on screen together. ⇧TAB switches back to peeking with TAB.")
+                                .font(.system(size: 10))
+                                .foregroundColor(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
                         Toggle(isOn: $player.pauseWhilePeeking) {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Pause while peeking at the translation (TAB)")
@@ -359,7 +380,7 @@ public struct SettingsView: View {
                         // Translation Size
                         VStack(alignment: .leading, spacing: 6) {
                             HStack {
-                                Text("Translation size (TAB):")
+                                Text("Translation size:")
                                     .font(.system(size: 12, weight: .medium))
                                 Spacer()
                                 Text("\(Int((style.translationScale * 100).rounded()))% of primary")
@@ -433,17 +454,39 @@ public struct SettingsView: View {
                                 .accentColor(.yellow)
                         }
 
-                        // Bottom Inset
+                        // Positions
+                        HStack {
+                            Text("Original subtitles:")
+                                .font(.system(size: 12, weight: .medium))
+                            Spacer()
+                            positionPicker($style.originalPosition)
+                        }
                         VStack(alignment: .leading, spacing: 6) {
                             HStack {
-                                Text("Bottom inset:")
+                                Text("Translation:")
                                     .font(.system(size: 12, weight: .medium))
                                 Spacer()
-                                Text("\(Int((style.bottomInset * 100).rounded()))% of height")
+                                positionPicker($style.translationPosition)
+                            }
+                            if style.originalPosition == style.translationPosition {
+                                Text("On the same edge the original stays next to the edge and the translation goes on the inner side, so the original never moves when the translation comes and goes.")
+                                    .font(.system(size: 10))
+                                    .foregroundColor(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+
+                        // Edge Inset
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Text("Distance from the edge:")
+                                    .font(.system(size: 12, weight: .medium))
+                                Spacer()
+                                Text("\(Int((style.edgeInset * 100).rounded()))% of height")
                                     .font(.system(size: 12, weight: .bold, design: .monospaced))
                                     .foregroundColor(.yellow)
                             }
-                            Slider(value: $style.bottomInset, in: SubtitleStyle.bottomInsetRange, step: 0.01)
+                            Slider(value: $style.edgeInset, in: SubtitleStyle.edgeInsetRange, step: 0.01)
                                 .accentColor(.yellow)
                         }
 
@@ -461,8 +504,8 @@ public struct SettingsView: View {
                                 .frame(maxWidth: 260, alignment: .trailing)
                             }
                             Text(style.controlsClearance == .always
-                                 ? "The subtitles never sit under the controls bar, so the line stays put when the bar appears; the bottom inset acts as a minimum."
-                                 : "The bottom inset is used exactly, even right at the edge; the line moves up whenever the controls bar appears.")
+                                 ? "Subtitles at the bottom never sit under the controls bar, so the line stays put when the bar appears; the distance from the edge acts as a minimum."
+                                 : "The distance from the edge is used exactly, even right at the bottom; the line moves up whenever the controls bar appears.")
                                 .font(.system(size: 10))
                                 .foregroundColor(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -612,6 +655,16 @@ public struct SettingsView: View {
             // The sheet's modal session can swallow the quit; do not stay behind.
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) { exit(0) }
         }
+    }
+
+    private func positionPicker(_ position: Binding<SubtitleStyle.Position>) -> some View {
+        Picker("", selection: position) {
+            Text("Bottom").tag(SubtitleStyle.Position.bottom)
+            Text("Top").tag(SubtitleStyle.Position.top)
+        }
+        .labelsHidden()
+        .pickerStyle(.segmented)
+        .frame(width: 160)
     }
 
     private func pictureSlider(_ title: LocalizedStringKey, value: Binding<Double>) -> some View {

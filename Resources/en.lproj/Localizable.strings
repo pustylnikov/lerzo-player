@@ -34,10 +34,12 @@
 "Primary track (original language):" = "Primary track (original language):";
 "✓ No subtitles" = "✓ No subtitles";
 "Turn off" = "Turn off";
-"✓ (Peek) %@" = "✓ (Peek) %@";
-"(Peek) %@" = "(Peek) %@";
 "Track %lld" = "Track %lld";
-"Second track (translation to peek at with TAB):" = "Second track (translation to peek at with TAB):";
+"Second track (translation):" = "Second track (translation):";
+"✓ Show while TAB is held" = "✓ Show while TAB is held";
+"Show while TAB is held" = "Show while TAB is held";
+"✓ Always show  (⇧TAB)" = "✓ Always show  (⇧TAB)";
+"Always show  (⇧TAB)" = "Always show  (⇧TAB)";
 "✓ No second track" = "✓ No second track";
 "Subtitles" = "Subtitles";
 "Audio" = "Audio";
@@ -55,12 +57,17 @@
 "Jump to the next line (E)" = "Jump to the next line (E)";
 "Playback speed ([ slower, ] faster, Backspace — 1×)" = "Playback speed ([ slower, ] faster, Backspace — 1×)";
 "Peek translation" = "Peek translation";
-"Hold TAB to quickly see the translation from the second subtitle track" = "Hold TAB to quickly see the translation from the second subtitle track";
+"Translation on" = "Translation on";
+"The translation from the second subtitle track stays on screen. Click or press ⇧TAB to show it only while TAB is held" = "The translation from the second subtitle track stays on screen. Click or press ⇧TAB to show it only while TAB is held";
+"Hold TAB to quickly see the translation from the second subtitle track. Click or press ⇧TAB to keep it on screen" = "Hold TAB to quickly see the translation from the second subtitle track. Click or press ⇧TAB to keep it on screen";
 "Full screen (F)" = "Full screen (F)";
 
 /* Subtitles layer */
 "AI" = "AI";
 "Explain this line with Gemini AI (Cmd + G)" = "Explain this line with Gemini AI (Cmd + G)";
+"This file has no subtitles — load a subtitle file with ⌘⇧O" = "This file has no subtitles — load a subtitle file with ⌘⇧O";
+"This file has only one subtitle track — load a translation with ⌘⇧O" = "This file has only one subtitle track — load a translation with ⌘⇧O";
+"No translation track selected — pick a second track in the Subtitles menu" = "No translation track selected — pick a second track in the Subtitles menu";
 
 /* On-screen display */
 "Speed %@" = "Speed %@";
@@ -106,6 +113,10 @@
 "Same as system (%@)" = "Same as system (%@)";
 "Your native language is the same as the one you're learning — no translation subtitles will be selected." = "Your native language is the same as the one you're learning — no translation subtitles will be selected.";
 "Playback Behavior" = "Playback Behavior";
+"Translation (second subtitle track):" = "Translation (second subtitle track):";
+"Always show" = "Always show";
+"The translation appears only while TAB is held, so the original is not spoiled. ⇧TAB switches to dual subtitles." = "The translation appears only while TAB is held, so the original is not spoiled. ⇧TAB switches to dual subtitles.";
+"Dual subtitles: the original and the translation are on screen together. ⇧TAB switches back to peeking with TAB." = "Dual subtitles: the original and the translation are on screen together. ⇧TAB switches back to peeking with TAB.";
 "Pause while peeking at the translation (TAB)" = "Pause while peeking at the translation (TAB)";
 "While TAB is held the video pauses; it resumes when released." = "While TAB is held the video pauses; it resumes when released.";
 "Output HDR video in HDR" = "Output HDR video in HDR";
@@ -113,7 +124,7 @@
 "This display does not support HDR — video is tone-mapped to SDR. The setting takes effect on an HDR display." = "This display does not support HDR — video is tone-mapped to SDR. The setting takes effect on an HDR display.";
 "Subtitle Appearance" = "Subtitle Appearance";
 "Subtitle font size:" = "Subtitle font size:";
-"Translation size (TAB):" = "Translation size (TAB):";
+"Translation size:" = "Translation size:";
 "%lld%% of primary" = "%lld%% of primary";
 "Font:" = "Font:";
 "System" = "System";
@@ -124,17 +135,23 @@
 "Background opacity:" = "Background opacity:";
 "no background" = "no background";
 "%lld%%" = "%lld%%";
-"Bottom inset:" = "Bottom inset:";
+"Original subtitles:" = "Original subtitles:";
+"Translation:" = "Translation:";
+"Bottom" = "Bottom";
+"Top" = "Top";
+"On the same edge the original stays next to the edge and the translation goes on the inner side, so the original never moves when the translation comes and goes." = "On the same edge the original stays next to the edge and the translation goes on the inner side, so the original never moves when the translation comes and goes.";
+"Distance from the edge:" = "Distance from the edge:";
 "Playback controls:" = "Playback controls:";
 "Keep subtitles always above" = "Keep subtitles always above";
 "Lift subtitles only while shown" = "Lift subtitles only while shown";
-"The subtitles never sit under the controls bar, so the line stays put when the bar appears; the bottom inset acts as a minimum." = "The subtitles never sit under the controls bar, so the line stays put when the bar appears; the bottom inset acts as a minimum.";
-"The bottom inset is used exactly, even right at the edge; the line moves up whenever the controls bar appears." = "The bottom inset is used exactly, even right at the edge; the line moves up whenever the controls bar appears.";
+"Subtitles at the bottom never sit under the controls bar, so the line stays put when the bar appears; the distance from the edge acts as a minimum." = "Subtitles at the bottom never sit under the controls bar, so the line stays put when the bar appears; the distance from the edge acts as a minimum.";
+"The distance from the edge is used exactly, even right at the bottom; the line moves up whenever the controls bar appears." = "The distance from the edge is used exactly, even right at the bottom; the line moves up whenever the controls bar appears.";
 "%lld%% of height" = "%lld%% of height";
 "On-screen preview:" = "On-screen preview:";
 "Reset style" = "Reset style";
 "Keyboard Shortcuts" = "Keyboard Shortcuts";
 "Hold: instantly peek at the translation (second subtitle track)" = "Hold: instantly peek at the translation (second subtitle track)";
+"Keep the translation on screen on / off" = "Keep the translation on screen on / off";
 "Replay the current line from the start" = "Replay the current line from the start";
 "Previous / next line of dialogue" = "Previous / next line of dialogue";
 "AI breakdown of the current line with Gemini" = "AI breakdown of the current line with Gemini";
@@ -259,11 +276,14 @@
 
 /* Boost dialogue */
 "Boost Dialogue" = "Boost Dialogue";
+"Always Show Translation" = "Always Show Translation";
 "Boost dialogue  (B)" = "Boost dialogue  (B)";
 "✓ Boost dialogue  (B)" = "✓ Boost dialogue  (B)";
 "Boost dialogue (B)" = "Boost dialogue (B)";
 "Evens out the volume and lifts speech above music and effects. Surround tracks are mixed to stereo with a louder centre channel." = "Evens out the volume and lifts speech above music and effects. Surround tracks are mixed to stereo with a louder centre channel.";
 "Boost dialogue on" = "Boost dialogue on";
+"Translation always shown" = "Translation always shown";
+"Translation shown while TAB is held" = "Translation shown while TAB is held";
 "Boost dialogue off" = "Boost dialogue off";
 "Boost dialogue on / off" = "Boost dialogue on / off";
 

@@ -32,10 +32,12 @@
 "Primary track (original language):" = "Основная дорожка (язык оригинала):";
 "✓ No subtitles" = "✓ Без субтитров";
 "Turn off" = "Отключить";
-"✓ (Peek) %@" = "✓ (Перевод) %@";
-"(Peek) %@" = "(Перевод) %@";
 "Track %lld" = "Дорожка %lld";
-"Second track (translation to peek at with TAB):" = "Вторая дорожка (перевод для подглядывания по TAB):";
+"Second track (translation):" = "Вторая дорожка (перевод):";
+"✓ Show while TAB is held" = "✓ Показывать, пока зажат TAB";
+"Show while TAB is held" = "Показывать, пока зажат TAB";
+"✓ Always show  (⇧TAB)" = "✓ Показывать всегда  (⇧TAB)";
+"Always show  (⇧TAB)" = "Показывать всегда  (⇧TAB)";
 "✓ No second track" = "✓ Без вторичных";
 "Subtitles" = "Субтитры";
 "Audio" = "Аудио";
@@ -53,12 +55,17 @@
 "Jump to the next line (E)" = "К следующей реплике (клавиша E)";
 "Playback speed ([ slower, ] faster, Backspace — 1×)" = "Скорость воспроизведения ([ медленнее, ] быстрее, Backspace — 1×)";
 "Peek translation" = "Подглядеть перевод";
-"Hold TAB to quickly see the translation from the second subtitle track" = "Зажмите и удерживайте TAB, чтобы быстро увидеть перевод со второй дорожки субтитров";
+"Translation on" = "Перевод включён";
+"The translation from the second subtitle track stays on screen. Click or press ⇧TAB to show it only while TAB is held" = "Перевод со второй дорожки субтитров остаётся на экране. Нажмите здесь или ⇧TAB, чтобы показывать его только пока зажат TAB";
+"Hold TAB to quickly see the translation from the second subtitle track. Click or press ⇧TAB to keep it on screen" = "Зажмите TAB, чтобы быстро увидеть перевод со второй дорожки субтитров. Нажмите здесь или ⇧TAB, чтобы закрепить его на экране";
 "Full screen (F)" = "Полноэкранный режим (F)";
 
 /* Subtitles layer */
 "AI" = "ИИ";
 "Explain this line with Gemini AI (Cmd + G)" = "Объяснить эту фразу через Gemini AI (Cmd + G)";
+"This file has no subtitles — load a subtitle file with ⌘⇧O" = "В этом файле нет субтитров — загрузите файл субтитров через ⌘⇧O";
+"This file has only one subtitle track — load a translation with ⌘⇧O" = "В этом файле только одна дорожка субтитров — загрузите перевод через ⌘⇧O";
+"No translation track selected — pick a second track in the Subtitles menu" = "Дорожка перевода не выбрана — выберите вторую дорожку в меню «Субтитры»";
 
 /* On-screen display */
 "Speed %@" = "Скорость %@";
@@ -104,6 +111,10 @@
 "Same as system (%@)" = "Как в системе (%@)";
 "Your native language is the same as the one you're learning — no translation subtitles will be selected." = "Родной язык совпадает с изучаемым — субтитры перевода выбираться не будут.";
 "Playback Behavior" = "Поведение при просмотре";
+"Translation (second subtitle track):" = "Перевод (вторая дорожка субтитров):";
+"Always show" = "Показывать всегда";
+"The translation appears only while TAB is held, so the original is not spoiled. ⇧TAB switches to dual subtitles." = "Перевод появляется только пока зажат TAB, и не подсказывает раньше времени. ⇧TAB включает двойные субтитры.";
+"Dual subtitles: the original and the translation are on screen together. ⇧TAB switches back to peeking with TAB." = "Двойные субтитры: оригинал и перевод на экране одновременно. ⇧TAB возвращает подглядывание по TAB.";
 "Pause while peeking at the translation (TAB)" = "Пауза при подглядывании перевода (TAB)";
 "While TAB is held the video pauses; it resumes when released." = "Пока TAB зажат, видео стоит; после отпускания продолжает играть.";
 "Output HDR video in HDR" = "Выводить HDR-видео в HDR";
@@ -111,7 +122,7 @@
 "This display does not support HDR — video is tone-mapped to SDR. The setting takes effect on an HDR display." = "Текущий дисплей не поддерживает HDR — видео преобразуется в SDR. Настройка применится на HDR-дисплее.";
 "Subtitle Appearance" = "Отображение субтитров";
 "Subtitle font size:" = "Размер шрифта субтитров:";
-"Translation size (TAB):" = "Размер перевода (TAB):";
+"Translation size:" = "Размер перевода:";
 "%lld%% of primary" = "%lld %% от основных";
 "Font:" = "Шрифт:";
 "System" = "Системный";
@@ -122,17 +133,23 @@
 "Background opacity:" = "Прозрачность подложки:";
 "no background" = "без подложки";
 "%lld%%" = "%lld %%";
-"Bottom inset:" = "Отступ снизу:";
+"Original subtitles:" = "Оригинальные субтитры:";
+"Translation:" = "Перевод:";
+"Bottom" = "Снизу";
+"Top" = "Сверху";
+"On the same edge the original stays next to the edge and the translation goes on the inner side, so the original never moves when the translation comes and goes." = "У одного края оригинал стоит ближе к краю, а перевод — с внутренней стороны, поэтому оригинал не сдвигается, когда перевод появляется и исчезает.";
+"Distance from the edge:" = "Отступ от края:";
 "Playback controls:" = "Панель воспроизведения:";
 "Keep subtitles always above" = "Субтитры всегда выше панели";
 "Lift subtitles only while shown" = "Поднимать только пока панель видна";
-"The subtitles never sit under the controls bar, so the line stays put when the bar appears; the bottom inset acts as a minimum." = "Субтитры никогда не оказываются под панелью, и строка не сдвигается при её появлении; отступ снизу работает как минимальный.";
-"The bottom inset is used exactly, even right at the edge; the line moves up whenever the controls bar appears." = "Отступ снизу соблюдается точно, хоть у самого края; строка поднимается каждый раз, когда появляется панель.";
+"Subtitles at the bottom never sit under the controls bar, so the line stays put when the bar appears; the distance from the edge acts as a minimum." = "Субтитры снизу никогда не оказываются под панелью, и строка не сдвигается при её появлении; отступ от края работает как минимальный.";
+"The distance from the edge is used exactly, even right at the bottom; the line moves up whenever the controls bar appears." = "Отступ от края соблюдается точно, хоть у самого низа; строка поднимается каждый раз, когда появляется панель.";
 "%lld%% of height" = "%lld %% высоты";
 "On-screen preview:" = "Предпросмотр на экране:";
 "Reset style" = "Сбросить стиль";
 "Keyboard Shortcuts" = "Горячие клавиши";
 "Hold: instantly peek at the translation (second subtitle track)" = "Зажать: мгновенно подглядеть перевод (вторая дорожка субтитров)";
+"Keep the translation on screen on / off" = "Закрепить перевод на экране: вкл / выкл";
 "Replay the current line from the start" = "Повторить текущую реплику сначала";
 "Previous / next line of dialogue" = "Предыдущая / следующая реплика диалога";
 "AI breakdown of the current line with Gemini" = "ИИ-разбор текущей фразы через Gemini";
@@ -257,11 +274,14 @@
 
 /* Boost dialogue */
 "Boost Dialogue" = "Усилить речь";
+"Always Show Translation" = "Всегда показывать перевод";
 "Boost dialogue  (B)" = "Усилить речь  (B)";
 "✓ Boost dialogue  (B)" = "✓ Усилить речь  (B)";
 "Boost dialogue (B)" = "Усилить речь (B)";
 "Evens out the volume and lifts speech above music and effects. Surround tracks are mixed to stereo with a louder centre channel." = "Выравнивает громкость и поднимает речь над музыкой и эффектами. Многоканальные дорожки сводятся в стерео с усиленным центральным каналом.";
 "Boost dialogue on" = "Усиление речи включено";
+"Translation always shown" = "Перевод показывается всегда";
+"Translation shown while TAB is held" = "Перевод показывается, пока зажат TAB";
 "Boost dialogue off" = "Усиление речи выключено";
 "Boost dialogue on / off" = "Усиление речи вкл / выкл";
 

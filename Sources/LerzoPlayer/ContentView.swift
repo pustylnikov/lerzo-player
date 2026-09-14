@@ -16,6 +16,7 @@ public struct ContentView: View {
     /// Last measured height of the controls bar; kept while the bar is hidden
     /// so the subtitles do not drop when it goes away in the "always" mode.
     @State private var controlsBarHeight: CGFloat = 0
+    @State private var topBarHeight: CGFloat = 0
     
     public init() {}
     
@@ -68,6 +69,7 @@ public struct ContentView: View {
             SubtitlesLayer(
                 showExplanation: $isExplanationOpen,
                 controlsBarHeight: controlsBarHeight,
+                topBarHeight: topBarHeight,
                 controlsShown: controlsShown,
                 onExplainWord: { word in
                     player.pause()
@@ -109,6 +111,9 @@ public struct ContentView: View {
         .onPreferenceChange(ControlsBarHeightKey.self) { height in
             // The preference resets to 0 when the overlay leaves the tree.
             if height > 0 { controlsBarHeight = height }
+        }
+        .onPreferenceChange(TopBarHeightKey.self) { height in
+            if height > 0 { topBarHeight = height }
         }
         // The window itself is transparent (video renders in mpv's window
         // underneath), so paint a background until that surface exists and a

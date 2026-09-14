@@ -135,6 +135,12 @@ struct LerzoPlayerApp: App {
                 ))
                 .keyboardShortcut("b", modifiers: [])
 
+                Toggle("Always Show Translation", isOn: Binding(
+                    get: { player.translationMode == .always },
+                    set: { player.translationMode = $0 ? .always : .peek; OSDController.shared.show(.translationMode) }
+                ))
+                .keyboardShortcut(.tab, modifiers: .shift)
+
                 Divider()
 
                 Menu("Subtitle Delay") {

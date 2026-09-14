@@ -10,6 +10,7 @@
 - 🪟 **One native window:** the video and the translucent SwiftUI interface share a single window.
 - 💬 **Interactive subtitles:** hovering highlights words; clicking a word or the **“+ AI”** button sends the line for a breakdown focused on that expression.
 - ⚡️ **Quick peek (`TAB`):** hold **`TAB`** to see the translation from the second subtitle track instantly; release it and the film goes on in the original language.
+- 📑 **Dual subtitles (`⇧TAB`):** keep the translation on screen together with the original; each line can sit at the top or the bottom of the picture.
 - 🧠 **AI breakdown with Gemini (`⌘ G`):** a detailed explanation of the line — idioms (*“under the weather”*, *“break a leg”*), slang, grammar and the subtext of the scene. Uses your own Google AI Studio key, stored in the keychain.
 - 🔄 **Line-by-line navigation:** **`R`** replays the current line, **`W`** / **`E`** jump to the previous / next one. The player builds its own index of the track’s lines, so seeking is exact and works any number of lines in a row; for MKV the index is read from the Cues in a fraction of a second even on files of tens of gigabytes.
 - 📄 **External subtitles:** `.srt`, `.ass`, `.vtt` files via ⌘⇧O, the open dialog or drag and drop; tracks are picked automatically by your preferred languages.
@@ -37,6 +38,7 @@ Press **`H`** in the player for the built-in cheat sheet; in the source the list
 | Key | Action |
 | :--- | :--- |
 | **`TAB` (hold)** | Peek at the translation (second subtitle track) |
+| **`⇧TAB`** | Keep the translation on screen (dual subtitles) on / off |
 | **`R`** | Replay the current line from the start |
 | **`W` / `E`** | Previous / next line of dialogue |
 | **`⌘ + G`** | AI breakdown of the current line with Gemini |

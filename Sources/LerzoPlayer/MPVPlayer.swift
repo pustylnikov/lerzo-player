@@ -62,8 +62,42 @@ public final class MPVPlayer: ObservableObject {
     
     @Published public var currentSubText: String = ""
     @Published public var currentSecondarySubText: String = ""
+    /// True while TAB is held. Only meaningful in the `.peek` translation mode,
+    /// but tracked in both so the "nothing to show" hint can react to TAB.
     @Published public var isPeekingTranslation: Bool = false
-    @Published public var showSubtitles: Bool = true
+
+    /// How the second (translation) subtitle track is shown: only while TAB is
+    /// held, or permanently as dual subtitles.
+    public enum TranslationMode: String, CaseIterable, Identifiable {
+        case peek, always
+        public var id: String { rawValue }
+    }
+    @Published public var translationMode: TranslationMode = .peek {
+        didSet { UserDefaults.standard.set(translationMode.rawValue, forKey: "LerzoPlayer.translationMode") }
+    }
+    /// Whether the translation line is on screen right now (given it has text).
+    public var isTranslationShown: Bool {
+        translationMode == .always || isPeekingTranslation
+    }
+    public func toggleTranslationMode() {
+        translationMode = translationMode == .peek ? .always : .peek
+    }
+
+    /// Why the translation cannot be shown for the loaded file, if it cannot.
+    public enum TranslationUnavailableReason: Equatable {
+        /// The file has no subtitle tracks at all.
+        case noSubtitleTracks
+        /// The only subtitle track is already the primary one.
+        case singleTrack
+        /// There are tracks to choose from, but no second track is selected.
+        case noSecondaryTrack
+    }
+    public var translationUnavailableReason: TranslationUnavailableReason? {
+        guard currentFileURL != nil else { return nil }
+        if subtitleTracks.isEmpty { return .noSubtitleTracks }
+        guard currentSecondarySubId == nil else { return nil }
+        return subtitleTracks.count == 1 ? .singleTrack : .noSecondaryTrack
+    }
     
     /// Rendered point size of the primary subtitle words.
     @Published public var subFontSize: Double = MPVPlayer.defaultSubFontSize {
@@ -161,6 +195,10 @@ public final class MPVPlayer: ObservableObject {
             self.subFontSize = min(max((legacy * 0.65).rounded(), Self.subFontSizeRange.lowerBound), Self.subFontSizeRange.upperBound)
             defaults.set(self.subFontSize, forKey: Self.subFontSizeKey)
             defaults.removeObject(forKey: Self.legacySubFontSizeKey)
+        }
+        if let saved = UserDefaults.standard.string(forKey: "LerzoPlayer.translationMode")
+            .flatMap(TranslationMode.init(rawValue:)) {
+            self.translationMode = saved
         }
         if let saved = UserDefaults.standard.object(forKey: "LerzoPlayer.pauseWhilePeeking") as? Bool {
             self.pauseWhilePeeking = saved
@@ -1009,15 +1047,19 @@ public final class MPVPlayer: ObservableObject {
     }
 
     // MARK: - Language Learning & Subtitle Methods
+    /// The translation text comes from mpv's `secondary-sub-text` no matter
+    /// what `secondary-sub-visibility` says (that only affects mpv's own,
+    /// hidden rendering), so showing it is purely a SwiftUI concern.
     public func setPeekingTranslation(_ isPeeking: Bool) {
         // Tab auto-repeats while held; only react to actual transitions.
         guard isPeeking != isPeekingTranslation else { return }
         self.isPeekingTranslation = isPeeking
-        let val = isPeeking ? "yes" : "no"
-        setPropertyAsync("secondary-sub-visibility", val)
 
         if isPeeking {
-            if pauseWhilePeeking && playbackState == .playing {
+            // With the translation already pinned, TAB has nothing to reveal;
+            // and pausing for a "no translation track" hint would only annoy.
+            let peekReveals = translationMode == .peek && translationUnavailableReason == nil
+            if peekReveals && pauseWhilePeeking && playbackState == .playing {
                 didPauseForPeek = true
                 pause()
             }
@@ -1395,7 +1437,6 @@ public final class MPVPlayer: ObservableObject {
         if let native = prefs.resolvedNativeCode,
            let secondary = LanguagePreferences.bestTrack(in: subtitleTracks.filter { $0.id != primary?.id }, matching: native) {
             setSecondarySubtitle(trackId: secondary.id)
-            setPropertyAsync("secondary-sub-visibility", "no")
         }
     }
     

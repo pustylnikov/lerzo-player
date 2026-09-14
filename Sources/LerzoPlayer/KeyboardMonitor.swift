@@ -104,8 +104,15 @@ public final class KeyboardMonitor: ObservableObject {
                 }
             }
             
+            // SHIFT+TAB (keyCode 48) -> pin / unpin the translation line
+            if event.keyCode == 48 && flags == [.shift] {
+                player.toggleTranslationMode()
+                osd.show(.translationMode)
+                return nil
+            }
+
             // TAB KEY (keyCode 48) - Peek translation (secondary subtitle track)
-            if event.keyCode == 48 {
+            if event.keyCode == 48 && flags.isEmpty {
                 player.setPeekingTranslation(true)
                 return nil
             }
