@@ -24,6 +24,12 @@
 "TAB: peek at the translation" = "TAB: peek at the translation";
 "Gemini: idioms and slang explained" = "Gemini: idioms and slang explained";
 "R: replay the current line" = "R: replay the current line";
+"Replay / previous / next line" = "Replay / previous / next line";
+"Peek at the translation" = "Peek at the translation";
+"AI phrase breakdown" = "AI phrase breakdown";
+"No subtitle tracks were found" = "No subtitle tracks were found";
+"Load an SRT, ASS, or VTT file to make words clickable and use the learning tools." = "Load an SRT, ASS, or VTT file to make words clickable and use the learning tools.";
+"Find subtitles on OpenSubtitles ↗" = "Find subtitles on OpenSubtitles ↗";
 "Choose a video file" = "Choose a video file";
 
 /* Controls bar */

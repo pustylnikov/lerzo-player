@@ -22,6 +22,12 @@
 "TAB: peek at the translation" = "TAB: быстро подглядеть перевод";
 "Gemini: idioms and slang explained" = "Gemini: разбор идиом и сленга";
 "R: replay the current line" = "R: повтор текущей реплики";
+"Replay / previous / next line" = "Повтор / предыдущая / следующая реплика";
+"Peek at the translation" = "Подглядеть перевод";
+"AI phrase breakdown" = "Разбор реплики через ИИ";
+"No subtitle tracks were found" = "Дорожки субтитров не найдены";
+"Load an SRT, ASS, or VTT file to make words clickable and use the learning tools." = "Загрузите файл SRT, ASS или VTT, чтобы слова стали кликабельными и заработали инструменты обучения.";
+"Find subtitles on OpenSubtitles ↗" = "Найти субтитры на OpenSubtitles ↗";
 "Choose a video file" = "Выберите видеофайл";
 
 /* Controls bar */

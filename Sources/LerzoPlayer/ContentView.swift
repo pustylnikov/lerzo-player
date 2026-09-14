@@ -92,6 +92,18 @@ public struct ContentView: View {
                 .transition(.opacity.animation(.easeInOut(duration: 0.2)))
             }
 
+            // A loaded video with no subtitle tracks needs a different empty
+            // state from the welcome screen. Keep it with the controls so it
+            // disappears during uninterrupted watching and returns on hover.
+            if showsVideo && player.subtitleTracks.isEmpty && controlsShown {
+                VStack {
+                    noSubtitlesView
+                        .padding(.top, max(topBarHeight + 16, 72))
+                    Spacer()
+                }
+                .transition(.opacity.animation(.easeInOut(duration: 0.2)))
+            }
+
             // Above the full-window controls overlay so its Export button is
             // always clickable at EOF.
             if player.playbackState == .finished {
@@ -255,12 +267,11 @@ public struct ContentView: View {
             }
             .buttonStyle(.plain)
             
-            // Feature Highlights
-            HStack(spacing: 24) {
-                featureBadge(icon: "character.book.closed.fill", text: "TAB: peek at the translation")
-                featureBadge(icon: "text.magnifyingglass", text: "Click a word: dictionary, offline")
-                featureBadge(icon: "sparkles", text: "Gemini: idioms and slang explained")
-                featureBadge(icon: "arrow.counterclockwise.circle", text: "R: replay the current line")
+            // The three shortcuts that explain the learning workflow at a glance.
+            HStack(spacing: 22) {
+                shortcutBadge(keys: "R / W / E", text: "Replay / previous / next line")
+                shortcutBadge(keys: "TAB", text: "Peek at the translation")
+                shortcutBadge(keys: "⌘G", text: "AI phrase breakdown")
             }
             .padding(.top, 16)
 
@@ -294,15 +305,61 @@ public struct ContentView: View {
         )
     }
     
-    private func featureBadge(icon: String, text: LocalizedStringKey) -> some View {
+    private func shortcutBadge(keys: String, text: LocalizedStringKey) -> some View {
         HStack(spacing: 6) {
-            Image(systemName: icon)
+            Text(verbatim: keys)
                 .foregroundColor(.yellow)
-                .font(.system(size: 13))
+                .font(.system(size: 12, weight: .bold, design: .monospaced))
             Text(text)
                 .font(.system(size: 12))
                 .foregroundColor(.white.opacity(0.8))
         }
+    }
+
+    private static let openSubtitlesURL = URL(string: "https://www.opensubtitles.com/en/home")!
+
+    private var noSubtitlesView: some View {
+        VStack(spacing: 9) {
+            HStack(spacing: 7) {
+                Image(systemName: "captions.bubble")
+                    .foregroundColor(.yellow)
+                Text("No subtitle tracks were found")
+                    .font(.system(size: 14, weight: .semibold))
+            }
+
+            Text("Load an SRT, ASS, or VTT file to make words clickable and use the learning tools.")
+                .font(.system(size: 12))
+                .foregroundColor(.white.opacity(0.7))
+                .multilineTextAlignment(.center)
+
+            HStack(spacing: 14) {
+                Button(action: openSubtitleDialog) {
+                    Label("Load an external subtitle file", systemImage: "doc.badge.plus")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(.black)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 7)
+                        .background(Color.yellow)
+                        .cornerRadius(7)
+                }
+                .buttonStyle(.plain)
+
+                Link("Find subtitles on OpenSubtitles ↗", destination: Self.openSubtitlesURL)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.yellow)
+            }
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 13)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.black.opacity(0.82))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.white.opacity(0.14), lineWidth: 1)
+                )
+        )
+        .shadow(color: .black.opacity(0.35), radius: 10, y: 4)
     }
     
     // MARK: - Auto Hide Controls
