@@ -270,6 +270,7 @@ public struct ContentView: View {
                 showControls = true
             }
         }
+        NSCursor.setHiddenUntilMouseMoves(false)
         hideTimer?.invalidate()
         if player.playbackState == .playing && !isExplanationOpen {
             hideTimer = Timer.scheduledTimer(withTimeInterval: 2.5, repeats: false) { _ in
@@ -277,9 +278,18 @@ public struct ContentView: View {
                     withAnimation(.easeInOut(duration: 0.3)) {
                         showControls = false
                     }
+                    hidePointerOverVideo()
                 }
             }
         }
+    }
+
+    /// The pointer goes away together with the controls, but only while it is
+    /// over our window: the timer also runs when playback starts from Finder
+    /// with the mouse parked over another app. Any movement brings it back.
+    private func hidePointerOverVideo() {
+        guard let window = NSApp.keyWindow, window.frame.contains(NSEvent.mouseLocation) else { return }
+        NSCursor.setHiddenUntilMouseMoves(true)
     }
     
     private func setupKeyboardBindings() {
