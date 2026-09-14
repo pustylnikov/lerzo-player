@@ -270,16 +270,16 @@ public final class KeyboardMonitor: ObservableObject {
                 return nil
             }
             
-            // UP ARROW (keyCode 126) -> Volume +5
+            // UP ARROW (keyCode 126) -> volume up
             if event.keyCode == 126 {
-                player.setVolume(player.volume + 5)
+                player.setVolume(player.volume + MPVPlayer.volumeStep)
                 osd.show(.volume)
                 return nil
             }
             
-            // DOWN ARROW (keyCode 125) -> Volume -5
+            // DOWN ARROW (keyCode 125) -> volume down
             if event.keyCode == 125 {
-                player.setVolume(player.volume - 5)
+                player.setVolume(player.volume - MPVPlayer.volumeStep)
                 osd.show(.volume)
                 return nil
             }

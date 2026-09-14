@@ -17,6 +17,9 @@ public final class MPVPlayer: ObservableObject {
         didSet { UserDefaults.standard.set(volume, forKey: Self.volumeKey) }
     }
     private static let volumeKey = "LerzoPlayer.volume"
+    /// Arrow-key volume step, in percent. Fine enough to land on a
+    /// comfortable level without overshooting.
+    public static let volumeStep = 2.0
     @Published public var isMuted: Bool = false
     /// Playback speed multiplier. Not persisted: slowing down is tied to a
     /// hard passage, not a preference, so every file starts at 1x.

@@ -37,7 +37,7 @@ enum ShortcutsReference {
         ShortcutGroup(title: "Playback", icon: "play.fill", entries: [
             ShortcutEntry(keys: "Space", action: "Pause / Play"),
             ShortcutEntry(keys: "←  /  →", action: "Seek 5 seconds back / forward"),
-            ShortcutEntry(keys: "↑  /  ↓", action: "Volume +5% / −5%"),
+            ShortcutEntry(keys: "↑  /  ↓", action: "Volume +2% / −2%"),
             ShortcutEntry(keys: "M", action: "Mute / unmute"),
             ShortcutEntry(keys: "B", action: "Boost dialogue on / off"),
             ShortcutEntry(keys: "[  /  ]", action: "Speed: slower / faster by 0.1×"),
