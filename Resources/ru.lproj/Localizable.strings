@@ -367,6 +367,31 @@
 "Click a word: dictionary, offline" = "Клик по слову: словарь без сети";
 "Short entry" = "Кратко";
 "Full entry with examples" = "Вся статья с примерами";
+"Word lookup:" = "Перевод слова:";
+"macOS Dictionary" = "Словарь macOS";
+"Gemini in context" = "Gemini в контексте";
+"Dictionary + Gemini" = "Словарь + Gemini";
+"Gemini modes translate automatically on one click. In the combined mode, Gemini is shown first and the macOS dictionary stays available below it." = "В режимах Gemini перевод запускается автоматически одним кликом. В совместном режиме сначала показывается Gemini, а словарь macOS остаётся доступен ниже.";
+"Word translation" = "Перевод слов";
+"Automatic — cheapest Flash-Lite" = "Автоматически — самая дешёвая Flash-Lite";
+"Reasoning:" = "Уровень рассуждения:";
+"The automatic option uses the cheapest stable Flash-Lite available to this key. Minimal reasoning is usually enough for one word." = "Автоматический режим использует самую дешёвую стабильную Flash-Lite, доступную этому ключу. Для одного слова обычно достаточно минимального уровня.";
+"Phrase breakdown" = "Разбор реплик";
+"Minimal" = "Минимальный";
+"Low" = "Низкий";
+"Medium" = "Средний";
+"High" = "Высокий";
+"Flash models are cheaper and faster; Pro models and higher reasoning can improve difficult idioms but use more tokens." = "Flash-модели дешевле и быстрее; Pro-модели и высокий уровень рассуждения могут лучше разбирать сложные идиомы, но используют больше токенов.";
+"Gemini is translating the word in context…" = "Gemini переводит слово в контексте…";
+"Loaded from the local cache" = "Загружено из локального кэша";
+"Local cache" = "Локальный кэш";
+"Hide macOS dictionary" = "Скрыть словарь macOS";
+"Show macOS dictionary" = "Показать словарь macOS";
+"Gemini could not translate this word." = "Gemini не удалось перевести это слово.";
+"Other meanings: %@" = "Другие значения: %@";
+"Synonyms: %@" = "Синонимы: %@";
+"There are no subtitles right now." = "Сейчас нет субтитров.";
+"this key has no Flash-Lite model that supports generateContent" = "для этого ключа нет модели Flash-Lite с поддержкой generateContent";
 
 /* Study cards */
 "Study Cards" = "Карточки";
@@ -392,6 +417,7 @@
 "Sentence" = "Реплика";
 "Translation" = "Перевод";
 "Definition" = "Значение";
+"Gemini word meaning" = "Значение от Gemini";
 "Note" = "Заметка";
 "Word card" = "Карточка слова";
 "Phrase card" = "Карточка реплики";
@@ -417,8 +443,10 @@
 "Create one deck per video" = "Отдельная колода для каждого видео";
 "Include images" = "Включать изображения";
 "Include dictionary definitions" = "Включать словарные значения";
+"Include macOS dictionary definitions" = "Включать определения из словаря macOS";
 "Delete exported cards after export" = "Удалить выгруженные карточки после экспорта";
 "Dictionary definitions are optional content from the dictionaries enabled in macOS." = "Словарные значения — необязательный контент из словарей, включённых в macOS.";
+"Gemini word meanings are always exported. macOS dictionary text is optional and is kept separate to avoid noisy cards." = "Значения слов от Gemini экспортируются всегда. Текст словаря macOS добавляется отдельно и необязателен, чтобы карточки оставались компактными.";
 "%lld cards" = "Карточек: %lld";
 "Cancel" = "Отмена";
 "1 new card" = "1 новая карточка";

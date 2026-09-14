@@ -8,17 +8,17 @@
 
 - 🚀 **Hardware-accelerated playback:** MKV, MP4, WebM, AVI and everything else mpv plays, decoded by VideoToolbox and rendered with `gpu-next` (Metal via MoltenVK), HDR output included.
 - 🪟 **One native window:** the video and the translucent SwiftUI interface share a single window.
-- 💬 **Interactive subtitles:** hovering highlights words; clicking a word opens its entry from the macOS dictionaries (offline, no key — a bilingual dictionary enabled in Dictionary.app gives translations; the compact view lists the senses, the full entry has the examples); ⌥-click or the **“✨ AI”** button sends the line for a breakdown focused on that word.
+- 💬 **Interactive subtitles:** hovering highlights words; clicking one can use the macOS dictionaries, a concise contextual Gemini translation, or both. The dictionary stays offline, while Gemini returns the meaning in this line, alternatives, a definition and synonyms; each source is selected in Settings. ⌥-click or the **“✨ AI”** button sends the whole line for a detailed breakdown focused on that word.
 - ⚡️ **Quick peek (`TAB`):** hold **`TAB`** to see the translation from the second subtitle track instantly; release it and the film goes on in the original language.
 - 📑 **Dual subtitles (`⇧TAB`):** keep the translation on screen together with the original; each line can sit at the top or the bottom of the picture.
 - ⏸ **Pause after each line (`P`) and loops (`L`, `⇧L`):** stop just before every line leaves the screen, repeat the current line until you have it, or mark an A–B loop by hand.
 - 🧠 **AI breakdown with Gemini (`⌘ G`):** a detailed explanation of the line — idioms (*“under the weather”*, *“break a leg”*), slang, grammar and the subtext of the scene. Uses your own Google AI Studio key, stored in the keychain.
-- 🗂 **Study cards (`S`, `⌘E`):** dictionary lookups and AI breakdowns are saved automatically with the line, translation and current frame; press **`S`** to save any subtitle line explicitly. Review and edit cards in the Cards window, then export them as an Anki `.apkg` (with screenshots) or TSV. Cards stay in local app storage.
+- 🗂 **Study cards (`S`, `⌘E`):** dictionary lookups and AI breakdowns are saved automatically with the line, translation and current frame; contextual word meanings from Gemini stay separate from optional dictionary text for clean Anki cards. Press **`S`** to save any subtitle line explicitly. Review and edit cards in the Cards window, then export them as an Anki `.apkg` (with optional screenshots) or TSV. Cards stay in local app storage.
 - 🔄 **Line-by-line navigation:** **`R`** replays the current line, **`W`** / **`E`** jump to the previous / next one. The player builds its own index of the track’s lines, so seeking is exact and works any number of lines in a row; for MKV the index is read from the Cues in a fraction of a second even on files of tens of gigabytes.
 - 📄 **External subtitles:** `.srt`, `.ass`, `.vtt` files via ⌘⇧O, the open dialog or drag and drop; tracks are picked automatically by your preferred languages.
 - 🎚 **Sync and sound:** subtitle, translation and audio delay in 0.1 s steps; *Boost dialogue* lifts speech and evens out loudness; playback speed.
 - 🖼 **Picture:** zoom and pan, black-bar removal, brightness / contrast / gamma.
-- ⚙️ **Settings (`⌘ ,`):** subtitle font and size with live preview, track languages, Gemini model.
+- ⚙️ **Settings (`⌘ ,`):** subtitle font and size with live preview, track languages, word lookup source, and separate Gemini model/reasoning profiles for words and phrase breakdowns.
 - 🔄 **Automatic updates** via Sparkle.
 
 ---
@@ -27,7 +27,7 @@
 
 Lerzo Player runs on macOS 14 or later (Apple silicon). Grab the DMG from the [releases page](../../releases) — the app is signed and notarized and updates itself.
 
-No account, no analytics: the only things the player ever sends over the network are the subtitle line you ask Gemini to explain (with your own key) and a daily update check. Details in the [privacy policy](https://lerzowords.com/player/privacy).
+No account, no analytics: the only things the player ever sends over the network are the word and subtitle line processed by Gemini at your request (with your own key), plus a daily update check. Details in the [privacy policy](https://lerzowords.com/player/privacy).
 
 ---
 

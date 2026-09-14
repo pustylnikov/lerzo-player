@@ -16,6 +16,7 @@ public struct Card: Codable, Identifiable {
     public var sentence: String
     public var translation: String?
     public var definition: String?
+    public var contextualWordInfo: ContextualWordInfo?
     public var explanation: SubtitleExplanation?
     /// Free-form user note. Exporters append it to the Explanation field.
     public var notes: String?
@@ -87,7 +88,9 @@ public final class CardStore: ObservableObject {
     public func recordCurrent(kind: CardKind,
                               word: String? = nil,
                               definition: String? = nil,
+                              contextualWordInfo: ContextualWordInfo? = nil,
                               explanation: SubtitleExplanation? = nil,
+                              wordContextSensitive: Bool = false,
                               automatic: Bool = true) -> Card? {
         if automatic && !collectsAutomatically { return nil }
 
@@ -106,7 +109,9 @@ public final class CardStore: ObservableObject {
             sentence: sentence,
             translation: translation.isEmpty ? nil : translation,
             definition: definition,
+            contextualWordInfo: contextualWordInfo,
             explanation: explanation,
+            wordContextSensitive: wordContextSensitive,
             videoURL: videoURL,
             videoTitle: player.mediaTitle,
             time: player.currentTime,
@@ -123,7 +128,9 @@ public final class CardStore: ObservableObject {
                        sentence: String,
                        translation: String?,
                        definition: String?,
+                       contextualWordInfo: ContextualWordInfo? = nil,
                        explanation: SubtitleExplanation?,
+                       wordContextSensitive: Bool = false,
                        videoURL: URL,
                        videoTitle: String,
                        time: Double,
@@ -132,16 +139,24 @@ public final class CardStore: ObservableObject {
 
         let now = Date()
         let path = videoURL.standardizedFileURL.path
-        let key = deduplicationKey(kind: kind, word: word, sentence: sentence, videoPath: path)
+        let contextSensitive = kind == .word && (wordContextSensitive || contextualWordInfo != nil)
+        let key = deduplicationKey(kind: kind, word: word, sentence: sentence,
+                                   videoPath: path, wordContextSensitive: contextSensitive)
         var cardID: UUID
         var shouldCapture = false
 
         if let index = cards.firstIndex(where: {
-            deduplicationKey(kind: $0.kind, word: $0.word, sentence: $0.sentence, videoPath: $0.videoPath) == key
+            let existingContextSensitive = $0.kind == .word && contextSensitive
+            return deduplicationKey(kind: $0.kind, word: $0.word, sentence: $0.sentence,
+                                    videoPath: $0.videoPath,
+                                    wordContextSensitive: existingContextSensitive) == key
         }) {
             cards[index].lastUsedAt = now
             if cards[index].translation?.isEmpty != false { cards[index].translation = nonEmpty(translation) }
             if cards[index].definition?.isEmpty != false { cards[index].definition = nonEmpty(definition) }
+            if cards[index].contextualWordInfo == nil && cards[index].sentence == sentence {
+                cards[index].contextualWordInfo = contextualWordInfo
+            }
             if cards[index].explanation == nil { cards[index].explanation = explanation }
             if cards[index].videoTitle.isEmpty { cards[index].videoTitle = videoTitle }
             cardID = cards[index].id
@@ -155,6 +170,7 @@ public final class CardStore: ObservableObject {
                 sentence: sentence,
                 translation: nonEmpty(translation),
                 definition: nonEmpty(definition),
+                contextualWordInfo: contextualWordInfo,
                 explanation: explanation,
                 notes: nil,
                 videoPath: path,
@@ -358,8 +374,17 @@ public final class CardStore: ObservableObject {
         }
     }
 
-    private func deduplicationKey(kind: CardKind, word: String?, sentence: String, videoPath: String) -> String {
-        let value = kind == .word ? (word ?? "") : sentence
+    private func deduplicationKey(kind: CardKind,
+                                  word: String?,
+                                  sentence: String,
+                                  videoPath: String,
+                                  wordContextSensitive: Bool) -> String {
+        let value: String
+        if kind == .word {
+            value = wordContextSensitive ? "\(word ?? "")\u{1f}\(sentence)" : (word ?? "")
+        } else {
+            value = sentence
+        }
         let normalized = value.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
             .trimmingCharacters(in: .whitespacesAndNewlines)
         return "\(kind.rawValue)\u{1f}\(videoPath)\u{1f}\(normalized)"

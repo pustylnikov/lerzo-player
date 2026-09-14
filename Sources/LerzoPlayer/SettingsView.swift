@@ -7,6 +7,7 @@ public struct SettingsView: View {
     @ObservedObject var style = SubtitleStyle.shared
     @ObservedObject var languages = LanguagePreferences.shared
     @ObservedObject var cards = CardStore.shared
+    @ObservedObject var wordLookup = DictionaryLookup.shared
     @Binding var isOpen: Bool
 
     private let fontFamilies = SubtitleStyle.availableFontFamilies
@@ -109,7 +110,56 @@ public struct SettingsView: View {
                             .foregroundColor(.secondary)
                         }
 
+                        HStack {
+                            Text("Word lookup:")
+                                .font(.system(size: 12, weight: .medium))
+                            Spacer()
+                            Picker("", selection: $wordLookup.source) {
+                                Text("macOS Dictionary").tag(WordLookupSource.dictionary)
+                                Text("Gemini in context").tag(WordLookupSource.gemini)
+                                Text("Dictionary + Gemini").tag(WordLookupSource.combined)
+                            }
+                            .labelsHidden()
+                            .frame(maxWidth: 260, alignment: .trailing)
+                        }
+                        Text("Gemini modes translate automatically on one click. In the combined mode, Gemini is shown first and the macOS dictionary stays available below it.")
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+
                         if gemini.hasApiKey {
+                            if wordLookup.source.usesGemini {
+                                Divider().opacity(0.5)
+                                Text("Word translation")
+                                    .font(.system(size: 12, weight: .semibold))
+                                HStack {
+                                    Text("Model:")
+                                        .font(.system(size: 12, weight: .medium))
+                                    Spacer()
+                                    Picker("", selection: $gemini.selectedWordModel) {
+                                        Text("Automatic — cheapest Flash-Lite")
+                                            .tag(GeminiService.automaticWordModel)
+                                        ForEach(wordModelChoices, id: \.self) { Text($0).tag($0) }
+                                    }
+                                    .labelsHidden()
+                                    .frame(maxWidth: 260, alignment: .trailing)
+                                    modelRefreshButton
+                                }
+                                HStack {
+                                    Text("Reasoning:")
+                                        .font(.system(size: 12, weight: .medium))
+                                    Spacer()
+                                    reasoningPicker(selection: $gemini.wordReasoning)
+                                }
+                                Text("The automatic option uses the cheapest stable Flash-Lite available to this key. Minimal reasoning is usually enough for one word.")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+
+                            Divider().opacity(0.5)
+                            Text("Phrase breakdown")
+                                .font(.system(size: 12, weight: .semibold))
                             HStack {
                                 Text("Model:")
                                     .font(.system(size: 12, weight: .medium))
@@ -119,32 +169,18 @@ public struct SettingsView: View {
                                 }
                                 .labelsHidden()
                                 .frame(maxWidth: 260, alignment: .trailing)
-                                Button(action: refreshModels) {
-                                    if modelsRefreshing { ProgressView().controlSize(.small) }
-                                    else { Image(systemName: "arrow.clockwise") }
-                                }
-                                .buttonStyle(.plain)
-                                .foregroundColor(.secondary)
-                                .disabled(modelsRefreshing)
-                                .help("Reload the list of models available to this key")
+                                modelRefreshButton
                             }
-                            Text("Flash models are the cheap, fast ones and have a free tier; Flash-Lite is cheaper still but explains idioms less well. Pro models are noticeably more expensive.")
+                            HStack {
+                                Text("Reasoning:")
+                                    .font(.system(size: 12, weight: .medium))
+                                Spacer()
+                                reasoningPicker(selection: $gemini.explanationReasoning)
+                            }
+                            Text("Flash models are cheaper and faster; Pro models and higher reasoning can improve difficult idioms but use more tokens.")
                                 .font(.system(size: 11))
                                 .foregroundColor(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
-
-                            Toggle(isOn: $gemini.deepThinking) {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("Deep analysis (slower and more expensive)")
-                                        .font(.system(size: 12, weight: .medium))
-                                    Text("Lets the model think longer before answering. Rarely needed for a single line.")
-                                        .font(.system(size: 11))
-                                        .foregroundColor(.secondary)
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            }
-                            .toggleStyle(.switch)
-                            .controlSize(.small)
                         }
 
                         HStack {
@@ -695,6 +731,37 @@ public struct SettingsView: View {
         var list = gemini.availableModels
         if !list.contains(gemini.selectedModel) { list.insert(gemini.selectedModel, at: 0) }
         return list
+    }
+
+    private var wordModelChoices: [String] {
+        var list = gemini.availableModels.filter { GeminiService.isTextChatModel($0) }
+        if gemini.selectedWordModel != GeminiService.automaticWordModel,
+           !list.contains(gemini.selectedWordModel) {
+            list.insert(gemini.selectedWordModel, at: 0)
+        }
+        return list
+    }
+
+    private func reasoningPicker(selection: Binding<GeminiReasoningLevel>) -> some View {
+        Picker("", selection: selection) {
+            Text("Minimal").tag(GeminiReasoningLevel.minimal)
+            Text("Low").tag(GeminiReasoningLevel.low)
+            Text("Medium").tag(GeminiReasoningLevel.medium)
+            Text("High").tag(GeminiReasoningLevel.high)
+        }
+        .labelsHidden()
+        .frame(width: 130)
+    }
+
+    private var modelRefreshButton: some View {
+        Button(action: refreshModels) {
+            if modelsRefreshing { ProgressView().controlSize(.small) }
+            else { Image(systemName: "arrow.clockwise") }
+        }
+        .buttonStyle(.plain)
+        .foregroundColor(.secondary)
+        .disabled(modelsRefreshing)
+        .help("Reload the list of models available to this key")
     }
 
     private func refreshModels() {

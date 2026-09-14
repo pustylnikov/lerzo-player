@@ -60,3 +60,27 @@ public struct WordExplanation: Codable, Identifiable {
     public let translation: String
     public let partOfSpeech: String?
 }
+
+/// A compact, structured Gemini answer for one word in its subtitle context.
+/// It is stored separately from the macOS dictionary entry so the UI and
+/// exporters can choose either source without mixing their text.
+public struct ContextualWordInfo: Codable, Equatable {
+    public let lemma: String
+    public let partOfSpeech: String
+    public let meaningInContext: String
+    public let otherMeanings: [String]
+    public let definition: String
+    public let synonyms: [String]
+
+    public var plainText: String {
+        var lines = [meaningInContext]
+        if !definition.isEmpty { lines.append(definition) }
+        if !otherMeanings.isEmpty {
+            lines.append(String(localized: "Other meanings: \(otherMeanings.joined(separator: " · "))"))
+        }
+        if !synonyms.isEmpty {
+            lines.append(String(localized: "Synonyms: \(synonyms.joined(separator: " · "))"))
+        }
+        return lines.joined(separator: "\n")
+    }
+}

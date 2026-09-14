@@ -14,6 +14,11 @@ public struct SubtitlesLayer: View {
     var onExplainWord: ((String) -> Void)?
     
     @State private var hoveredWord: String? = nil
+    /// Recreates the word hover regions after a full-screen overlay or the
+    /// dictionary catcher disappears. AppKit does not always send a fresh
+    /// mouse-enter event to the SwiftUI views underneath until another player
+    /// state change occurs.
+    @State private var wordHoverRevision = 0
     /// Height of the video area, which the font scale is applied to.
     @State private var areaHeight: CGFloat = MPVPlayer.subFontReferenceHeight
     @State private var isHoveringPill: Bool = false
@@ -62,6 +67,12 @@ public struct SubtitlesLayer: View {
         .onChange(of: player.subTextOnScreen) { _, _ in lookup.close() }
         .onChange(of: player.playbackState) { _, state in
             if state == .playing { lookup.close() }
+        }
+        .onChange(of: lookup.word) { previous, current in
+            if previous != nil && current == nil { resetWordHoverRegions() }
+        }
+        .onChange(of: showExplanation) { wasOpen, isOpen in
+            if wasOpen && !isOpen { resetWordHoverRegions() }
         }
     }
 
@@ -160,6 +171,7 @@ public struct SubtitlesLayer: View {
                     WrappingHStack(words: words, horizontalSpacing: style.spaceWidth(size: primaryFontSize)) { word in
                         subtitleWordView(for: word)
                     }
+                    .id(wordHoverRevision)
                 }
             }
             .padding(.horizontal, 16)
@@ -187,6 +199,12 @@ public struct SubtitlesLayer: View {
     }
 
     private var boxOpacity: Double { style.backgroundOpacity }
+
+    private func resetWordHoverRegions() {
+        hoveredWord = nil
+        isHoveringPill = false
+        wordHoverRevision &+= 1
+    }
 
     private var explainBadge: some View {
         Button(action: {

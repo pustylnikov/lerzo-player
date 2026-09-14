@@ -369,6 +369,31 @@
 "Click a word: dictionary, offline" = "Click a word: dictionary, offline";
 "Short entry" = "Short entry";
 "Full entry with examples" = "Full entry with examples";
+"Word lookup:" = "Word lookup:";
+"macOS Dictionary" = "macOS Dictionary";
+"Gemini in context" = "Gemini in context";
+"Dictionary + Gemini" = "Dictionary + Gemini";
+"Gemini modes translate automatically on one click. In the combined mode, Gemini is shown first and the macOS dictionary stays available below it." = "Gemini modes translate automatically on one click. In the combined mode, Gemini is shown first and the macOS dictionary stays available below it.";
+"Word translation" = "Word translation";
+"Automatic — cheapest Flash-Lite" = "Automatic — cheapest Flash-Lite";
+"Reasoning:" = "Reasoning:";
+"The automatic option uses the cheapest stable Flash-Lite available to this key. Minimal reasoning is usually enough for one word." = "The automatic option uses the cheapest stable Flash-Lite available to this key. Minimal reasoning is usually enough for one word.";
+"Phrase breakdown" = "Phrase breakdown";
+"Minimal" = "Minimal";
+"Low" = "Low";
+"Medium" = "Medium";
+"High" = "High";
+"Flash models are cheaper and faster; Pro models and higher reasoning can improve difficult idioms but use more tokens." = "Flash models are cheaper and faster; Pro models and higher reasoning can improve difficult idioms but use more tokens.";
+"Gemini is translating the word in context…" = "Gemini is translating the word in context…";
+"Loaded from the local cache" = "Loaded from the local cache";
+"Local cache" = "Local cache";
+"Hide macOS dictionary" = "Hide macOS dictionary";
+"Show macOS dictionary" = "Show macOS dictionary";
+"Gemini could not translate this word." = "Gemini could not translate this word.";
+"Other meanings: %@" = "Other meanings: %@";
+"Synonyms: %@" = "Synonyms: %@";
+"There are no subtitles right now." = "There are no subtitles right now.";
+"this key has no Flash-Lite model that supports generateContent" = "this key has no Flash-Lite model that supports generateContent";
 
 /* Study cards */
 "Study Cards" = "Study Cards";
@@ -394,6 +419,7 @@
 "Sentence" = "Sentence";
 "Translation" = "Translation";
 "Definition" = "Definition";
+"Gemini word meaning" = "Gemini word meaning";
 "Note" = "Note";
 "Word card" = "Word card";
 "Phrase card" = "Phrase card";
@@ -419,8 +445,10 @@
 "Create one deck per video" = "Create one deck per video";
 "Include images" = "Include images";
 "Include dictionary definitions" = "Include dictionary definitions";
+"Include macOS dictionary definitions" = "Include macOS dictionary definitions";
 "Delete exported cards after export" = "Delete exported cards after export";
 "Dictionary definitions are optional content from the dictionaries enabled in macOS." = "Dictionary definitions are optional content from the dictionaries enabled in macOS.";
+"Gemini word meanings are always exported. macOS dictionary text is optional and is kept separate to avoid noisy cards." = "Gemini word meanings are always exported. macOS dictionary text is optional and is kept separate to avoid noisy cards.";
 "%lld cards" = "%lld cards";
 "Cancel" = "Cancel";
 "1 new card" = "1 new card";

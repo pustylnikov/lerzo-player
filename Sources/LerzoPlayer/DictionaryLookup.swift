@@ -124,6 +124,16 @@ private extension Array where Element: Hashable {
     }
 }
 
+public enum WordLookupSource: String, CaseIterable, Identifiable {
+    case dictionary
+    case gemini
+    case combined
+
+    public var id: String { rawValue }
+    public var usesDictionary: Bool { self != .gemini }
+    public var usesGemini: Bool { self != .dictionary }
+}
+
 /// The word whose dictionary card is open, shared so the keyboard monitor
 /// can close it and the subtitles layer can draw it next to the word.
 public final class DictionaryLookup: ObservableObject {
@@ -135,33 +145,95 @@ public final class DictionaryLookup: ObservableObject {
         case notFound
     }
 
+    public enum GeminiResult {
+        case idle
+        case loading
+        case found(ContextualWordInfo, model: String, cached: Bool, usage: GeminiService.TokenUsage?)
+        case failed(GeminiError)
+    }
+
     @Published public private(set) var word: String?
     @Published public private(set) var result: Result = .loading
+    @Published public private(set) var geminiResult: GeminiResult = .idle
+    @Published public var source: WordLookupSource = {
+        let raw = UserDefaults.standard.string(forKey: "LerzoPlayer.wordLookupSource")
+        return raw.flatMap(WordLookupSource.init(rawValue:)) ?? .dictionary
+    }() {
+        didSet { UserDefaults.standard.set(source.rawValue, forKey: "LerzoPlayer.wordLookupSource") }
+    }
+    private var geminiTask: Task<Void, Never>?
 
     public var isOpen: Bool { word != nil }
 
     public func open(_ word: String) {
+        geminiTask?.cancel()
         self.word = word
-        result = .loading
-        let stripStress = LanguagePreferences.shared.resolvedNativeCode == "ru"
-        DispatchQueue.global(qos: .userInitiated).async {
-            let lines = SystemDictionary.definition(for: word, stripStressMarks: stripStress)
-            DispatchQueue.main.async {
-                guard self.word == word else { return }
-                self.result = lines.map(Result.found) ?? .notFound
-                if let lines {
+        result = source.usesDictionary ? .loading : .notFound
+        geminiResult = source.usesGemini ? .loading : .idle
+
+        if source.usesDictionary {
+            let stripStress = LanguagePreferences.shared.resolvedNativeCode == "ru"
+            let wordContextSensitive = source.usesGemini
+            DispatchQueue.global(qos: .userInitiated).async {
+                let lines = SystemDictionary.definition(for: word, stripStressMarks: stripStress)
+                DispatchQueue.main.async {
+                    guard self.word == word else { return }
+                    self.result = lines.map(Result.found) ?? .notFound
+                    if let lines {
+                        CardStore.shared.recordCurrent(
+                            kind: .word,
+                            word: word,
+                            definition: CardStore.compactDefinition(from: lines),
+                            wordContextSensitive: wordContextSensitive
+                        )
+                    }
+                }
+            }
+        }
+
+        if source.usesGemini {
+            let player = MPVPlayer.shared
+            let sentence = player.subTextOnScreen.trimmingCharacters(in: .whitespacesAndNewlines)
+            let subtitleTranslation = player.secondarySubTextOnScreen
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            geminiTask = Task { @MainActor in
+                do {
+                    // Avoid paying for a click immediately superseded by another.
+                    try await Task.sleep(nanoseconds: 150_000_000)
+                    try Task.checkCancellation()
+                    guard !sentence.isEmpty else {
+                        throw GeminiError.other(String(localized: "There are no subtitles right now."))
+                    }
+                    let response = try await GeminiService.shared.translateWord(
+                        word,
+                        in: sentence,
+                        subtitleTranslation: subtitleTranslation.isEmpty ? nil : subtitleTranslation
+                    )
+                    try Task.checkCancellation()
+                    guard self.word == word else { return }
+                    self.geminiResult = .found(response.info, model: response.model,
+                                               cached: response.cached, usage: response.usage)
                     CardStore.shared.recordCurrent(
                         kind: .word,
                         word: word,
-                        definition: CardStore.compactDefinition(from: lines)
+                        contextualWordInfo: response.info,
+                        wordContextSensitive: true
                     )
+                } catch is CancellationError {
+                    return
+                } catch {
+                    guard self.word == word else { return }
+                    self.geminiResult = .failed(GeminiError.from(transport: error))
                 }
             }
         }
     }
 
     public func close() {
+        geminiTask?.cancel()
+        geminiTask = nil
         word = nil
+        geminiResult = .idle
     }
 }
 
@@ -222,6 +294,7 @@ struct DictionaryCardOverlay: View {
 /// Definition card shown next to the clicked word.
 struct DictionaryCardView: View {
     @ObservedObject var lookup = DictionaryLookup.shared
+    @ObservedObject private var gemini = GeminiService.shared
     let word: String
     var onExplain: () -> Void
 
@@ -230,6 +303,9 @@ struct DictionaryCardView: View {
     /// Senses shown per part of speech in the compact view.
     static let compactSensesPerPart = 6
     @State private var showsFullEntry = false
+    @State private var showsDictionaryInCombined = false
+    @State private var showsTokenTooltip = false
+    @State private var tokenTooltipTask: Task<Void, Never>?
 
     /// The glance view: the headword line, parts of speech and their first
     /// senses with any trailing example cut off; no sub-senses, examples or
@@ -323,7 +399,7 @@ struct DictionaryCardView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline) {
-                Image(systemName: "character.book.closed.fill")
+                Image(systemName: lookup.source == .dictionary ? "character.book.closed.fill" : "sparkles")
                     .font(.system(size: 13, weight: .bold))
                     .foregroundColor(.yellow)
                 Text(word)
@@ -340,41 +416,28 @@ struct DictionaryCardView: View {
                 .help("Close (Esc)")
             }
 
-            switch lookup.result {
-            case .loading:
-                ProgressView()
-                    .controlSize(.small)
-                    .colorInvert()
-                    .frame(maxWidth: .infinity, minHeight: 40)
-            case .found(let fullLines):
-                let lines = showsFullEntry ? fullLines : Self.compactLines(fullLines)
-                // The scroll view takes only what the entry needs, up to a cap.
-                ScrollView(.vertical) {
-                    VStack(alignment: .leading, spacing: Self.lineGap) {
-                        ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
-                            lineView(line)
-                        }
+            switch lookup.source {
+            case .dictionary:
+                dictionaryContent(maxHeight: Self.maxTextHeight)
+            case .gemini:
+                geminiContent
+            case .combined:
+                geminiContent
+                Button {
+                    showsDictionaryInCombined.toggle()
+                } label: {
+                    HStack {
+                        Image(systemName: showsDictionaryInCombined ? "chevron.down" : "chevron.right")
+                            .font(.system(size: 9, weight: .bold))
+                        Text(showsDictionaryInCombined ? "Hide macOS dictionary" : "Show macOS dictionary")
+                            .font(.system(size: 11, weight: .semibold))
+                        Spacer()
                     }
-                    .textSelection(.enabled)
+                    .foregroundColor(.white.opacity(0.72))
                 }
-                .frame(height: min(Self.height(of: lines), Self.maxTextHeight))
-                if lines.count < fullLines.count || showsFullEntry {
-                    Button(showsFullEntry ? "Short entry" : "Full entry with examples") {
-                        showsFullEntry.toggle()
-                    }
-                    .buttonStyle(.plain)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(.yellow.opacity(0.85))
-                }
-            case .notFound:
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Not in your dictionaries.")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.92))
-                    Text("Dictionaries for each language are turned on in Dictionary ▸ Settings; a bilingual one shows translations here.")
-                        .font(.system(size: 11))
-                        .foregroundColor(.white.opacity(0.6))
-                        .fixedSize(horizontal: false, vertical: true)
+                .buttonStyle(.plain)
+                if showsDictionaryInCombined {
+                    dictionaryContent(maxHeight: 150)
                 }
             }
 
@@ -422,5 +485,180 @@ struct DictionaryCardView: View {
                 )
         )
         .shadow(color: .black.opacity(0.6), radius: 16, x: 0, y: 6)
+        .onChange(of: word) { _, _ in
+            showsFullEntry = false
+            showsDictionaryInCombined = false
+            tokenTooltipTask?.cancel()
+            showsTokenTooltip = false
+        }
+        .onDisappear { tokenTooltipTask?.cancel() }
+    }
+
+    @ViewBuilder
+    private func dictionaryContent(maxHeight: CGFloat) -> some View {
+        switch lookup.result {
+        case .loading:
+            ProgressView()
+                .controlSize(.small)
+                .colorInvert()
+                .frame(maxWidth: .infinity, minHeight: 40)
+        case .found(let fullLines):
+            let lines = showsFullEntry ? fullLines : Self.compactLines(fullLines)
+            ScrollView(.vertical) {
+                VStack(alignment: .leading, spacing: Self.lineGap) {
+                    ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
+                        lineView(line)
+                    }
+                }
+                .textSelection(.enabled)
+            }
+            .frame(height: min(Self.height(of: lines), maxHeight))
+            if lines.count < fullLines.count || showsFullEntry {
+                Button(showsFullEntry ? "Short entry" : "Full entry with examples") {
+                    showsFullEntry.toggle()
+                }
+                .buttonStyle(.plain)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundColor(.yellow.opacity(0.85))
+            }
+        case .notFound:
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Not in your dictionaries.")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.92))
+                Text("Dictionaries for each language are turned on in Dictionary ▸ Settings; a bilingual one shows translations here.")
+                    .font(.system(size: 11))
+                    .foregroundColor(.white.opacity(0.6))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var geminiContent: some View {
+        switch lookup.geminiResult {
+        case .idle:
+            EmptyView()
+        case .loading:
+            VStack(spacing: 8) {
+                ProgressView().controlSize(.small).colorInvert()
+                Text("Gemini is translating the word in context…")
+                    .font(.system(size: 11))
+                    .foregroundColor(.white.opacity(0.62))
+            }
+            .frame(maxWidth: .infinity, minHeight: 56)
+        case .found(let info, let model, let cached, let usage):
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(info.meaningInContext)
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.white)
+                        .textSelection(.enabled)
+                    Spacer()
+                }
+                let details = [info.lemma, info.partOfSpeech].filter { !$0.isEmpty }.joined(separator: " · ")
+                if !details.isEmpty {
+                    Text(details)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(.yellow.opacity(0.82))
+                }
+                if !info.definition.isEmpty {
+                    Text(info.definition)
+                        .font(.system(size: 12))
+                        .foregroundColor(.white.opacity(0.82))
+                        .textSelection(.enabled)
+                }
+                if !info.otherMeanings.isEmpty {
+                    Text("Other meanings: \(info.otherMeanings.joined(separator: " · "))")
+                        .font(.system(size: 11))
+                        .foregroundColor(.white.opacity(0.66))
+                        .textSelection(.enabled)
+                }
+                if !info.synonyms.isEmpty {
+                    Text("Synonyms: \(info.synonyms.joined(separator: " · "))")
+                        .font(.system(size: 11))
+                        .foregroundColor(.white.opacity(0.66))
+                        .textSelection(.enabled)
+                }
+                geminiFooter(model: model, cached: cached, usage: usage)
+            }
+        case .failed(let error):
+            VStack(alignment: .leading, spacing: 4) {
+                Text(error.errorDescription ?? String(localized: "Gemini could not translate this word."))
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.orange)
+                if let hint = error.recoverySuggestion {
+                    Text(hint)
+                        .font(.system(size: 10))
+                        .foregroundColor(.white.opacity(0.55))
+                }
+            }
+        }
+    }
+
+    private func geminiFooter(model: String,
+                              cached: Bool,
+                              usage: GeminiService.TokenUsage?) -> some View {
+        let help = geminiFooterHelp(cached: cached, usage: usage)
+        return HStack(spacing: 4) {
+            Text(model)
+            if cached {
+                Text("·")
+                Image(systemName: "bolt.horizontal.circle")
+                Text("Local cache")
+                Text("·")
+                Text("\(0) tokens")
+            } else if let usage {
+                Text("·")
+                Text("\(usage.total) tokens")
+            }
+        }
+        .font(.system(size: 9))
+        .foregroundColor(.white.opacity(0.32))
+        .contentShape(Rectangle())
+        .overlay(alignment: .bottomLeading) {
+            if showsTokenTooltip, !help.isEmpty {
+                Text(help)
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(.white.opacity(0.92))
+                    .fixedSize()
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(Color.black.opacity(0.94))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .stroke(Color.white.opacity(0.14), lineWidth: 1)
+                            )
+                    )
+                    .shadow(color: .black.opacity(0.45), radius: 5, y: 2)
+                    .offset(y: -18)
+                    .allowsHitTesting(false)
+                    .transition(.opacity)
+                    .zIndex(2)
+            }
+        }
+        .onHover { hovering in
+            tokenTooltipTask?.cancel()
+            if hovering, !help.isEmpty {
+                tokenTooltipTask = Task { @MainActor in
+                    do { try await Task.sleep(nanoseconds: 250_000_000) }
+                    catch { return }
+                    withAnimation(.easeOut(duration: 0.1)) { showsTokenTooltip = true }
+                }
+            } else {
+                withAnimation(.easeOut(duration: 0.08)) { showsTokenTooltip = false }
+            }
+        }
+    }
+
+    private func geminiFooterHelp(cached: Bool,
+                                  usage: GeminiService.TokenUsage?) -> String {
+        if cached { return String(localized: "Loaded from the local cache") }
+        guard let usage else { return "" }
+        let request = String(localized: "Prompt \(usage.prompt), answer \(usage.output), thinking \(usage.thoughts) tokens")
+        let session = String(localized: "· session \(gemini.sessionUsage.total)")
+        return "\(request) \(session)"
     }
 }

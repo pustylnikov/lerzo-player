@@ -219,6 +219,17 @@ struct CardsWindow: View {
                     .foregroundColor(.secondary)
                     .textFieldStyle(.plain)
                     .lineLimit(1...4)
+                if let info = card.contextualWordInfo {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Label("Gemini word meaning", systemImage: "sparkles")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(.yellow)
+                        Text(info.plainText)
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
+                            .lineLimit(5)
+                    }
+                }
                 TextField("Note", text: optionalTextBinding(for: card.id, keyPath: \.notes), axis: .vertical)
                     .font(.system(size: 12))
                     .textFieldStyle(.roundedBorder)
@@ -362,7 +373,7 @@ private struct CardsExportView: View {
     @State private var videoPath: String
     @State private var deckName: String
     @State private var oneDeckPerVideo = false
-    @State private var includeDefinitions = true
+    @State private var includeDefinitions: Bool
     @State private var includeImages = true
     @State private var deleteAfterExport = false
     @State private var isExporting = false
@@ -378,6 +389,8 @@ private struct CardsExportView: View {
         _scope = State(initialValue: selectedIDs.isEmpty ? .all : .selected)
         _videoPath = State(initialValue: initialPath)
         _deckName = State(initialValue: initialTitle.isEmpty ? "Lerzo Player" : initialTitle)
+        let initialCards = selectedIDs.isEmpty ? cards : cards.filter { selectedIDs.contains($0.id) }
+        _includeDefinitions = State(initialValue: !initialCards.contains { $0.contextualWordInfo != nil })
     }
 
     private var videoChoices: [(path: String, title: String)] {
@@ -433,10 +446,10 @@ private struct CardsExportView: View {
                 Toggle("Include images", isOn: $includeImages)
             }
 
-            Toggle("Include dictionary definitions", isOn: $includeDefinitions)
+            Toggle("Include macOS dictionary definitions", isOn: $includeDefinitions)
             Toggle("Delete exported cards after export", isOn: $deleteAfterExport)
 
-            Text("Dictionary definitions are optional content from the dictionaries enabled in macOS.")
+            Text("Gemini word meanings are always exported. macOS dictionary text is optional and is kept separate to avoid noisy cards.")
                 .font(.system(size: 11))
                 .foregroundColor(.secondary)
 

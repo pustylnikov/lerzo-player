@@ -5,13 +5,15 @@ import CryptoKit
 enum CardExportError: LocalizedError {
     case noCards
     case sqlite(String)
-    case packageCreation
+    case packageCreation(String)
 
     var errorDescription: String? {
         switch self {
         case .noCards: return String(localized: "No cards selected for export.")
         case .sqlite(let message): return String(localized: "Could not create the Anki collection: \(message)")
-        case .packageCreation: return String(localized: "Could not create the Anki package.")
+        case .packageCreation(let message):
+            let prefix = String(localized: "Could not create the Anki package.")
+            return message.isEmpty ? prefix : "\(prefix) \(message)"
         }
     }
 }
@@ -63,11 +65,18 @@ enum CardExporter {
             try FileManager.default.removeItem(at: destination)
         }
         let process = Process()
+        let errorPipe = Pipe()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
         process.arguments = ["-c", "-k", "--norsrc", temp.path, destination.path]
+        process.standardError = errorPipe
         try process.run()
         process.waitUntilExit()
-        guard process.terminationStatus == 0 else { throw CardExportError.packageCreation }
+        guard process.terminationStatus == 0 else {
+            let data = errorPipe.fileHandleForReading.readDataToEndOfFile()
+            let message = String(data: data, encoding: .utf8)?
+                .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            throw CardExportError.packageCreation(message)
+        }
     }
 
     static func exportTSV(cards: [Card], to destination: URL, includeDefinitions: Bool) throws {
@@ -75,7 +84,7 @@ enum CardExporter {
         let header = ["Word", "Sentence", "Translation", "Definition", "Explanation", "Source"]
         let rows = cards.map { card in
             return [plain(card.word ?? ""), plain(card.sentence), plain(card.translation ?? ""),
-                    plain(includeDefinitions ? card.definition ?? "" : ""),
+                    plain(wordDetailsText(for: card, includeDictionary: includeDefinitions)),
                     plain(explanationText(for: card)), plain(sourceText(for: card))]
                 .map(tsvCell).joined(separator: "\t")
         }
@@ -203,13 +212,43 @@ enum CardExporter {
         let word = html(card.word ?? "")
         let sentence = boldWord(in: card.sentence, word: card.word)
         let translation = html(card.translation ?? "")
-        let definition = includeDefinitions ? html(card.definition ?? "").replacingOccurrences(of: "\n", with: "<br>") : ""
+        let definition = wordDetailsHTML(for: card, includeDictionary: includeDefinitions)
         let explanation = html(explanationText(for: card)).replacingOccurrences(of: "\n", with: "<br>")
         let source = html(sourceText(for: card))
         let screenshot = includeImages
             ? card.screenshot.map { "<img src=\"\(htmlAttribute($0))\">" } ?? ""
             : ""
         return [word, sentence, translation, definition, explanation, source, screenshot, ""]
+    }
+
+    private static func wordDetailsText(for card: Card, includeDictionary: Bool) -> String {
+        var sections: [String] = []
+        if let info = card.contextualWordInfo { sections.append(info.plainText) }
+        if includeDictionary, let definition = card.definition, !definition.isEmpty {
+            sections.append(definition)
+        }
+        return sections.joined(separator: "\n\n")
+    }
+
+    private static func wordDetailsHTML(for card: Card, includeDictionary: Bool) -> String {
+        var sections: [String] = []
+        if let info = card.contextualWordInfo {
+            var parts = ["<div class=context-meaning>\(html(info.meaningInContext))</div>"]
+            let details = [info.lemma, info.partOfSpeech].filter { !$0.isEmpty }.joined(separator: " · ")
+            if !details.isEmpty { parts.append("<div class=word-details>\(html(details))</div>") }
+            if !info.definition.isEmpty { parts.append("<div>\(html(info.definition))</div>") }
+            if !info.otherMeanings.isEmpty {
+                parts.append("<div>\(html(String(localized: "Other meanings: \(info.otherMeanings.joined(separator: " · "))")))</div>")
+            }
+            if !info.synonyms.isEmpty {
+                parts.append("<div>\(html(String(localized: "Synonyms: \(info.synonyms.joined(separator: " · "))")))</div>")
+            }
+            sections.append("<div class=contextual-word>\(parts.joined())</div>")
+        }
+        if includeDictionary, let definition = card.definition, !definition.isEmpty {
+            sections.append("<div class=dictionary-definition>\(html(definition).replacingOccurrences(of: "\n", with: "<br>"))</div>")
+        }
+        return sections.joined()
     }
 
     private static func explanationText(for card: Card) -> String {
@@ -243,7 +282,7 @@ enum CardExporter {
             ["name": "Word → meaning", "ord": 0, "qfmt": wordFront, "afmt": back, "did": NSNull(), "bqfmt": "", "bafmt": ""],
             ["name": "Phrase → translation", "ord": 1, "qfmt": phraseFront, "afmt": back, "did": NSNull(), "bqfmt": "", "bafmt": ""],
         ]
-        let css = ".card{font-family:-apple-system,Arial;font-size:20px;text-align:center;color:#111;background:#fff}.word{font-size:34px;font-weight:700;margin:12px}.sentence{font-size:21px;margin:12px}.translation{font-size:22px;margin:12px}.definition,.explanation{font-size:17px;margin:10px;line-height:1.4}.source{font-size:12px;color:#777;margin-top:12px}.media img{max-width:100%;max-height:320px;border-radius:8px}.nightMode .card{color:#eee;background:#1c1c1e}"
+        let css = ".card{font-family:-apple-system,Arial;font-size:20px;text-align:center;color:#111;background:#fff}.word{font-size:34px;font-weight:700;margin:12px}.sentence{font-size:21px;margin:12px}.translation{font-size:22px;margin:12px}.definition,.explanation{font-size:17px;margin:10px;line-height:1.4}.context-meaning{font-size:22px;font-weight:700}.word-details{font-size:13px;color:#777;margin:3px}.dictionary-definition{font-size:14px;color:#666;margin-top:12px}.source{font-size:12px;color:#777;margin-top:12px}.media img{max-width:100%;max-height:320px;border-radius:8px}.nightMode .card{color:#eee;background:#1c1c1e}"
         return [String(modelID): [
             "id": modelID, "name": "Lerzo Player", "type": 0, "mod": modified,
             "usn": -1, "sortf": 0, "did": deckID, "tmpls": templates,
