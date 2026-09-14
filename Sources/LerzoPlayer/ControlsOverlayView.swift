@@ -581,13 +581,10 @@ public struct ControlsOverlayView: View {
                         }
                         .buttonStyle(.plain)
 
-                        Slider(value: Binding(
-                            get: { player.volume },
-                            set: { player.setVolume($0) }
-                        ), in: 0...100)
-                        .frame(width: 70)
-                        .tint(.yellow)
-                        .controlSize(.small)
+                        // Drawn by hand like the seek bar: the system slider
+                        // turns grey whenever the window is not key.
+                        VolumeSlider(volume: player.volume, muted: muted) { player.setVolume($0) }
+                            .frame(width: 70, height: 16)
                     }
 
                     // Playback Speed
@@ -663,6 +660,51 @@ public struct ControlsOverlayView: View {
         )
     }
     
+    /// Volume bar in the seek bar's style — a capsule with a yellow fill —
+    /// so it keeps its colour in an inactive window and matches the row.
+    private struct VolumeSlider: View {
+        let volume: Double
+        let muted: Bool
+        let onChange: (Double) -> Void
+        @State private var dragging: Double? = nil
+        @State private var hovering = false
+
+        var body: some View {
+            GeometryReader { geo in
+                let shown = dragging ?? volume
+                let fraction = max(0, min(1, shown / 100))
+                let x = fraction * geo.size.width
+                let trackHeight: CGFloat = hovering ? 5 : 3
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(Color.white.opacity(0.25))
+                        .frame(height: trackHeight)
+                    Capsule()
+                        .fill(muted ? Color.white.opacity(0.45) : Color.yellow)
+                        .frame(width: x, height: trackHeight)
+                    Circle()
+                        .fill(Color.white)
+                        .frame(width: 10, height: 10)
+                        .offset(x: max(0, min(x - 5, geo.size.width - 10)))
+                }
+                .frame(height: geo.size.height)
+                .contentShape(Rectangle())
+                .onHover { hover in
+                    withAnimation(.easeInOut(duration: 0.15)) { hovering = hover }
+                }
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { value in
+                            let v = Double(max(0, min(1, value.location.x / geo.size.width))) * 100
+                            dragging = v
+                            onChange(v)
+                        }
+                        .onEnded { _ in dragging = nil }
+                )
+            }
+        }
+    }
+
     private func translationPill(pinned: Bool, showsTitle: Bool) -> some View {
         HStack(spacing: 5) {
             // Without the wording, an eye says "peek"; it fills when pinned,
