@@ -104,7 +104,7 @@ public struct OSDView: View {
             }
             return player.translationMode == .always ? "captions.bubble.fill" : "captions.bubble"
         case .autoPause: return player.autoPauseAfterLine ? "pause.circle.fill" : "pause.circle"
-        case .loop: return player.loopMode == .off ? "repeat" : "repeat.circle.fill"
+        case .loop: return "repeat"
         }
     }
 

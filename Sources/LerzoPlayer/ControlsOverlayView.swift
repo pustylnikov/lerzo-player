@@ -478,10 +478,13 @@ public struct ControlsOverlayView: View {
                 .help("Jump to the next line (E)")
 
                 // Repeat the current line
+                // One glyph for both states: swapping symbols of different
+                // widths shifted the whole row (see the play/pause button).
                 Button(action: { player.toggleLineLoop(); OSDController.shared.show(.loop) }) {
-                    Image(systemName: player.loopMode == .off ? "repeat" : "repeat.circle.fill")
-                        .font(.system(size: 13))
+                    Image(systemName: "repeat")
+                        .font(.system(size: 13, weight: player.loopMode == .off ? .regular : .bold))
                         .foregroundColor(player.loopMode == .off ? .white.opacity(0.85) : .yellow)
+                        .frame(width: 18, height: 18)
                 }
                 .buttonStyle(.plain)
                 .help(loopHelp)
@@ -491,6 +494,7 @@ public struct ControlsOverlayView: View {
                     Image(systemName: player.autoPauseAfterLine ? "pause.circle.fill" : "pause.circle")
                         .font(.system(size: 13))
                         .foregroundColor(player.autoPauseAfterLine ? .yellow : .white.opacity(0.85))
+                        .frame(width: 18, height: 18)
                 }
                 .buttonStyle(.plain)
                 .help(player.autoPauseAfterLine
