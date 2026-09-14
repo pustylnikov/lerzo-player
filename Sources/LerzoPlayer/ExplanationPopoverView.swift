@@ -420,6 +420,10 @@ public struct ExplanationPopoverView: View {
         isFetching = true
         errorText = nil
         geminiError = nil
+        let videoURL = player.currentFileURL
+        let videoTitle = player.mediaTitle
+        let time = player.currentTime
+        let translation = player.currentSecondarySubText.isEmpty ? nil : player.currentSecondarySubText
         
         Task {
             do {
@@ -432,6 +436,20 @@ public struct ExplanationPopoverView: View {
                 await MainActor.run {
                     self.explanation = res
                     self.isFetching = false
+                    if CardStore.shared.collectsAutomatically, let videoURL {
+                        CardStore.shared.record(
+                            kind: self.focusedWord == nil ? .phrase : .word,
+                            word: self.focusedWord,
+                            sentence: sub,
+                            translation: translation,
+                            definition: nil,
+                            explanation: res,
+                            videoURL: videoURL,
+                            videoTitle: videoTitle,
+                            time: time,
+                            captureScreenshot: true
+                        )
+                    }
                 }
             } catch {
                 await MainActor.run {

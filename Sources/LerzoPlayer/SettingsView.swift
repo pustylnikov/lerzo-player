@@ -6,6 +6,7 @@ public struct SettingsView: View {
     @ObservedObject var player = MPVPlayer.shared
     @ObservedObject var style = SubtitleStyle.shared
     @ObservedObject var languages = LanguagePreferences.shared
+    @ObservedObject var cards = CardStore.shared
     @Binding var isOpen: Bool
 
     private let fontFamilies = SubtitleStyle.availableFontFamilies
@@ -13,6 +14,7 @@ public struct SettingsView: View {
     @State private var showApiKey: Bool = false
     @State private var keyCheck: KeyCheck = .idle
     @State private var modelsRefreshing = false
+    @State private var showDeleteAllCardsConfirmation = false
 
     private enum KeyCheck: Equatable {
         case idle, checking, valid, failed(GeminiError)
@@ -322,6 +324,46 @@ public struct SettingsView: View {
                         }
                         .toggleStyle(.switch)
                         .controlSize(.small)
+
+                    }
+                    .padding(14)
+                    .background(Color.white.opacity(0.04))
+                    .cornerRadius(12)
+
+                    // SECTION 3a: CARD COLLECTION
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            Image(systemName: "rectangle.stack.badge.plus")
+                                .foregroundColor(.yellow)
+                            Text("Study Cards")
+                                .font(.system(size: 14, weight: .bold))
+                        }
+
+                        Toggle(isOn: $cards.collectsAutomatically) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Collect cards when I use the dictionary or AI breakdown")
+                                    .font(.system(size: 12, weight: .medium))
+                                Text("Stored only on this Mac. Press S to save a line even when automatic collection is off.")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .toggleStyle(.switch)
+                        .controlSize(.small)
+
+                        HStack {
+                            Text("\(cards.cards.count) cards stored")
+                                .font(.system(size: 11))
+                                .foregroundColor(.secondary)
+                            Spacer()
+                            Button("Delete All Cards…", role: .destructive) {
+                                showDeleteAllCardsConfirmation = true
+                            }
+                            .controlSize(.small)
+                            .disabled(cards.cards.isEmpty)
+                        }
                     }
                     .padding(14)
                     .background(Color.white.opacity(0.04))
@@ -610,6 +652,19 @@ public struct SettingsView: View {
         // Otherwise the sheet focuses (and selects) the API key field on open.
         .background(InitialFocusSink())
         .onAppear { if gemini.hasApiKey && gemini.modelListIsStale { refreshModels() } }
+        .confirmationDialog(
+            "Delete all \(cards.cards.count) cards?",
+            isPresented: $showDeleteAllCardsConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Delete All Cards", role: .destructive) {
+                let removed = cards.removeAllCards()
+                cards.discardMedia(for: removed)
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This cannot be undone.")
+        }
     }
     
     @ViewBuilder

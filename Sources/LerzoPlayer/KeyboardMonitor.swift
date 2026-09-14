@@ -12,6 +12,7 @@ public final class KeyboardMonitor: ObservableObject {
     public var onDismissExplanationRequested: (() -> Void)?
     public var onDismissSettingsRequested: (() -> Void)?
     public var onToggleShortcutsRequested: (() -> Void)?
+    public var onOpenCardsRequested: (() -> Void)?
     public var isExplanationOpen: Bool = false
     public var isShortcutsOpen: Bool = false
     /// While the settings sheet is up, player shortcuts must not fire from
@@ -19,6 +20,8 @@ public final class KeyboardMonitor: ObservableObject {
     public var isSettingsOpen: Bool = false
     /// Set by `AboutView` while its window exists; keys are not intercepted there.
     public weak var aboutWindow: NSWindow?
+    /// The cards editor owns Delete, Space and ordinary typing while it is key.
+    public weak var cardsWindow: NSWindow?
     
     public init() {
         startMonitoring()
@@ -54,6 +57,9 @@ public final class KeyboardMonitor: ObservableObject {
         if let aboutWindow, NSApp.keyWindow === aboutWindow {
             return event
         }
+        if let cardsWindow, NSApp.keyWindow === cardsWindow {
+            return event
+        }
         
         if isSettingsOpen {
             guard event.type == .keyDown else { return event }
@@ -77,7 +83,7 @@ public final class KeyboardMonitor: ObservableObject {
             return event
         }
         if flags.contains(.command) {
-            let commandShortcuts: Set<String> = ["g", "o", ","]
+            let commandShortcuts: Set<String> = ["g", "o", "e", ","]
             guard let ch = event.charactersIgnoringModifiers?.lowercased(), commandShortcuts.contains(ch) else {
                 return event
             }
@@ -168,6 +174,9 @@ public final class KeyboardMonitor: ObservableObject {
                     player.resetZoomAndPan(); osd.show(.zoom); return nil
                 case 11: // B -> boost dialogue
                     player.boostDialogue.toggle(); osd.show(.boostDialogue); return nil
+                case 1: // S -> explicitly save the current subtitle as a phrase card
+                    let saved = CardStore.shared.recordCurrent(kind: .phrase, automatic: false) != nil
+                    osd.show(.cardSaved(saved)); return nil
                 default: break
                 }
             }
@@ -190,6 +199,13 @@ public final class KeyboardMonitor: ObservableObject {
             if flags.contains(.command) && event.charactersIgnoringModifiers?.lowercased() == "g" {
                 player.pause()
                 onExplainRequested?()
+                return nil
+            }
+
+            // CMD + E -> Cards window. AppKit reserves this chord for
+            // "Use Selection for Find", so intercept it explicitly.
+            if flags.contains(.command) && event.charactersIgnoringModifiers?.lowercased() == "e" {
+                onOpenCardsRequested?()
                 return nil
             }
             

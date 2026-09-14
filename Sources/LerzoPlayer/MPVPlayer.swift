@@ -2,6 +2,7 @@ import Foundation
 import Cocoa
 import Cmpv
 import Combine
+import ImageIO
 
 public final class MPVPlayer: ObservableObject {
     public static let shared = MPVPlayer()
@@ -1174,8 +1175,23 @@ public final class MPVPlayer: ObservableObject {
         }
     }
 
+    /// Captures the decoded video frame without player subtitles or OSD and
+    /// encodes a reasonably sized JPEG for a study card. A video-less file or
+    /// a transient mpv failure returns nil; card creation itself still succeeds.
+    public func captureCurrentFrameJPEG(maxDimension: Int = 1280,
+                                        quality: Double = 0.82,
+                                        completion: @escaping (Data?) -> Void) {
+        guard let handle = mpv, currentFileURL != nil else { completion(nil); return }
+        DispatchQueue.global(qos: .utility).async {
+            let data = Self.grabRawFrame(handle).flatMap {
+                Self.jpegData(from: $0, maxDimension: maxDimension, quality: quality)
+            }
+            DispatchQueue.main.async { completion(data) }
+        }
+    }
+
     private struct RawFrame {
-        let width: Int, height: Int, stride: Int
+        let width: Int, height: Int, stride: Int, format: String
         let pixels: [UInt8]   // bgr0 / bgra, 4 bytes per pixel
     }
 
@@ -1210,7 +1226,74 @@ public final class MPVPlayer: ObservableObject {
         }
         guard w > 0, h > 0, stride >= w * 4, let pixels = bytes, pixels.count >= stride * h,
               format == "bgr0" || format == "bgra" || format == "rgba" else { return nil }
-        return RawFrame(width: w, height: h, stride: stride, pixels: pixels)
+        return RawFrame(width: w, height: h, stride: stride, format: format, pixels: pixels)
+    }
+
+    private static func jpegData(from frame: RawFrame, maxDimension: Int, quality: Double) -> Data? {
+        let pixelCount = frame.width * frame.height
+        var rgba = [UInt8](repeating: 255, count: pixelCount * 4)
+        for y in 0..<frame.height {
+            for x in 0..<frame.width {
+                let source = y * frame.stride + x * 4
+                let target = (y * frame.width + x) * 4
+                if frame.format == "rgba" {
+                    rgba[target] = frame.pixels[source]
+                    rgba[target + 1] = frame.pixels[source + 1]
+                    rgba[target + 2] = frame.pixels[source + 2]
+                } else {
+                    rgba[target] = frame.pixels[source + 2]
+                    rgba[target + 1] = frame.pixels[source + 1]
+                    rgba[target + 2] = frame.pixels[source]
+                }
+            }
+        }
+
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let bitmapInfo = CGBitmapInfo.byteOrder32Big.union(
+            CGBitmapInfo(rawValue: CGImageAlphaInfo.noneSkipLast.rawValue)
+        )
+        guard let provider = CGDataProvider(data: Data(rgba) as CFData),
+              let source = CGImage(width: frame.width,
+                                   height: frame.height,
+                                   bitsPerComponent: 8,
+                                   bitsPerPixel: 32,
+                                   bytesPerRow: frame.width * 4,
+                                   space: colorSpace,
+                                   bitmapInfo: bitmapInfo,
+                                   provider: provider,
+                                   decode: nil,
+                                   shouldInterpolate: true,
+                                   intent: .defaultIntent) else { return nil }
+
+        let longest = max(frame.width, frame.height)
+        let scale = longest > maxDimension ? CGFloat(maxDimension) / CGFloat(longest) : 1
+        let width = max(1, Int((CGFloat(frame.width) * scale).rounded()))
+        let height = max(1, Int((CGFloat(frame.height) * scale).rounded()))
+        let image: CGImage
+        if scale < 1 {
+            guard let context = CGContext(data: nil,
+                                          width: width,
+                                          height: height,
+                                          bitsPerComponent: 8,
+                                          bytesPerRow: width * 4,
+                                          space: colorSpace,
+                                          bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+            context.interpolationQuality = .high
+            context.draw(source, in: CGRect(x: 0, y: 0, width: width, height: height))
+            guard let scaled = context.makeImage() else { return nil }
+            image = scaled
+        } else {
+            image = source
+        }
+
+        let result = NSMutableData()
+        guard let destination = CGImageDestinationCreateWithData(
+            result, "public.jpeg" as CFString, 1, nil
+        ) else { return nil }
+        let properties = [kCGImageDestinationLossyCompressionQuality: min(max(quality, 0), 1)] as CFDictionary
+        CGImageDestinationAddImage(destination, image, properties)
+        guard CGImageDestinationFinalize(destination) else { return nil }
+        return result as Data
     }
 
     /// Bounding box of the non-black picture: a row or column counts as a

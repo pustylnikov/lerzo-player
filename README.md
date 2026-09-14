@@ -13,6 +13,7 @@
 - 📑 **Dual subtitles (`⇧TAB`):** keep the translation on screen together with the original; each line can sit at the top or the bottom of the picture.
 - ⏸ **Pause after each line (`P`) and loops (`L`, `⇧L`):** stop just before every line leaves the screen, repeat the current line until you have it, or mark an A–B loop by hand.
 - 🧠 **AI breakdown with Gemini (`⌘ G`):** a detailed explanation of the line — idioms (*“under the weather”*, *“break a leg”*), slang, grammar and the subtext of the scene. Uses your own Google AI Studio key, stored in the keychain.
+- 🗂 **Study cards (`S`, `⌘E`):** dictionary lookups and AI breakdowns are saved automatically with the line, translation and current frame; press **`S`** to save any subtitle line explicitly. Review and edit cards in the Cards window, then export them as an Anki `.apkg` (with screenshots) or TSV. Cards stay in local app storage.
 - 🔄 **Line-by-line navigation:** **`R`** replays the current line, **`W`** / **`E`** jump to the previous / next one. The player builds its own index of the track’s lines, so seeking is exact and works any number of lines in a row; for MKV the index is read from the Cues in a fraction of a second even on files of tens of gigabytes.
 - 📄 **External subtitles:** `.srt`, `.ass`, `.vtt` files via ⌘⇧O, the open dialog or drag and drop; tracks are picked automatically by your preferred languages.
 - 🎚 **Sync and sound:** subtitle, translation and audio delay in 0.1 s steps; *Boost dialogue* lifts speech and evens out loudness; playback speed.
@@ -47,6 +48,7 @@ Press **`H`** in the player for the built-in cheat sheet; in the source the list
 | **`L`** | Repeat the current line on / off |
 | **`⇧L`** | A–B loop: mark the start, mark the end, clear |
 | **`⌘ + G`** | AI breakdown of the current line with Gemini |
+| **`S`** | Save the current line as a card |
 
 ### Playback
 

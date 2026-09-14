@@ -19,6 +19,7 @@ public enum OSDItem: Equatable {
     case autoPause
     case autoPauseTail
     case loop
+    case cardSaved(Bool)
 }
 
 /// Keyboard feedback shown in the top-left corner for a moment, so the user
@@ -107,6 +108,7 @@ public struct OSDView: View {
         case .autoPause: return player.autoPauseAfterLine ? "pause.circle.fill" : "pause.circle"
         case .autoPauseTail: return "pause.circle"
         case .loop: return "repeat"
+        case .cardSaved(let saved): return saved ? "rectangle.stack.badge.plus" : "captions.bubble"
         }
     }
 
@@ -177,6 +179,8 @@ public struct OSDView: View {
             case .ab(let a, nil): return String(localized: "Loop start \(Self.formatTime(a)) — press ⇧L at the end")
             case .ab(let a, let b?): return String(localized: "Loop \(Self.formatTime(a)) – \(Self.formatTime(b))")
             }
+        case .cardSaved(let saved):
+            return saved ? String(localized: "Line saved") : String(localized: "No subtitle to save")
         }
     }
 

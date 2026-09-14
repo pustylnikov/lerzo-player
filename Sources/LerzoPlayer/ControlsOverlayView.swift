@@ -2,6 +2,8 @@ import SwiftUI
 
 public struct ControlsOverlayView: View {
     @ObservedObject var player = MPVPlayer.shared
+    @ObservedObject var cards = CardStore.shared
+    @Environment(\.openWindow) private var openWindow
     @Binding var isSettingsOpen: Bool
     @Binding var isExplanationOpen: Bool
     @Binding var isShortcutsOpen: Bool
@@ -125,6 +127,22 @@ public struct ControlsOverlayView: View {
             }
             
             Spacer()
+
+            Button(action: { openWindow(id: CardsWindow.windowID) }) {
+                HStack(spacing: 4) {
+                    Image(systemName: "rectangle.stack.fill")
+                    Text("\(cards.newCount(for: player.currentFileURL))")
+                        .monospacedDigit()
+                        .frame(minWidth: 12)
+                }
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(.white)
+                .frame(width: 48, height: 26)
+                .background(Color.white.opacity(0.15))
+                .cornerRadius(8)
+            }
+            .buttonStyle(.plain)
+            .help("Cards from this video (Cmd + E)")
             
             // Subtitle Selection Menu
             Menu {

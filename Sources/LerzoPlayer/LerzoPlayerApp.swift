@@ -231,6 +231,19 @@ struct LerzoPlayerApp: App {
                     KeyboardMonitor.shared.onExplainRequested?()
                 }
                 .keyboardShortcut("g", modifiers: .command)
+
+                Button("Save Line as Card") {
+                    let saved = CardStore.shared.recordCurrent(kind: .phrase, automatic: false) != nil
+                    OSDController.shared.show(.cardSaved(saved))
+                }
+                .keyboardShortcut("s", modifiers: [])
+
+                Divider()
+
+                Button("Cards...") {
+                    openWindow(id: CardsWindow.windowID)
+                }
+                .keyboardShortcut("e", modifiers: .command)
             }
 
             CommandGroup(replacing: .help) {
@@ -242,6 +255,8 @@ struct LerzoPlayerApp: App {
         }
 
         aboutWindow
+
+        cardsWindow
     }
 
     /// The About window; `KeyboardMonitor` leaves keys alone while it is in front.
@@ -251,6 +266,14 @@ struct LerzoPlayerApp: App {
                 .preferredColorScheme(.dark)
         }
         .windowResizability(.contentSize)
+    }
+
+    private var cardsWindow: some Scene {
+        Window("Cards", id: CardsWindow.windowID) {
+            CardsWindow()
+                .preferredColorScheme(.dark)
+        }
+        .defaultSize(width: 920, height: 700)
     }
 
     /// `nil` resets the delay. Shows the OSD so the menu gives the same feedback as the keys.

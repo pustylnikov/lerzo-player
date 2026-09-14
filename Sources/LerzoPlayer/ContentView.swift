@@ -3,7 +3,9 @@ import AppKit
 import UniformTypeIdentifiers
 
 public struct ContentView: View {
+    @Environment(\.openWindow) private var openWindow
     @ObservedObject private var gemini = GeminiService.shared
+    @ObservedObject private var cards = CardStore.shared
     @ObservedObject var player = MPVPlayer.shared
     @ObservedObject var keyboardMonitor = KeyboardMonitor.shared
     
@@ -88,6 +90,34 @@ public struct ContentView: View {
                     onOpenFile: openFileDialog
                 )
                 .transition(.opacity.animation(.easeInOut(duration: 0.2)))
+            }
+
+            // Above the full-window controls overlay so its Export button is
+            // always clickable at EOF.
+            if player.playbackState == .finished {
+                let count = cards.newCount(for: player.currentFileURL)
+                if count > 0 {
+                    VStack {
+                        Spacer()
+                        HStack(spacing: 10) {
+                            Image(systemName: "rectangle.stack.fill")
+                                .foregroundColor(.yellow)
+                            Text(count == 1 ? "1 new card" : "\(count) new cards")
+                                .font(.system(size: 13, weight: .semibold))
+                            Button("Export  (⌘E)") { openWindow(id: CardsWindow.windowID) }
+                                .buttonStyle(.plain)
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundColor(.yellow)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(Capsule().fill(Color.black.opacity(0.82)))
+                        .overlay(Capsule().stroke(Color.white.opacity(0.15), lineWidth: 1))
+                        .shadow(radius: 10)
+                        .padding(.bottom, max(controlsBarHeight + 18, 78))
+                    }
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+                }
             }
 
             // Keyboard cheat sheet (H)
@@ -330,6 +360,9 @@ public struct ContentView: View {
             withAnimation(.easeOut(duration: 0.15)) {
                 self.isShortcutsOpen.toggle()
             }
+        }
+        keyboardMonitor.onOpenCardsRequested = {
+            self.openWindow(id: CardsWindow.windowID)
         }
     }
     

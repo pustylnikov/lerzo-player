@@ -149,6 +149,13 @@ public final class DictionaryLookup: ObservableObject {
             DispatchQueue.main.async {
                 guard self.word == word else { return }
                 self.result = lines.map(Result.found) ?? .notFound
+                if let lines {
+                    CardStore.shared.recordCurrent(
+                        kind: .word,
+                        word: word,
+                        definition: CardStore.compactDefinition(from: lines)
+                    )
+                }
             }
         }
     }

@@ -35,6 +35,7 @@ let package = Package(
                 .unsafeFlags(["-I/opt/homebrew/include"])
             ],
             linkerSettings: [
+                .linkedLibrary("sqlite3"),
                 .unsafeFlags(["-L/opt/homebrew/lib", "-lmpv", "-lavformat", "-lavcodec", "-lavutil", "-Xlinker", "-rpath", "-Xlinker", "/opt/homebrew/lib"])
             ]
         )
