@@ -6,30 +6,89 @@ import CoreServices
 /// dictionaries answer (and in what order) is whatever the user enabled in
 /// Dictionary.app, so a bilingual dictionary there gives translations here.
 enum SystemDictionary {
-    /// The entry for `word` as flat text, or nil when no active dictionary
-    /// knows it. Sentence-initial capitals are retried in lowercase.
-    static func definition(for word: String) -> String? {
+    /// The entry for `word`, or nil when no active dictionary knows it.
+    /// Sentence-initial capitals are retried in lowercase.
+    static func definition(for word: String) -> [DefinitionLine]? {
         let candidates = [word, word.lowercased()]
         for candidate in candidates.uniqued() {
             let term = candidate as NSString as CFString
             let range = CFRangeMake(0, candidate.utf16.count)
             if let text = DCSCopyTextDefinition(nil, term, range)?.takeRetainedValue() {
-                return format(text as NSString as String)
+                return lines(from: text as NSString as String)
             }
         }
         return nil
     }
 
-    /// The flat text runs every sense together; give the senses, sub-senses
-    /// and the trailing sections their own lines.
-    private static func format(_ raw: String) -> String {
+    /// Part-of-speech labels as Apple's dictionaries print them; only
+    /// recognised right after a pronunciation, a bracket or a Cyrillic word,
+    /// so "collective noun" inside a definition stays put.
+    private static let partsOfSpeech = [
+        "transitive verb", "intransitive verb", "reflexive verb", "auxiliary verb", "modal verb",
+        "plural noun", "noun", "verb", "adjective", "adverb", "pronoun", "preposition",
+        "conjunction", "exclamation", "interjection", "determiner", "abbreviation",
+        "prefix", "suffix", "combining form",
+    ]
+    private static let sections = ["PHRASES", "PHRASAL VERBS", "DERIVATIVES", "ORIGIN", "USAGE"]
+
+    /// The flat text runs everything together: senses, sub-senses, examples
+    /// and parts of speech get their own lines, typed for the card to style.
+    static func lines(from raw: String) -> [DefinitionLine] {
         var text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Examples (Oxford bilingual: "▸", often glued to the previous word)
+        // and sub-senses (Oxford monolingual: "•").
+        text = text.replacingOccurrences(of: #"\s*▸\s*"#, with: "\n▸ ", options: .regularExpression)
         text = text.replacingOccurrences(of: " • ", with: "\n• ")
+        text = splitSenses(in: text)
+        // Parts of speech: before a sense number, or heading a definition.
+        let pos = partsOfSpeech.joined(separator: "|")
+        let before = #"(?<=\| |\) |\] |\. |[\p{Cyrillic}\p{M}] )"#
         text = text.replacingOccurrences(
-            of: #"(?<=\S) (\d{1,2}) (?=[\[(\p{L}])"#, with: "\n$1 ", options: .regularExpression)
+            of: before + "(" + pos + #")(?=\n)"#, with: "\n$1", options: .regularExpression)
         text = text.replacingOccurrences(
-            of: #"(?<=\S) (PHRASES|PHRASAL VERBS|DERIVATIVES|ORIGIN|USAGE)\b"#, with: "\n\n$1", options: .regularExpression)
-        return text
+            of: before + "(" + pos + #") (?=[\[(\p{L}])"#, with: "\n$1\n", options: .regularExpression)
+        // Trailing sections of the monolingual entries.
+        text = text.replacingOccurrences(
+            of: #"(?<=\S) ("# + sections.joined(separator: "|") + #")\b"#,
+            with: "\n$1\n", options: .regularExpression)
+
+        return text.components(separatedBy: "\n").compactMap { line in
+            let line = line.trimmingCharacters(in: .whitespaces)
+            guard !line.isEmpty else { return nil }
+            if line.hasPrefix("▸") { return DefinitionLine(kind: .example, text: line) }
+            if line.hasPrefix("•") { return DefinitionLine(kind: .subsense, text: line) }
+            if partsOfSpeech.contains(line) { return DefinitionLine(kind: .partOfSpeech, text: line) }
+            if sections.contains(line) { return DefinitionLine(kind: .section, text: line) }
+            if let match = line.range(of: #"^\d{1,2}(?: |:$)"#, options: .regularExpression) {
+                return DefinitionLine(kind: .sense(number: String(line[match].dropLast())),
+                                      text: String(line[match.upperBound...]))
+            }
+            return DefinitionLine(kind: .plain, text: line)
+        }
+    }
+
+    /// Sense numbers run 1, 2, 3… within a part of speech and start over at
+    /// the next one; a number out of sequence ("a 5 percent rise", "(sense 2
+    /// of the noun)") is part of the text and stays inline.
+    private static func splitSenses(in text: String) -> String {
+        // "2:" is a sense with examples only (bilingual entries).
+        let pattern = try! NSRegularExpression(pattern: #"(?<=\S) (\d{1,2})(?: (?=[\[(\p{L}])|:(?=\n))"#)
+        let source = text as NSString
+        let result = NSMutableString(string: text)
+        var expected = 1
+        for match in pattern.matches(in: text, range: NSRange(location: 0, length: source.length)) {
+            let number = Int(source.substring(with: match.range(at: 1)))!
+            let start = match.range.location
+            let preceding = source.substring(with: NSRange(location: max(0, start - 8), length: min(8, start))).lowercased()
+            guard number == expected || number == 1,
+                  !preceding.hasSuffix("sense"), !preceding.hasSuffix("senses")
+            else { continue }
+            expected = number + 1
+            // "\n" replaces the space before the number: same length, so
+            // later match offsets stay valid.
+            result.replaceCharacters(in: NSRange(location: start, length: 1), with: "\n")
+        }
+        return result as String
     }
 
     /// Full entry with pictures and every dictionary, in Dictionary.app.
@@ -38,6 +97,20 @@ enum SystemDictionary {
               let url = URL(string: "dict://\(encoded)") else { return }
         NSWorkspace.shared.open(url)
     }
+}
+
+/// One line of a formatted dictionary entry.
+public struct DefinitionLine: Equatable {
+    public enum Kind: Equatable {
+        case plain
+        case partOfSpeech
+        case section
+        case sense(number: String)
+        case subsense
+        case example
+    }
+    public let kind: Kind
+    public let text: String
 }
 
 private extension Array where Element: Hashable {
@@ -54,7 +127,7 @@ public final class DictionaryLookup: ObservableObject {
 
     public enum Result: Equatable {
         case loading
-        case found(String)
+        case found([DefinitionLine])
         case notFound
     }
 
@@ -67,10 +140,10 @@ public final class DictionaryLookup: ObservableObject {
         self.word = word
         result = .loading
         DispatchQueue.global(qos: .userInitiated).async {
-            let text = SystemDictionary.definition(for: word)
+            let lines = SystemDictionary.definition(for: word)
             DispatchQueue.main.async {
                 guard self.word == word else { return }
-                self.result = text.map(Result.found) ?? .notFound
+                self.result = lines.map(Result.found) ?? .notFound
             }
         }
     }
@@ -142,23 +215,58 @@ struct DictionaryCardView: View {
 
     static let width: CGFloat = 400
     static let maxTextHeight: CGFloat = 220
-    private static let textSize: CGFloat = 13
-    private static let lineSpacing: CGFloat = 2
     private static let padding: CGFloat = 14
+    private static let lineGap: CGFloat = 3
 
-    /// Laid-out height of the definition at the card's text width, measured
-    /// with AppKit so the scroll view can be sized before SwiftUI lays it out.
-    private static func height(of text: String) -> CGFloat {
-        let paragraph = NSMutableParagraphStyle()
-        paragraph.lineSpacing = lineSpacing
-        let attributed = NSAttributedString(string: text, attributes: [
-            .font: NSFont.systemFont(ofSize: textSize),
-            .paragraphStyle: paragraph,
-        ])
-        let bounds = attributed.boundingRect(
-            with: CGSize(width: width - 2 * padding, height: .greatestFiniteMagnitude),
-            options: [.usesLineFragmentOrigin, .usesFontLeading])
-        return ceil(bounds.height) + 4
+    /// How each kind of line is drawn; the same numbers size the scroll view.
+    private static func style(for kind: DefinitionLine.Kind) -> (font: NSFont, indent: CGFloat, topGap: CGFloat, opacity: Double) {
+        switch kind {
+        case .plain: return (.systemFont(ofSize: 13), 0, 0, 0.92)
+        case .partOfSpeech, .section: return (.systemFont(ofSize: 11, weight: .bold), 0, 6, 1)
+        case .sense: return (.systemFont(ofSize: 13), 0, 2, 0.92)
+        case .subsense: return (.systemFont(ofSize: 13), 10, 0, 0.85)
+        case .example: return (.systemFont(ofSize: 12.5), 14, 0, 0.62)
+        }
+    }
+
+    /// Laid-out height of the entry at the card's text width, measured with
+    /// AppKit so the scroll view can be sized before SwiftUI lays it out.
+    private static func height(of lines: [DefinitionLine]) -> CGFloat {
+        let width = Self.width - 2 * padding
+        var total: CGFloat = 0
+        for (index, line) in lines.enumerated() {
+            let style = style(for: line.kind)
+            var text = line.text
+            if case .sense(let number) = line.kind { text = number + "  " + text }
+            let bounds = NSAttributedString(string: text, attributes: [.font: style.font]).boundingRect(
+                with: CGSize(width: width - style.indent, height: .greatestFiniteMagnitude),
+                options: [.usesLineFragmentOrigin, .usesFontLeading])
+            total += ceil(bounds.height) + style.topGap + (index > 0 ? lineGap : 0)
+        }
+        return total + 4
+    }
+
+    @ViewBuilder
+    private func lineView(_ line: DefinitionLine) -> some View {
+        let style = Self.style(for: line.kind)
+        Group {
+            switch line.kind {
+            case .partOfSpeech, .section:
+                Text(line.text.uppercased())
+                    .foregroundColor(.yellow)
+            case .sense(let number):
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(number).fontWeight(.bold).foregroundColor(.yellow)
+                    Text(line.text).foregroundColor(.white.opacity(style.opacity))
+                }
+            default:
+                Text(line.text).foregroundColor(.white.opacity(style.opacity))
+            }
+        }
+        .font(Font(style.font))
+        .padding(.leading, style.indent)
+        .padding(.top, style.topGap)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     var body: some View {
@@ -187,17 +295,17 @@ struct DictionaryCardView: View {
                     .controlSize(.small)
                     .colorInvert()
                     .frame(maxWidth: .infinity, minHeight: 40)
-            case .found(let text):
-                // The scroll view takes only what the text needs, up to a cap.
+            case .found(let lines):
+                // The scroll view takes only what the entry needs, up to a cap.
                 ScrollView(.vertical) {
-                    Text(text)
-                        .font(.system(size: Self.textSize))
-                        .lineSpacing(Self.lineSpacing)
-                        .foregroundColor(.white.opacity(0.92))
-                        .textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                    VStack(alignment: .leading, spacing: Self.lineGap) {
+                        ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
+                            lineView(line)
+                        }
+                    }
+                    .textSelection(.enabled)
                 }
-                .frame(height: min(Self.height(of: text), Self.maxTextHeight))
+                .frame(height: min(Self.height(of: lines), Self.maxTextHeight))
             case .notFound:
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Not in your dictionaries.")

@@ -73,6 +73,11 @@
   клавиш для шпаргалки (H) и настроек: новая клавиша добавляется туда.
 - `GeminiService.swift`, `GeminiError.swift`, `KeychainStore.swift`,
   `ExplanationPopoverView.swift` — разбор реплики через Gemini; ключ в keychain.
+- `DictionaryLookup.swift` — словарь по клику на слово: `DCSCopyTextDefinition` отдаёт статью
+  плоским текстом, `SystemDictionary.lines(from:)` эвристически режет её на части речи,
+  значения (только по порядку 1, 2, 3…), подзначения «•» и примеры «▸». Какой словарь
+  отвечает первым, DCS выбирает по языку интерфейса приложения (русский UI → Oxford Russian,
+  английский → NOAD), поэтому в CLI-пробах передавать `-AppleLanguages "(ru)"`.
 - `AboutView.swift` — окно About (отдельная `Window`-сцена `about`): версия, текст GPLv3 из
   `Resources/LICENSE`, список библиотек из `THIRD-PARTY-SOURCES.md` (есть только в релизной
   сборке), ссылки `AboutInfo`. Пока оно ключевое, `KeyboardMonitor` не перехватывает клавиши.
