@@ -162,7 +162,7 @@
 "Keep the translation on screen on / off" = "Keep the translation on screen on / off";
 "Replay the current line from the start" = "Replay the current line from the start";
 "Previous / next line of dialogue" = "Previous / next line of dialogue";
-"Pause at the end of every line on / off" = "Pause at the end of every line on / off";
+"Pause at the end of every line on / off (R, W, E play on)" = "Pause at the end of every line on / off (R, W, E play on)";
 "Repeat the current line on / off" = "Repeat the current line on / off";
 "A–B loop: mark the start, mark the end, clear" = "A–B loop: mark the start, mark the end, clear";
 "AI breakdown of the current line with Gemini" = "AI breakdown of the current line with Gemini";

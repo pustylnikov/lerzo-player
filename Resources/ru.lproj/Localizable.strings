@@ -160,7 +160,7 @@
 "Keep the translation on screen on / off" = "Закрепить перевод на экране: вкл / выкл";
 "Replay the current line from the start" = "Повторить текущую реплику сначала";
 "Previous / next line of dialogue" = "Предыдущая / следующая реплика диалога";
-"Pause at the end of every line on / off" = "Пауза в конце каждой реплики: вкл / выкл";
+"Pause at the end of every line on / off (R, W, E play on)" = "Пауза в конце каждой реплики: вкл / выкл (R, W, E продолжают)";
 "Repeat the current line on / off" = "Повтор текущей реплики: вкл / выкл";
 "A–B loop: mark the start, mark the end, clear" = "Цикл A–B: отметить начало, отметить конец, снять";
 "AI breakdown of the current line with Gemini" = "ИИ-разбор текущей фразы через Gemini";

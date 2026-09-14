@@ -121,6 +121,9 @@ public final class MPVPlayer: ObservableObject {
     }
     /// The line auto-pause last stopped at, so resuming does not stop there again.
     private var autoPausedCueIndex: Int?
+    /// True while the current pause was made by auto-pause rather than the
+    /// user: W/E then mean "go on", while a manual pause is left alone.
+    private var isAutoPaused = false
     /// How far before a line's end auto-pause fires. `time-pos` arrives once
     /// per frame, so this must cover a couple of frames; pausing after the
     /// end would leave the user looking at a blank screen.
@@ -727,6 +730,7 @@ public final class MPVPlayer: ObservableObject {
     }
     
     public func togglePlayPause() {
+        isAutoPaused = false
         if playbackState == .finished {
             restartFromBeginning()
             return
@@ -735,6 +739,7 @@ public final class MPVPlayer: ObservableObject {
     }
     
     public func play() {
+        isAutoPaused = false
         if playbackState == .finished {
             restartFromBeginning()
             return
@@ -751,6 +756,7 @@ public final class MPVPlayer: ObservableObject {
     }
     
     public func pause() {
+        isAutoPaused = false
         setPropertyAsync("pause", "yes")
     }
     
@@ -783,11 +789,21 @@ public final class MPVPlayer: ObservableObject {
                 // A line loop follows the line the user moves to.
                 if isLoopingLine { bindLineLoop(to: target) }
                 performSeek(to: timeline.cues[target].start + subDelay)
+                resumeAfterLineJump(direction: direction)
             }
             return
         }
         beginSeek(optimisticTime: nil)
         executeCommand(["sub-seek", "\(direction)"])
+        resumeAfterLineJump(direction: direction)
+    }
+
+    /// Replaying a line means hearing it, so R always plays. W/E play on
+    /// only from an auto-pause ("next" there means "go on"); a pause the user
+    /// made themselves stays while they browse the lines.
+    private func resumeAfterLineJump(direction: Int) {
+        guard playbackState == .paused, direction == 0 || isAutoPaused else { return }
+        play()
     }
 
     // MARK: - Line auto-pause and loops
@@ -803,6 +819,7 @@ public final class MPVPlayer: ObservableObject {
               subTime >= timeline.cues[index].end - Self.autoPauseLead else { return }
         autoPausedCueIndex = index
         pause()
+        isAutoPaused = true
     }
 
     /// Repeat the line on screen (or the last one shown) until turned off.
