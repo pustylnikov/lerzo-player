@@ -181,6 +181,9 @@ public struct SubtitlesLayer: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
             .background(subtitleBox)
+            // The dictionary card keeps clear of the whole pill, not just
+            // the clicked word, so it never covers the line being read.
+            .transformAnchorPreference(key: LookupAnchorsKey.self, value: .bounds) { $0.block = $1 }
             .shadow(color: .black.opacity(0.5 * boxOpacity), radius: 6, x: 0, y: 3)
             // Quick Explain badge: floats over the pill's top-right corner
             // and only appears on hover, so it neither shifts the centred
@@ -291,7 +294,9 @@ public struct SubtitlesLayer: View {
         )
             .lineLimit(1)
             .fixedSize()
-            .anchorPreference(key: LookedUpWordAnchorKey.self, value: .bounds) { isLookedUp ? $0 : nil }
+            .anchorPreference(key: LookupAnchorsKey.self, value: .bounds) {
+                isLookedUp ? LookupAnchors(word: $0) : LookupAnchors()
+            }
             .onHover { isHover in
                 hoveredWord = isHover ? cleanWord : nil
             }

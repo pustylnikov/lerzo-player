@@ -238,26 +238,39 @@ public final class DictionaryLookup: ObservableObject {
 }
 
 /// Bounds of the word whose card is open, reported by the subtitles layer.
-struct LookedUpWordAnchorKey: PreferenceKey {
-    static var defaultValue: Anchor<CGRect>? = nil
-    static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
-        if let next = nextValue() { value = next }
+/// Where the card goes: the clicked word (for the horizontal centre) and
+/// the whole pill of the line (which the card must not cover).
+struct LookupAnchors {
+    var word: Anchor<CGRect>? = nil
+    var block: Anchor<CGRect>? = nil
+}
+
+struct LookupAnchorsKey: PreferenceKey {
+    static var defaultValue = LookupAnchors()
+    static func reduce(value: inout LookupAnchors, nextValue: () -> LookupAnchors) {
+        let next = nextValue()
+        if let word = next.word { value.word = word }
+        if let block = next.block { value.block = block }
     }
 }
 
-/// Places the card over the clicked word (under it when the line is at the
-/// top), centred on the word but kept inside the area, above every other
+/// Places the card above the subtitle pill (under it when the line is at the
+/// top), centred on the clicked word but kept inside the area, above every other
 /// layer. A transparent catcher behind it closes the card on a click
 /// elsewhere. `anchor` comes from the subtitles layer's preference.
 struct DictionaryCardOverlay: View {
     @ObservedObject var lookup = DictionaryLookup.shared
     let anchor: Anchor<CGRect>
+    /// The whole pill of the line; the card avoids it, not just the word,
+    /// so a word on the second row does not hide the first.
+    var blockAnchor: Anchor<CGRect>?
     var onExplain: (String) -> Void
 
     var body: some View {
         GeometryReader { geo in
             if let word = lookup.word {
                 let wordRect = geo[anchor]
+                let blockRect = blockAnchor.map { geo[$0] } ?? wordRect
                 let size = geo.size
                 let width = DictionaryCardView.width
                 let gap: CGFloat = 8
@@ -272,12 +285,12 @@ struct DictionaryCardOverlay: View {
                     Color.black.opacity(0.001)
                         .onTapGesture { lookup.close() }
                     if above {
-                        let height = max(0, wordRect.minY - gap)
+                        let height = max(0, blockRect.minY - gap)
                         card
                             .frame(width: width, height: height, alignment: .bottom)
                             .position(x: x, y: height / 2)
                     } else {
-                        let top = wordRect.maxY + gap
+                        let top = blockRect.maxY + gap
                         let height = max(0, size.height - top)
                         card
                             .frame(width: width, height: height, alignment: .top)

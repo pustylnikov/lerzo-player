@@ -151,9 +151,9 @@ public struct ContentView: View {
         }
         // Dictionary card over the clicked word, above the controls and the
         // big play button; the word's bounds arrive from the subtitles layer.
-        .overlayPreferenceValue(LookedUpWordAnchorKey.self) { anchor in
-            if let anchor {
-                DictionaryCardOverlay(anchor: anchor) { word in
+        .overlayPreferenceValue(LookupAnchorsKey.self) { anchors in
+            if let anchor = anchors.word {
+                DictionaryCardOverlay(anchor: anchor, blockAnchor: anchors.block) { word in
                     player.pause()
                     selectedWordToExplain = word
                     isExplanationOpen = true
