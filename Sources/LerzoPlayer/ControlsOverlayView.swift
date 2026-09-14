@@ -390,7 +390,7 @@ public struct ControlsOverlayView: View {
             // Seek bar + Time labels
             HStack(spacing: 10) {
                 let displayTime = seekDraggingValue ?? player.currentTime
-                Text(formatTime(displayTime))
+                Text(formatTime(displayTime, hours: player.duration >= 3600))
                     .font(.system(size: 11, weight: .medium, design: .monospaced))
                     .foregroundColor(.white.opacity(0.9))
                     .frame(width: 48, alignment: .leading)
@@ -445,7 +445,7 @@ public struct ControlsOverlayView: View {
                 }
                 .frame(height: 16)
                 
-                Text(formatTime(player.duration))
+                Text(formatTime(player.duration, hours: player.duration >= 3600))
                     .font(.system(size: 11, weight: .medium, design: .monospaced))
                     .foregroundColor(.white.opacity(0.7))
                     .frame(width: 48, alignment: .trailing)
@@ -570,10 +570,13 @@ public struct ControlsOverlayView: View {
                 HStack(spacing: 14) {
                     // Volume Control
                     HStack(spacing: 6) {
+                        // A toggle like loop and auto-pause: outline at rest,
+                        // filled and yellow while the sound is off.
+                        let muted = player.isMuted || player.volume == 0
                         Button(action: { player.toggleMute() }) {
-                            Image(systemName: player.isMuted || player.volume == 0 ? "speaker.slash.fill" : "speaker.wave.2.fill")
+                            Image(systemName: muted ? "speaker.slash.fill" : "speaker.wave.2")
                                 .font(.system(size: 13))
-                                .foregroundColor(.white.opacity(0.85))
+                                .foregroundColor(muted ? .yellow : .white.opacity(0.85))
                                 .frame(width: 20, height: 20)
                         }
                         .buttonStyle(.plain)
@@ -634,12 +637,17 @@ public struct ControlsOverlayView: View {
                 Button(action: {
                     player.toggleFullscreen()
                 }) {
-                    Image(systemName: "arrow.up.left.and.arrow.down.right")
+                    // isFullscreen is not published, but the bar re-renders on
+                    // every time-pos update, so the glyph keeps up in practice.
+                    Image(systemName: player.isFullscreen
+                          ? "arrow.down.right.and.arrow.up.left"
+                          : "arrow.up.left.and.arrow.down.right")
                         .font(.system(size: 13))
                         .foregroundColor(.white.opacity(0.85))
+                        .frame(width: 18, height: 18)
                 }
                 .buttonStyle(.plain)
-                .help("Full screen (F)")
+                .help(player.isFullscreen ? "Exit full screen (F)" : "Full screen (F)")
             }
         }
         .frame(maxWidth: .infinity)
@@ -657,6 +665,12 @@ public struct ControlsOverlayView: View {
     
     private func translationPill(pinned: Bool, showsTitle: Bool) -> some View {
         HStack(spacing: 5) {
+            // Without the wording, an eye says "peek"; it fills when pinned,
+            // like the other toggles.
+            if !showsTitle {
+                Image(systemName: pinned ? "eye.fill" : "eye")
+                    .font(.system(size: 11))
+            }
             Text(pinned ? "⇧TAB" : "TAB")
                 .font(.system(size: 9, weight: .bold, design: .monospaced))
                 .padding(.horizontal, 4)
@@ -676,13 +690,15 @@ public struct ControlsOverlayView: View {
         .fixedSize()
     }
 
-    private func formatTime(_ seconds: Double) -> String {
-        guard !seconds.isNaN && !seconds.isInfinite && seconds >= 0 else { return "00:00" }
+    // Elapsed time and duration share one format, chosen by the duration,
+    // so the elapsed label does not change shape when playback passes an hour.
+    private func formatTime(_ seconds: Double, hours: Bool) -> String {
+        guard !seconds.isNaN && !seconds.isInfinite && seconds >= 0 else { return hours ? "0:00:00" : "00:00" }
         let total = Int(seconds)
         let s = total % 60
         let m = (total / 60) % 60
         let h = total / 3600
-        if h > 0 {
+        if hours {
             return String(format: "%d:%02d:%02d", h, m, s)
         } else {
             return String(format: "%02d:%02d", m, s)

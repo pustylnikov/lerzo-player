@@ -71,6 +71,7 @@
 "The translation from the second subtitle track stays on screen. Click or press ⇧TAB to show it only while TAB is held" = "Перевод со второй дорожки субтитров остаётся на экране. Нажмите здесь или ⇧TAB, чтобы показывать его только пока зажат TAB";
 "Hold TAB to quickly see the translation from the second subtitle track. Click or press ⇧TAB to keep it on screen" = "Зажмите TAB, чтобы быстро увидеть перевод со второй дорожки субтитров. Нажмите здесь или ⇧TAB, чтобы закрепить его на экране";
 "Full screen (F)" = "Полноэкранный режим (F)";
+"Exit full screen (F)" = "Выйти из полноэкранного режима (F)";
 
 /* Subtitles layer */
 "AI" = "ИИ";

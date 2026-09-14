@@ -73,6 +73,7 @@
 "The translation from the second subtitle track stays on screen. Click or press ⇧TAB to show it only while TAB is held" = "The translation from the second subtitle track stays on screen. Click or press ⇧TAB to show it only while TAB is held";
 "Hold TAB to quickly see the translation from the second subtitle track. Click or press ⇧TAB to keep it on screen" = "Hold TAB to quickly see the translation from the second subtitle track. Click or press ⇧TAB to keep it on screen";
 "Full screen (F)" = "Full screen (F)";
+"Exit full screen (F)" = "Exit full screen (F)";
 
 /* Subtitles layer */
 "AI" = "AI";
