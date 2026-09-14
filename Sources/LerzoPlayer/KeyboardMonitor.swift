@@ -98,6 +98,9 @@ public final class KeyboardMonitor: ObservableObject {
                 } else if isExplanationOpen {
                     onDismissExplanationRequested?()
                     return nil
+                } else if DictionaryLookup.shared.isOpen {
+                    DictionaryLookup.shared.close()
+                    return nil
                 } else if player.isFullscreen {
                     player.toggleFullscreen()
                     return nil

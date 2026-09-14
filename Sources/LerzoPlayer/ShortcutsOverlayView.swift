@@ -30,6 +30,8 @@ enum ShortcutsReference {
             ShortcutEntry(keys: "L", action: "Repeat the current line on / off"),
             ShortcutEntry(keys: "⇧ + L", action: "A–B loop: mark the start, mark the end, clear"),
             ShortcutEntry(keys: "⌘ + G", action: "AI breakdown of the current line with Gemini"),
+            ShortcutEntry(keys: "Click a word", action: "Definition from the macOS dictionary, offline"),
+            ShortcutEntry(keys: "⌥ + click a word", action: "AI breakdown of the line, focused on that word"),
         ]),
         ShortcutGroup(title: "Playback", icon: "play.fill", entries: [
             ShortcutEntry(keys: "Space", action: "Pause / Play"),

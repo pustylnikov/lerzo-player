@@ -3,6 +3,7 @@ import SwiftUI
 public struct SubtitlesLayer: View {
     @ObservedObject var player = MPVPlayer.shared
     @ObservedObject var style = SubtitleStyle.shared
+    @ObservedObject var lookup = DictionaryLookup.shared
     @Binding var showExplanation: Bool
     /// Height of the playback controls bar (with its bottom margin), measured
     /// by `ControlsOverlayView`; 0 until it has been shown once.
@@ -55,6 +56,12 @@ public struct SubtitlesLayer: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .onAppear { areaHeight = geo.size.height }
             .onChange(of: geo.size.height) { _, height in areaHeight = height }
+        }
+        // The dictionary card belongs to one line: it goes when the line
+        // does, or when playback resumes (Space, R, W, E...).
+        .onChange(of: player.subTextOnScreen) { _, _ in lookup.close() }
+        .onChange(of: player.playbackState) { _, state in
+            if state == .playing { lookup.close() }
         }
     }
 
@@ -217,7 +224,8 @@ public struct SubtitlesLayer: View {
     @ViewBuilder
     private func subtitleWordView(for word: String) -> some View {
         let cleanWord = word.trimmingCharacters(in: .punctuationCharacters)
-        let isHovered = hoveredWord == cleanWord
+        let isLookedUp = lookup.word == cleanWord
+        let isHovered = hoveredWord == cleanWord || isLookedUp
         OutlinedText(
             word,
             font: style.font(size: primaryFontSize),
@@ -227,11 +235,20 @@ public struct SubtitlesLayer: View {
         )
             .lineLimit(1)
             .fixedSize()
+            .anchorPreference(key: LookedUpWordAnchorKey.self, value: .bounds) { isLookedUp ? $0 : nil }
             .onHover { isHover in
                 hoveredWord = isHover ? cleanWord : nil
             }
+            // Click: the offline dictionary. ⌥-click: straight to the AI
+            // breakdown of the line, focused on the word.
             .onTapGesture {
-                onExplainWord?(cleanWord)
+                guard !cleanWord.isEmpty else { return }
+                if NSApp.currentEvent?.modifierFlags.contains(.option) == true {
+                    onExplainWord?(cleanWord)
+                } else {
+                    player.pause()
+                    lookup.open(cleanWord)
+                }
             }
     }
 }

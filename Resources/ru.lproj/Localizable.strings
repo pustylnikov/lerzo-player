@@ -351,3 +351,17 @@
 "Release builds bundle them and list each one here with its version, license and source." = "Релизные сборки включают их в приложение и показывают здесь каждую с версией, лицензией и исходниками.";
 "%lld libraries built by Homebrew are bundled with the app. Links lead to each library's source code and build recipe." = "В приложение включены библиотеки, собранные Homebrew: %lld. Ссылки ведут к исходному коду и рецепту сборки каждой.";
 "Check for Updates..." = "Проверить обновления...";
+
+/* Dictionary card */
+"Close (Esc)" = "Закрыть (Esc)";
+"Not in your dictionaries." = "В ваших словарях нет.";
+"Dictionaries for each language are turned on in Dictionary ▸ Settings; a bilingual one shows translations here." = "Словари для каждого языка включаются в «Словарь» ▸ «Настройки»; двуязычный словарь покажет здесь перевод.";
+"Dictionary app" = "Словарь";
+"Open the full entry in Dictionary.app" = "Открыть полную статью в приложении «Словарь»";
+"AI breakdown" = "Разбор ИИ";
+"Explain the whole line with Gemini, focused on this word (⌥-click a word does the same)" = "Разобрать всю реплику через Gemini с упором на это слово (то же — ⌥-клик по слову)";
+"Click a word" = "Клик по слову";
+"Definition from the macOS dictionary, offline" = "Значение из словаря macOS, без сети";
+"⌥ + click a word" = "⌥ + клик по слову";
+"AI breakdown of the line, focused on that word" = "Разбор реплики ИИ с упором на это слово";
+"Click a word: dictionary, offline" = "Клик по слову: словарь без сети";

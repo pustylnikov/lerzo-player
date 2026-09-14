@@ -107,6 +107,17 @@ public struct ContentView: View {
                 .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isExplanationOpen)
             }
         }
+        // Dictionary card over the clicked word, above the controls and the
+        // big play button; the word's bounds arrive from the subtitles layer.
+        .overlayPreferenceValue(LookedUpWordAnchorKey.self) { anchor in
+            if let anchor {
+                DictionaryCardOverlay(anchor: anchor) { word in
+                    player.pause()
+                    selectedWordToExplain = word
+                    isExplanationOpen = true
+                }
+            }
+        }
         .frame(minWidth: 800, maxWidth: .infinity, minHeight: 480, maxHeight: .infinity)
         .onPreferenceChange(ControlsBarHeightKey.self) { height in
             // The preference resets to 0 when the overlay leaves the tree.
@@ -217,6 +228,7 @@ public struct ContentView: View {
             // Feature Highlights
             HStack(spacing: 24) {
                 featureBadge(icon: "character.book.closed.fill", text: "TAB: peek at the translation")
+                featureBadge(icon: "text.magnifyingglass", text: "Click a word: dictionary, offline")
                 featureBadge(icon: "sparkles", text: "Gemini: idioms and slang explained")
                 featureBadge(icon: "arrow.counterclockwise.circle", text: "R: replay the current line")
             }
