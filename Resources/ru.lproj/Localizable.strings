@@ -53,7 +53,7 @@
 "Explain the current line and its idioms with Gemini (Cmd + G)" = "Разобрать текущую реплику и идиомы через Gemini (Cmd + G)";
 "Subtitle and Gemini API settings (Cmd + ,)" = "Настройки субтитров и Gemini API (Cmd + ,)";
 "Play / Pause (Space)" = "Воспроизведение / Пауза (Пробел)";
-"Replay" = "Фраза";
+"Replay" = "Ещё раз";
 "Replay the current line from the start (R)" = "Повторить текущую реплику сначала (клавиша R)";
 "Back 5 seconds (Left Arrow)" = "Назад на 5 секунд (Стрелка влево)";
 "Forward 5 seconds (Right Arrow)" = "Вперёд на 5 секунд (Стрелка вправо)";

@@ -451,163 +451,179 @@ public struct ControlsOverlayView: View {
                     .frame(width: 48, alignment: .trailing)
             }
             
-            // Buttons Row
-            HStack(spacing: 16) {
-                // Play / Pause
-                // Fixed frame: play.fill and pause.fill have different widths,
-                // so without it the whole row shifts on every toggle.
-                Button(action: { player.togglePlayPause() }) {
-                    Image(systemName: player.playbackState == .playing ? "pause.fill" : "play.fill")
-                        .font(.system(size: 18))
-                        .foregroundColor(.white)
-                        .frame(width: 22, height: 22)
-                }
-                .buttonStyle(.plain)
-                .help("Play / Pause (Space)")
-                
-                // Previous Subtitle Line
-                Button(action: { player.seekSubtitle(direction: -1) }) {
-                    Image(systemName: "backward.end.alt.fill")
-                        .font(.system(size: 13))
-                        .foregroundColor(.white.opacity(0.85))
-                }
-                .buttonStyle(.plain)
-                .help("Jump to the previous line (W)")
-
-                // Replay Current Subtitle Line (Language Learning Feature!)
-                Button(action: { player.seekSubtitle(direction: 0) }) {
-                    HStack(spacing: 3) {
-                        Image(systemName: "arrow.counterclockwise.circle.fill")
-                        Text("Replay")
-                            .font(.system(size: 11, weight: .bold))
-                    }
-                    .foregroundColor(.yellow)
-                }
-                .buttonStyle(.plain)
-                .help("Replay the current line from the start (R)")
-                
-                // Next Subtitle Line
-                Button(action: { player.seekSubtitle(direction: 1) }) {
-                    Image(systemName: "forward.end.alt.fill")
-                        .font(.system(size: 13))
-                        .foregroundColor(.white.opacity(0.85))
-                }
-                .buttonStyle(.plain)
-                .help("Jump to the next line (E)")
-
-                // Repeat the current line
-                // One glyph for both states: swapping symbols of different
-                // widths shifted the whole row (see the play/pause button).
-                Button(action: { player.toggleLineLoop(); OSDController.shared.show(.loop) }) {
-                    Image(systemName: "repeat")
-                        .font(.system(size: 13, weight: player.loopMode == .off ? .regular : .bold))
-                        .foregroundColor(player.loopMode == .off ? .white.opacity(0.85) : .yellow)
-                        .frame(width: 18, height: 18)
-                }
-                .buttonStyle(.plain)
-                .help(loopHelp)
-
-                // Pause after each line
-                Button(action: { player.autoPauseAfterLine.toggle(); OSDController.shared.show(.autoPause) }) {
-                    HStack(spacing: 3) {
-                        Image(systemName: player.autoPauseAfterLine ? "pause.circle.fill" : "pause.circle")
-                            .font(.system(size: 13))
-                            .frame(width: 18, height: 18)
-                        if player.autoPauseTail > 0 {
-                            Text("+" + OSDView.tailLabel(player.autoPauseTail))
-                                .font(.system(size: 10, weight: .bold, design: .monospaced))
-                        }
-                    }
-                    .foregroundColor(player.autoPauseAfterLine ? .yellow : .white.opacity(0.85))
-                }
-                .buttonStyle(.plain)
-                .help(player.autoPauseAfterLine
-                      ? "Pausing at the end of every line; Space plays on to the next one (P). ⇧O / ⇧P pause earlier / later for subtitles that end mid-word"
-                      : "Pause at the end of every line (P)")
-                
-                // Skip -5s
-                Button(action: { player.seekRelative(seconds: -5) }) {
-                    Image(systemName: "gobackward.5")
-                        .font(.system(size: 14))
-                        .foregroundColor(.white.opacity(0.85))
-                }
-                .buttonStyle(.plain)
-                .help("Back 5 seconds (Left Arrow)")
-                
-                // Skip +5s
-                Button(action: { player.seekRelative(seconds: 5) }) {
-                    Image(systemName: "goforward.5")
-                        .font(.system(size: 14))
-                        .foregroundColor(.white.opacity(0.85))
-                }
-                .buttonStyle(.plain)
-                .help("Forward 5 seconds (Right Arrow)")
-                
-                // Volume Control
-                HStack(spacing: 6) {
-                    Button(action: { player.toggleMute() }) {
-                        Image(systemName: player.isMuted || player.volume == 0 ? "speaker.slash.fill" : "speaker.wave.2.fill")
-                            .font(.system(size: 13))
-                            .foregroundColor(.white.opacity(0.85))
-                            .frame(width: 20, height: 20)
+            // Buttons Row: related controls sit 14 pt apart, groups 28 pt,
+            // so the eye reads four clusters instead of one long strip.
+            // Left to right: time (play, ±5 s), the line — navigation with
+            // the replay hero, then its modes — and playback parameters.
+            HStack(spacing: 28) {
+                // Transport
+                HStack(spacing: 14) {
+                    // Play / Pause
+                    // Fixed frame: play.fill and pause.fill have different widths,
+                    // so without it the whole row shifts on every toggle.
+                    Button(action: { player.togglePlayPause() }) {
+                        Image(systemName: player.playbackState == .playing ? "pause.fill" : "play.fill")
+                            .font(.system(size: 18))
+                            .foregroundColor(.white)
+                            .frame(width: 22, height: 22)
                     }
                     .buttonStyle(.plain)
-                    
-                    Slider(value: Binding(
-                        get: { player.volume },
-                        set: { player.setVolume($0) }
-                    ), in: 0...100)
-                    .frame(width: 70)
-                    .accentColor(.yellow)
+                    .help("Play / Pause (Space)")
+
+                    // Skip -5s
+                    Button(action: { player.seekRelative(seconds: -5) }) {
+                        Image(systemName: "gobackward.5")
+                            .font(.system(size: 14))
+                            .foregroundColor(.white.opacity(0.85))
+                    }
+                    .buttonStyle(.plain)
+                    .help("Back 5 seconds (Left Arrow)")
+
+                    // Skip +5s
+                    Button(action: { player.seekRelative(seconds: 5) }) {
+                        Image(systemName: "goforward.5")
+                            .font(.system(size: 14))
+                            .foregroundColor(.white.opacity(0.85))
+                    }
+                    .buttonStyle(.plain)
+                    .help("Forward 5 seconds (Right Arrow)")
                 }
 
-                // Playback Speed
-                Menu {
-                    ForEach(MPVPlayer.speedPresets, id: \.self) { preset in
-                        Button(action: { player.setSpeed(preset) }) {
-                            if abs(player.playbackSpeed - preset) < 0.01 {
-                                Label(Self.speedLabel(preset), systemImage: "checkmark")
-                            } else {
-                                Text(Self.speedLabel(preset))
+                // Line navigation
+                HStack(spacing: 14) {
+                    // Previous Subtitle Line
+                    Button(action: { player.seekSubtitle(direction: -1) }) {
+                        Image(systemName: "backward.end.alt.fill")
+                            .font(.system(size: 13))
+                            .foregroundColor(.white.opacity(0.85))
+                    }
+                    .buttonStyle(.plain)
+                    .help("Jump to the previous line (W)")
+
+                    // Replay the current line — the hero of the bar.
+                    // It stands out by form (the only labelled pill in the row),
+                    // not by colour: a solid yellow fill would outshout the
+                    // toggles, which are the ones carrying state.
+                    Button(action: { player.seekSubtitle(direction: 0) }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "arrow.counterclockwise")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundColor(.yellow)
+                            Text("Replay")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundColor(.white.opacity(0.9))
+                        }
+                        .padding(.horizontal, 9)
+                        .frame(height: 22)
+                        .background(Color.white.opacity(0.1))
+                        .cornerRadius(6)
+                        // Never let the layout squeeze the label away silently
+                        .fixedSize()
+                    }
+                    .buttonStyle(.plain)
+                    .help("Replay the current line from the start (R)")
+
+                    // Next Subtitle Line
+                    Button(action: { player.seekSubtitle(direction: 1) }) {
+                        Image(systemName: "forward.end.alt.fill")
+                            .font(.system(size: 13))
+                            .foregroundColor(.white.opacity(0.85))
+                    }
+                    .buttonStyle(.plain)
+                    .help("Jump to the next line (E)")
+                }
+
+                // Line modes
+                // Toggles share one "on" treatment: the filled variant of the
+                // same symbol in yellow.
+                HStack(spacing: 14) {
+                    // Repeat the current line
+                    Button(action: { player.toggleLineLoop(); OSDController.shared.show(.loop) }) {
+                        Image(systemName: player.loopMode == .off ? "repeat.circle" : "repeat.circle.fill")
+                            .font(.system(size: 13))
+                            .foregroundColor(player.loopMode == .off ? .white.opacity(0.85) : .yellow)
+                            .frame(width: 18, height: 18)
+                    }
+                    .buttonStyle(.plain)
+                    .help(loopHelp)
+
+                    // Pause after each line
+                    Button(action: { player.autoPauseAfterLine.toggle(); OSDController.shared.show(.autoPause) }) {
+                        HStack(spacing: 3) {
+                            Image(systemName: player.autoPauseAfterLine ? "pause.circle.fill" : "pause.circle")
+                                .font(.system(size: 13))
+                                .frame(width: 18, height: 18)
+                            if player.autoPauseTail > 0 {
+                                Text("+" + OSDView.tailLabel(player.autoPauseTail))
+                                    .font(.system(size: 10, weight: .bold, design: .monospaced))
                             }
                         }
+                        .foregroundColor(player.autoPauseAfterLine ? .yellow : .white.opacity(0.85))
                     }
-                } label: {
-                    Text(Self.speedLabel(player.playbackSpeed))
-                        .font(.system(size: 11, weight: .bold, design: .monospaced))
-                        .foregroundColor(isCustomSpeed ? .yellow : .white.opacity(0.85))
-                        .frame(width: 44, height: 20)
-                        .background(Color.white.opacity(isCustomSpeed ? 0.18 : 0.1))
-                        .cornerRadius(5)
+                    .buttonStyle(.plain)
+                    .help(player.autoPauseAfterLine
+                          ? "Pausing at the end of every line; Space plays on to the next one (P). ⇧O / ⇧P pause earlier / later for subtitles that end mid-word"
+                          : "Pause at the end of every line (P)")
                 }
-                .menuStyle(.borderlessButton)
-                .menuIndicator(.hidden)
-                .fixedSize()
-                .help("Playback speed ([ slower, ] faster, Backspace — 1×)")
-                
+
+                // Audio and speed
+                HStack(spacing: 14) {
+                    // Volume Control
+                    HStack(spacing: 6) {
+                        Button(action: { player.toggleMute() }) {
+                            Image(systemName: player.isMuted || player.volume == 0 ? "speaker.slash.fill" : "speaker.wave.2.fill")
+                                .font(.system(size: 13))
+                                .foregroundColor(.white.opacity(0.85))
+                                .frame(width: 20, height: 20)
+                        }
+                        .buttonStyle(.plain)
+
+                        Slider(value: Binding(
+                            get: { player.volume },
+                            set: { player.setVolume($0) }
+                        ), in: 0...100)
+                        .frame(width: 70)
+                        .tint(.yellow)
+                        .controlSize(.small)
+                    }
+
+                    // Playback Speed
+                    Menu {
+                        ForEach(MPVPlayer.speedPresets, id: \.self) { preset in
+                            Button(action: { player.setSpeed(preset) }) {
+                                if abs(player.playbackSpeed - preset) < 0.01 {
+                                    Label(Self.speedLabel(preset), systemImage: "checkmark")
+                                } else {
+                                    Text(Self.speedLabel(preset))
+                                }
+                            }
+                        }
+                    } label: {
+                        Text(Self.speedLabel(player.playbackSpeed))
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .foregroundColor(isCustomSpeed ? .yellow : .white.opacity(0.85))
+                            .frame(width: 44, height: 20)
+                            .background(isCustomSpeed ? Color.yellow.opacity(0.18) : Color.white.opacity(0.1))
+                            .cornerRadius(5)
+                    }
+                    .menuStyle(.borderlessButton)
+                    .menuIndicator(.hidden)
+                    .fixedSize()
+                    .help("Playback speed ([ slower, ] faster, Backspace — 1×)")
+                }
                 Spacer()
                 
-                // Translation mode: a TAB hint that doubles as the pin toggle
+                // Translation mode: a TAB hint that doubles as the pin toggle.
+                // In a narrow window the wording goes first, the badge stays.
                 let pinned = player.translationMode == .always
                 Button(action: {
                     player.toggleTranslationMode()
                     OSDController.shared.show(.translationMode)
                 }) {
-                    HStack(spacing: 5) {
-                        Text(pinned ? "⇧TAB" : "TAB")
-                            .font(.system(size: 9, weight: .bold, design: .monospaced))
-                            .padding(.horizontal, 4)
-                            .padding(.vertical, 2)
-                            .background(Color.white.opacity(0.2))
-                            .cornerRadius(4)
-                        Text(pinned ? "Translation on" : "Peek translation")
-                            .font(.system(size: 11, weight: .medium))
+                    ViewThatFits(in: .horizontal) {
+                        translationPill(pinned: pinned, showsTitle: true)
+                        translationPill(pinned: pinned, showsTitle: false)
                     }
-                    .foregroundColor(pinned ? .yellow : .white.opacity(0.8))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(pinned ? Color.yellow.opacity(0.18) : Color.white.opacity(0.1))
-                    .cornerRadius(6)
                 }
                 .buttonStyle(.plain)
                 .help(pinned
@@ -639,6 +655,27 @@ public struct ControlsOverlayView: View {
         )
     }
     
+    private func translationPill(pinned: Bool, showsTitle: Bool) -> some View {
+        HStack(spacing: 5) {
+            Text(pinned ? "⇧TAB" : "TAB")
+                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                .padding(.horizontal, 4)
+                .padding(.vertical, 2)
+                .background(Color.white.opacity(0.2))
+                .cornerRadius(4)
+            if showsTitle {
+                Text(pinned ? "Translation on" : "Peek translation")
+                    .font(.system(size: 11, weight: .medium))
+            }
+        }
+        .foregroundColor(pinned ? .yellow : .white.opacity(0.8))
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(pinned ? Color.yellow.opacity(0.18) : Color.white.opacity(0.1))
+        .cornerRadius(6)
+        .fixedSize()
+    }
+
     private func formatTime(_ seconds: Double) -> String {
         guard !seconds.isNaN && !seconds.isInfinite && seconds >= 0 else { return "00:00" }
         let total = Int(seconds)
