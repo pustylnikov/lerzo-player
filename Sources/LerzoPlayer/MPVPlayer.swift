@@ -504,6 +504,13 @@ public final class MPVPlayer: ObservableObject {
     }
 
     // MARK: - Native Child Window Attachment
+    /// libmpv's macOS backend replaces the Dock icon with mpv's own when it
+    /// brings up the video output, so the first file with video turned the
+    /// player purple. nil puts the bundle's icon back.
+    private func restoreAppIcon() {
+        NSApp.applicationIconImage = nil
+    }
+
     public func attachMpvChildWindowIfNeeded() {
         DispatchQueue.main.async { [weak self] in
             guard let self = self, let target = self.targetView, let parentWindow = target.window else { return }
@@ -533,6 +540,7 @@ public final class MPVPlayer: ObservableObject {
                     self.updateEmbeddedWindowOrdering(window, in: parentWindow)
                     self.mpvChildWindow = window
                     self.hasVideoSurface = true
+                    self.restoreAppIcon()
                     self.updateOverlayEDRFlag()
                     self.embedTimer?.invalidate()
                     self.embedTimer = nil
