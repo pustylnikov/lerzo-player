@@ -104,16 +104,25 @@ public final class MPVPlayer: ObservableObject {
         return subtitleTracks.count == 1 ? .singleTrack : .noSecondaryTrack
     }
     
-    /// Rendered point size of the primary subtitle words.
-    @Published public var subFontSize: Double = MPVPlayer.defaultSubFontSize {
-        didSet {
-            UserDefaults.standard.set(subFontSize, forKey: MPVPlayer.subFontSizeKey)
-            applySubtitleStyle()
-        }
+    /// Size of the primary subtitle words as a fraction of the video area's
+    /// height, so the text grows with the window and in fullscreen (mpv sizes
+    /// its own subtitles against a 720-line canvas the same way).
+    @Published public var subFontScale: Double = MPVPlayer.defaultSubFontScale {
+        didSet { UserDefaults.standard.set(subFontScale, forKey: MPVPlayer.subFontScaleKey) }
     }
-    public static let defaultSubFontSize = 30.0
-    public static let subFontSizeRange = 16.0...60.0
-    private static let subFontSizeKey = "LerzoPlayer.subFontSizePt"
+    public static let defaultSubFontScale = 0.04
+    public static let subFontScaleRange = 0.025...0.09
+    public static let subFontScaleStep = 0.0025
+    /// Height the scale is converted against where no real area exists (the
+    /// settings preview) and when migrating the old point size.
+    public static let subFontReferenceHeight = 720.0
+    /// Point size on an area of the given height, never below a legible floor.
+    public func subFontSize(forAreaHeight height: Double) -> Double {
+        max(12, height * subFontScale)
+    }
+    private static let subFontScaleKey = "LerzoPlayer.subFontScale"
+    /// 1.x key with an absolute point size; converted as if drawn on a 720 pt area.
+    private static let legacySubFontSizePtKey = "LerzoPlayer.subFontSizePt"
     /// Pre-1.x key that stored a nominal mpv size; the words were drawn at 65 % of it.
     private static let legacySubFontSizeKey = "LerzoPlayer.subFontSize"
     
@@ -245,12 +254,25 @@ public final class MPVPlayer: ObservableObject {
     
     public init() {
         let defaults = UserDefaults.standard
-        if let saved = defaults.object(forKey: Self.subFontSizeKey) as? Double {
-            self.subFontSize = saved
-        } else if let legacy = defaults.object(forKey: Self.legacySubFontSizeKey) as? Double, legacy > 15 {
-            // Convert the old nominal value to the size that was actually drawn.
-            self.subFontSize = min(max((legacy * 0.65).rounded(), Self.subFontSizeRange.lowerBound), Self.subFontSizeRange.upperBound)
-            defaults.set(self.subFontSize, forKey: Self.subFontSizeKey)
+        if let saved = defaults.object(forKey: Self.subFontScaleKey) as? Double {
+            self.subFontScale = saved
+        } else {
+            let points: Double?
+            if let pt = defaults.object(forKey: Self.legacySubFontSizePtKey) as? Double {
+                points = pt
+            } else if let legacy = defaults.object(forKey: Self.legacySubFontSizeKey) as? Double, legacy > 15 {
+                // Convert the old nominal value to the size that was actually drawn.
+                points = (legacy * 0.65).rounded()
+            } else {
+                points = nil
+            }
+            if let points {
+                let step = Self.subFontScaleStep
+                let scale = (points / Self.subFontReferenceHeight / step).rounded() * step
+                self.subFontScale = min(max(scale, Self.subFontScaleRange.lowerBound), Self.subFontScaleRange.upperBound)
+                defaults.set(self.subFontScale, forKey: Self.subFontScaleKey)
+            }
+            defaults.removeObject(forKey: Self.legacySubFontSizePtKey)
             defaults.removeObject(forKey: Self.legacySubFontSizeKey)
         }
         if let saved = UserDefaults.standard.string(forKey: "LerzoPlayer.translationMode")
@@ -450,8 +472,7 @@ public final class MPVPlayer: ObservableObject {
 
     // MARK: - Subtitle Styling
     public func applySubtitleStyle() {
-        let sizeStr = "\(Int(subFontSize))"
-        setPropertyAsync("sub-font-size", sizeStr)
+        setPropertyAsync("sub-font-size", "30")   // mpv's own subtitles are drawn invisible
         setPropertyAsync("sub-border-size", "0")
         setPropertyAsync("sub-border-color", "0.0/0.0/0.0/0.0")
         setPropertyAsync("sub-color", "1.0/1.0/1.0/0.0")

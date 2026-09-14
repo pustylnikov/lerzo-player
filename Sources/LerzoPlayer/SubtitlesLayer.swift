@@ -13,6 +13,8 @@ public struct SubtitlesLayer: View {
     var onExplainWord: ((String) -> Void)?
     
     @State private var hoveredWord: String? = nil
+    /// Height of the video area, which the font scale is applied to.
+    @State private var areaHeight: CGFloat = MPVPlayer.subFontReferenceHeight
     @State private var isHoveringPill: Bool = false
     
     public init(showExplanation: Binding<Bool>,
@@ -51,6 +53,8 @@ public struct SubtitlesLayer: View {
                 .animation(.easeInOut(duration: 0.2), value: controlsShown)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .onAppear { areaHeight = geo.size.height }
+            .onChange(of: geo.size.height) { _, height in areaHeight = height }
         }
     }
 
@@ -198,7 +202,7 @@ public struct SubtitlesLayer: View {
         .help("Explain this line with Gemini AI (Cmd + G)")
     }
 
-    private var primaryFontSize: CGFloat { CGFloat(player.subFontSize) }
+    private var primaryFontSize: CGFloat { CGFloat(player.subFontSize(forAreaHeight: areaHeight)) }
 
     /// Shared box behind the primary subtitles and the translation line.
     private var subtitleBox: some View {

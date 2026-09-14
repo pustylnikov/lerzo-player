@@ -368,13 +368,16 @@ public struct SettingsView: View {
                                 Text("Subtitle font size:")
                                     .font(.system(size: 12, weight: .medium))
                                 Spacer()
-                                Text("\(Int(player.subFontSize)) pt")
+                                Text("\(Self.percent(player.subFontScale))% of height")
                                     .font(.system(size: 12, weight: .bold, design: .monospaced))
                                     .foregroundColor(.yellow)
                             }
                             
-                            Slider(value: $player.subFontSize, in: MPVPlayer.subFontSizeRange, step: 1)
+                            Slider(value: $player.subFontScale, in: MPVPlayer.subFontScaleRange, step: MPVPlayer.subFontScaleStep)
                                 .accentColor(.yellow)
+                            Text("Relative to the window, so the text grows in fullscreen.")
+                                .font(.system(size: 10))
+                                .foregroundColor(.secondary)
                         }
 
                         // Translation Size
@@ -535,7 +538,7 @@ public struct SettingsView: View {
                             
                             // One word is drawn as if hovered so the highlight
                             // colour can be judged against the text colour.
-                            let previewSize = max(14, CGFloat(player.subFontSize * 0.75))
+                            let previewSize = CGFloat(player.subFontSize(forAreaHeight: MPVPlayer.subFontReferenceHeight) * 0.75)
                             WrappingHStack(
                                 words: "Hey John, are you feeling under the weather?".split(separator: " ").map(String.init),
                                 horizontalSpacing: style.spaceWidth(size: previewSize)
@@ -724,4 +727,13 @@ private struct InitialFocusSink: NSViewRepresentable {
     }
     func makeNSView(context: Context) -> SinkView { SinkView(frame: .zero) }
     func updateNSView(_ nsView: SinkView, context: Context) {}
+}
+
+extension SettingsView {
+    /// "4", "4.25", "4.5" — a fraction as a percentage without trailing zeros.
+    static func percent(_ fraction: Double) -> String {
+        let value = fraction * 100
+        let text = String(format: "%.2f", value)
+        return text.replacingOccurrences(of: #"\.?0+$"#, with: "", options: .regularExpression)
+    }
 }

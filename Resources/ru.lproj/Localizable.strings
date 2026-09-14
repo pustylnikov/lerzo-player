@@ -128,6 +128,8 @@
 "This display does not support HDR — video is tone-mapped to SDR. The setting takes effect on an HDR display." = "Текущий дисплей не поддерживает HDR — видео преобразуется в SDR. Настройка применится на HDR-дисплее.";
 "Subtitle Appearance" = "Отображение субтитров";
 "Subtitle font size:" = "Размер шрифта субтитров:";
+"Relative to the window, so the text grows in fullscreen." = "Относительно окна, поэтому в полноэкранном режиме текст крупнее.";
+"%@%% of height" = "%@ %% высоты";
 "Translation size:" = "Размер перевода:";
 "%lld%% of primary" = "%lld %% от основных";
 "Font:" = "Шрифт:";

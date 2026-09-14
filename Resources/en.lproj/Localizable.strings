@@ -130,6 +130,8 @@
 "This display does not support HDR — video is tone-mapped to SDR. The setting takes effect on an HDR display." = "This display does not support HDR — video is tone-mapped to SDR. The setting takes effect on an HDR display.";
 "Subtitle Appearance" = "Subtitle Appearance";
 "Subtitle font size:" = "Subtitle font size:";
+"Relative to the window, so the text grows in fullscreen." = "Relative to the window, so the text grows in fullscreen.";
+"%@%% of height" = "%@%% of height";
 "Translation size:" = "Translation size:";
 "%lld%% of primary" = "%lld%% of primary";
 "Font:" = "Font:";
