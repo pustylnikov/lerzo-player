@@ -223,7 +223,6 @@ struct DictionaryCardView: View {
     /// Senses shown per part of speech in the compact view.
     static let compactSensesPerPart = 6
     @State private var showsFullEntry = false
-    @State private var hasTranslation = false
 
     /// The glance view: the headword line, parts of speech and their first
     /// senses with any trailing example cut off; no sub-senses, examples or
@@ -334,10 +333,6 @@ struct DictionaryCardView: View {
                 .help("Close (Esc)")
             }
 
-            if #available(macOS 15, *) {
-                WordTranslationLine(word: word) { hasTranslation = $0 != nil }
-            }
-
             switch lookup.result {
             case .loading:
                 ProgressView()
@@ -366,11 +361,9 @@ struct DictionaryCardView: View {
                 }
             case .notFound:
                 VStack(alignment: .leading, spacing: 4) {
-                    if !hasTranslation {
-                        Text("Not in your dictionaries.")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.92))
-                    }
+                    Text("Not in your dictionaries.")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.92))
                     Text("Dictionaries for each language are turned on in Dictionary ▸ Settings; a bilingual one shows translations here.")
                         .font(.system(size: 11))
                         .foregroundColor(.white.opacity(0.6))
