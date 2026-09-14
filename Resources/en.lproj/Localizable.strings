@@ -384,6 +384,10 @@
 "Medium" = "Medium";
 "High" = "High";
 "Flash models are cheaper and faster; Pro models and higher reasoning can improve difficult idioms but use more tokens." = "Flash models are cheaper and faster; Pro models and higher reasoning can improve difficult idioms but use more tokens.";
+"Additional instructions:" = "Additional instructions:";
+"For example: explain grammar in more detail, include CEFR levels, or highlight British slang." = "For example: explain grammar in more detail, include CEFR levels, or highlight British slang.";
+"These instructions apply only to phrase breakdowns. More detailed requests may use more tokens." = "These instructions apply only to phrase breakdowns. More detailed requests may use more tokens.";
+"Grammar:" = "Grammar:";
 "Gemini is translating the word in context…" = "Gemini is translating the word in context…";
 "Loaded from the local cache" = "Loaded from the local cache";
 "Local cache" = "Local cache";

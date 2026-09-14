@@ -387,6 +387,30 @@ public struct ExplanationPopoverView: View {
                         }
                     }
                 }
+
+                if let grammar = expl.grammar, !grammar.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Grammar:")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.white.opacity(0.8))
+
+                        ForEach(grammar) { item in
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(item.fragment)
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundColor(.yellow)
+                                Text(item.explanation)
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.white.opacity(0.85))
+                                    .lineSpacing(3)
+                            }
+                            .padding(10)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.white.opacity(0.05))
+                            .cornerRadius(8)
+                        }
+                    }
+                }
                 
                 // Context Note
                 if let note = expl.contextNote, !note.isEmpty {
@@ -403,6 +427,24 @@ public struct ExplanationPopoverView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(Color.white.opacity(0.04))
                     .cornerRadius(8)
+                }
+
+                if let customSections = expl.customSections, !customSections.isEmpty {
+                    ForEach(customSections) { section in
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(section.title)
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundColor(.white.opacity(0.7))
+                            Text(section.content)
+                                .font(.system(size: 14))
+                                .foregroundColor(.white.opacity(0.85))
+                                .lineSpacing(3)
+                        }
+                        .padding(10)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.white.opacity(0.04))
+                        .cornerRadius(8)
+                    }
                 }
             }
         }

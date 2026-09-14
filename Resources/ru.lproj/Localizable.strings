@@ -382,6 +382,10 @@
 "Medium" = "Средний";
 "High" = "Высокий";
 "Flash models are cheaper and faster; Pro models and higher reasoning can improve difficult idioms but use more tokens." = "Flash-модели дешевле и быстрее; Pro-модели и высокий уровень рассуждения могут лучше разбирать сложные идиомы, но используют больше токенов.";
+"Additional instructions:" = "Дополнительные инструкции:";
+"For example: explain grammar in more detail, include CEFR levels, or highlight British slang." = "Например: подробнее объясняй грамматику, указывай уровень CEFR или отмечай британский сленг.";
+"These instructions apply only to phrase breakdowns. More detailed requests may use more tokens." = "Инструкции применяются только к разбору реплик. Более подробные запросы могут расходовать больше токенов.";
+"Grammar:" = "Грамматика:";
 "Gemini is translating the word in context…" = "Gemini переводит слово в контексте…";
 "Loaded from the local cache" = "Загружено из локального кэша";
 "Local cache" = "Локальный кэш";

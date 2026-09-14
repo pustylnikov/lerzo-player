@@ -260,7 +260,13 @@ enum CardExporter {
                 let part = $0.partOfSpeech.map { " (\($0))" } ?? ""
                 return "\($0.word)\(part): \($0.translation)"
             })
+            sections.append(contentsOf: (explanation.grammar ?? []).map {
+                "\($0.fragment): \($0.explanation)"
+            })
             if let note = explanation.contextNote, !note.isEmpty { sections.append(note) }
+            sections.append(contentsOf: (explanation.customSections ?? []).map {
+                "\($0.title): \($0.content)"
+            })
         }
         if let notes = card.notes, !notes.isEmpty { sections.append(notes) }
         return sections.joined(separator: "\n")

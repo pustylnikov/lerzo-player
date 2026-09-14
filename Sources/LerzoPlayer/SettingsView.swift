@@ -181,6 +181,48 @@ public struct SettingsView: View {
                                 .font(.system(size: 11))
                                 .foregroundColor(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
+                            VStack(alignment: .leading, spacing: 5) {
+                                HStack {
+                                    Text("Additional instructions:")
+                                        .font(.system(size: 12, weight: .medium))
+                                    Spacer()
+                                    Text(verbatim: "\(gemini.explanationInstructions.count)/\(GeminiService.maxExplanationInstructionsLength)")
+                                        .font(.system(size: 10, design: .monospaced))
+                                        .foregroundColor(.secondary)
+                                }
+                                ZStack(alignment: .topLeading) {
+                                    if gemini.explanationInstructions.isEmpty {
+                                        Text("For example: explain grammar in more detail, include CEFR levels, or highlight British slang.")
+                                            .font(.system(size: 11))
+                                            .foregroundColor(.secondary.opacity(0.75))
+                                            .padding(.horizontal, 9)
+                                            .padding(.vertical, 8)
+                                            .allowsHitTesting(false)
+                                    }
+                                    TextEditor(text: Binding(
+                                        get: { gemini.explanationInstructions },
+                                        set: {
+                                            gemini.explanationInstructions = String(
+                                                $0.prefix(GeminiService.maxExplanationInstructionsLength)
+                                            )
+                                        }
+                                    ))
+                                    .font(.system(size: 11))
+                                    .scrollContentBackground(.hidden)
+                                    .padding(3)
+                                }
+                                .frame(height: 72)
+                                .background(Color.black.opacity(0.16))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 6)
+                                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                                )
+                                .cornerRadius(6)
+                                Text("These instructions apply only to phrase breakdowns. More detailed requests may use more tokens.")
+                                    .font(.system(size: 10))
+                                    .foregroundColor(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
                         }
 
                         HStack {

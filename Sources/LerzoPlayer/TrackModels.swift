@@ -45,6 +45,10 @@ public struct SubtitleExplanation: Codable {
     public let idioms: [IdiomExplanation]
     public let difficultWords: [WordExplanation]
     public let contextNote: String?
+    /// Optional for compatibility with phrase cards saved before these
+    /// sections were added to the Gemini response.
+    public let grammar: [GrammarExplanation]?
+    public let customSections: [CustomExplanationSection]?
 }
 
 public struct IdiomExplanation: Codable, Identifiable {
@@ -59,6 +63,18 @@ public struct WordExplanation: Codable, Identifiable {
     public let word: String
     public let translation: String
     public let partOfSpeech: String?
+}
+
+public struct GrammarExplanation: Codable, Identifiable {
+    public var id: String { fragment }
+    public let fragment: String
+    public let explanation: String
+}
+
+public struct CustomExplanationSection: Codable, Identifiable {
+    public var id: String { title }
+    public let title: String
+    public let content: String
 }
 
 /// A compact, structured Gemini answer for one word in its subtitle context.

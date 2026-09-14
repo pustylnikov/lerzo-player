@@ -316,7 +316,9 @@ struct CardsWindow: View {
         var parts = [explanation.translation]
         parts.append(contentsOf: explanation.idioms.map { "\($0.idiom): \($0.actualMeaning)" })
         parts.append(contentsOf: explanation.difficultWords.map { "\($0.word): \($0.translation)" })
+        parts.append(contentsOf: (explanation.grammar ?? []).map { "\($0.fragment): \($0.explanation)" })
         if let note = explanation.contextNote, !note.isEmpty { parts.append(note) }
+        parts.append(contentsOf: (explanation.customSections ?? []).map { "\($0.title): \($0.content)" })
         return parts.filter { !$0.isEmpty }.joined(separator: " · ")
     }
 
