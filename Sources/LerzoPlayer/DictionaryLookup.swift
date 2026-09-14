@@ -8,13 +8,17 @@ import CoreServices
 enum SystemDictionary {
     /// The entry for `word`, or nil when no active dictionary knows it.
     /// Sentence-initial capitals are retried in lowercase.
-    static func definition(for word: String) -> [DefinitionLine]? {
+    static func definition(for word: String, stripStressMarks: Bool) -> [DefinitionLine]? {
         let candidates = [word, word.lowercased()]
         for candidate in candidates.uniqued() {
             let term = candidate as NSString as CFString
             let range = CFRangeMake(0, candidate.utf16.count)
             if let text = DCSCopyTextDefinition(nil, term, range)?.takeRetainedValue() {
-                return lines(from: text as NSString as String)
+                var raw = text as NSString as String
+                // Bilingual entries stress every Russian word (зе́мля); a native
+                // speaker reads faster without the marks.
+                if stripStressMarks { raw = raw.replacingOccurrences(of: "\u{0301}", with: "") }
+                return lines(from: raw)
             }
         }
         return nil
@@ -139,8 +143,9 @@ public final class DictionaryLookup: ObservableObject {
     public func open(_ word: String) {
         self.word = word
         result = .loading
+        let stripStress = LanguagePreferences.shared.resolvedNativeCode == "ru"
         DispatchQueue.global(qos: .userInitiated).async {
-            let lines = SystemDictionary.definition(for: word)
+            let lines = SystemDictionary.definition(for: word, stripStressMarks: stripStress)
             DispatchQueue.main.async {
                 guard self.word == word else { return }
                 self.result = lines.map(Result.found) ?? .notFound
@@ -215,6 +220,46 @@ struct DictionaryCardView: View {
 
     static let width: CGFloat = 400
     static let maxTextHeight: CGFloat = 220
+    /// Senses shown per part of speech in the compact view.
+    static let compactSensesPerPart = 6
+    @State private var showsFullEntry = false
+    @State private var hasTranslation = false
+
+    /// The glance view: the headword line, parts of speech and their first
+    /// senses with any trailing example cut off; no sub-senses, examples or
+    /// sections. A sense that is only examples shows its first example.
+    static func compactLines(_ lines: [DefinitionLine]) -> [DefinitionLine] {
+        var result: [DefinitionLine] = []
+        var sensesInPart = 0
+        var previousKind: DefinitionLine.Kind = .plain
+        for (index, line) in lines.enumerated() {
+            switch line.kind {
+            case .partOfSpeech:
+                result.append(line)
+                sensesInPart = 0
+            case .plain where index == 0 || previousKind == .partOfSpeech:
+                result.append(DefinitionLine(kind: .plain, text: index == 0 ? line.text : gloss(line.text)))
+            case .sense(let number) where sensesInPart < compactSensesPerPart:
+                var text = gloss(line.text)
+                if text.isEmpty, let example = lines.dropFirst(index + 1).first, example.kind == .example {
+                    text = String(example.text.dropFirst(2))   // "▸ "
+                }
+                result.append(DefinitionLine(kind: .sense(number: number), text: text))
+                sensesInPart += 1
+            default:
+                break
+            }
+            previousKind = line.kind
+        }
+        return result
+    }
+
+    /// The definition without the example that follows the colon.
+    private static func gloss(_ text: String) -> String {
+        var text = text
+        if let colon = text.range(of: ": ") { text = String(text[..<colon.lowerBound]) }
+        return text.trimmingCharacters(in: CharacterSet(charactersIn: " :;,"))
+    }
     private static let padding: CGFloat = 14
     private static let lineGap: CGFloat = 3
 
@@ -289,13 +334,18 @@ struct DictionaryCardView: View {
                 .help("Close (Esc)")
             }
 
+            if #available(macOS 15, *) {
+                WordTranslationLine(word: word) { hasTranslation = $0 != nil }
+            }
+
             switch lookup.result {
             case .loading:
                 ProgressView()
                     .controlSize(.small)
                     .colorInvert()
                     .frame(maxWidth: .infinity, minHeight: 40)
-            case .found(let lines):
+            case .found(let fullLines):
+                let lines = showsFullEntry ? fullLines : Self.compactLines(fullLines)
                 // The scroll view takes only what the entry needs, up to a cap.
                 ScrollView(.vertical) {
                     VStack(alignment: .leading, spacing: Self.lineGap) {
@@ -306,11 +356,21 @@ struct DictionaryCardView: View {
                     .textSelection(.enabled)
                 }
                 .frame(height: min(Self.height(of: lines), Self.maxTextHeight))
+                if lines.count < fullLines.count || showsFullEntry {
+                    Button(showsFullEntry ? "Short entry" : "Full entry with examples") {
+                        showsFullEntry.toggle()
+                    }
+                    .buttonStyle(.plain)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(.yellow.opacity(0.85))
+                }
             case .notFound:
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Not in your dictionaries.")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.92))
+                    if !hasTranslation {
+                        Text("Not in your dictionaries.")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.92))
+                    }
                     Text("Dictionaries for each language are turned on in Dictionary ▸ Settings; a bilingual one shows translations here.")
                         .font(.system(size: 11))
                         .foregroundColor(.white.opacity(0.6))

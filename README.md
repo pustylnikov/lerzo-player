@@ -8,7 +8,7 @@
 
 - 🚀 **Hardware-accelerated playback:** MKV, MP4, WebM, AVI and everything else mpv plays, decoded by VideoToolbox and rendered with `gpu-next` (Metal via MoltenVK), HDR output included.
 - 🪟 **One native window:** the video and the translucent SwiftUI interface share a single window.
-- 💬 **Interactive subtitles:** hovering highlights words; clicking a word opens its entry from the macOS dictionary (offline, no key — bilingual dictionaries enabled in Dictionary.app show translations); ⌥-click or the **“✨ AI”** button sends the line for a breakdown focused on that word.
+- 💬 **Interactive subtitles:** hovering highlights words; clicking a word shows a one-line translation from Apple's on-device engine (macOS 15+, after the system downloads the language pack) and its entry from the macOS dictionaries (offline, no key — a bilingual dictionary enabled in Dictionary.app gives translations; the compact view lists the senses, the full entry has the examples); ⌥-click or the **“✨ AI”** button sends the line for a breakdown focused on that word.
 - ⚡️ **Quick peek (`TAB`):** hold **`TAB`** to see the translation from the second subtitle track instantly; release it and the film goes on in the original language.
 - 📑 **Dual subtitles (`⇧TAB`):** keep the translation on screen together with the original; each line can sit at the top or the bottom of the picture.
 - ⏸ **Pause after each line (`P`) and loops (`L`, `⇧L`):** stop just before every line leaves the screen, repeat the current line until you have it, or mark an A–B loop by hand.

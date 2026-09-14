@@ -365,3 +365,5 @@
 "⌥ + click a word" = "⌥ + клик по слову";
 "AI breakdown of the line, focused on that word" = "Разбор реплики ИИ с упором на это слово";
 "Click a word: dictionary, offline" = "Клик по слову: словарь без сети";
+"Short entry" = "Кратко";
+"Full entry with examples" = "Вся статья с примерами";
