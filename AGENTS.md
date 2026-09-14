@@ -118,6 +118,9 @@ Swift-интерполяциях — одиночный `%`. Проверка: `
 
 `test_media/sample_dialogue.mkv` (2 дорожки субтитров, en/ru), `letterboxed.mkv`
 (чёрные полосы, ожидаемый crop `1280x720+60+100`), `hdr_sample.mp4`, `en.srt`, `ru.srt`.
+`test_media/sintel/` (в `.gitignore`, 1,2 ГБ) — официальный Sintel 1080p с
+download.blender.org (CC BY 3.0, встроенные en/ru субтитры) для скриншотов лендинга;
+hero снят на реплике 01:58 «You're a fool for traveling alone…» в окне 1440×900 pt.
 
 ## Документация
 
