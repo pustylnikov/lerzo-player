@@ -43,7 +43,7 @@ public struct SubtitlesLayer: View {
                 // so the stacks read edge-inwards: bottom-up at the bottom,
                 // top-down at the top.
                 VStack(spacing: 0) {
-                    blocks(at: .top)
+                    blocks(at: .top, availableWidth: geo.size.width)
                     Spacer(minLength: 0)
                 }
                 .padding(.top, inset(for: geo.size.height, clearing: topBarHeight))
@@ -53,7 +53,7 @@ public struct SubtitlesLayer: View {
 
                 VStack(spacing: 0) {
                     Spacer(minLength: 0)
-                    blocks(at: .bottom)
+                    blocks(at: .bottom, availableWidth: geo.size.width)
                 }
                 .padding(.bottom, inset(for: geo.size.height, clearing: controlsBarHeight))
                 .animation(.easeInOut(duration: 0.2), value: controlsShown)
@@ -93,16 +93,16 @@ public struct SubtitlesLayer: View {
 
     /// The lines placed at that edge, ordered from the edge inwards.
     @ViewBuilder
-    private func blocks(at edge: SubtitleStyle.Position) -> some View {
+    private func blocks(at edge: SubtitleStyle.Position, availableWidth: CGFloat) -> some View {
         let original = style.originalPosition == edge
         let translation = style.translationPosition == edge
         VStack(spacing: 8) {
             if edge == .top {
-                if original { originalBlock }
+                if original { originalBlock(availableWidth: availableWidth) }
                 if translation { translationBlock }
             } else {
                 if translation { translationBlock }
-                if original { originalBlock }
+                if original { originalBlock(availableWidth: availableWidth) }
             }
         }
         .frame(maxWidth: .infinity)
@@ -158,7 +158,7 @@ public struct SubtitlesLayer: View {
     // MARK: - Original line (interactive words)
 
     @ViewBuilder
-    private var originalBlock: some View {
+    private func originalBlock(availableWidth: CGFloat) -> some View {
         if !player.subTextOnScreen.isEmpty {
             let lines = player.subTextOnScreen
                 .components(separatedBy: .newlines)
@@ -167,13 +167,17 @@ public struct SubtitlesLayer: View {
 
             VStack(alignment: .center, spacing: 4) {
                 ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
-                    let words = line.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
-                    WrappingHStack(words: words, horizontalSpacing: style.spaceWidth(size: primaryFontSize)) { word in
-                        subtitleWordView(for: word)
+                    let rows = wrappedWordRows(for: line, availableWidth: availableWidth)
+                    ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+                        HStack(spacing: style.spaceWidth(size: primaryFontSize)) {
+                            ForEach(Array(row.enumerated()), id: \.offset) { _, word in
+                                subtitleWordView(for: word)
+                            }
+                        }
                     }
-                    .id(wordHoverRevision)
                 }
             }
+            .id(wordHoverRevision)
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
             .background(subtitleBox)
@@ -228,6 +232,40 @@ public struct SubtitlesLayer: View {
     }
 
     private var primaryFontSize: CGFloat { CGFloat(player.subFontSize(forAreaHeight: areaHeight)) }
+
+    /// Split the line before SwiftUI measures the subtitle box. A custom
+    /// `Layout` can be offered an unconstrained width during measurement and
+    /// a smaller width during placement; it then draws a second row outside
+    /// the one-row height that the parent already accepted. Concrete HStacks
+    /// make the measured box height and the rendered rows identical.
+    private func wrappedWordRows(for line: String, availableWidth: CGFloat) -> [[String]] {
+        let words = line.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
+        guard !words.isEmpty else { return [] }
+
+        // 32 pt inside the pill, 20 pt around it for the floating AI badge,
+        // and another 32 pt so glyphs and their shadow stay inside the window.
+        let maximumTextWidth = max(1, availableWidth - 84)
+        let font = style.nsFont(size: primaryFontSize)
+        let spacing = style.spaceWidth(size: primaryFontSize)
+        var rows: [[String]] = []
+        var current: [String] = []
+        var currentWidth: CGFloat = 0
+
+        for word in words {
+            let wordWidth = (word as NSString).size(withAttributes: [.font: font]).width
+            let proposedWidth = currentWidth + (current.isEmpty ? 0 : spacing) + wordWidth
+            if !current.isEmpty && proposedWidth > maximumTextWidth {
+                rows.append(current)
+                current = [word]
+                currentWidth = wordWidth
+            } else {
+                current.append(word)
+                currentWidth = proposedWidth
+            }
+        }
+        if !current.isEmpty { rows.append(current) }
+        return rows
+    }
 
     /// Shared box behind the primary subtitles and the translation line.
     private var subtitleBox: some View {
