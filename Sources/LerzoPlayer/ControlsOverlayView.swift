@@ -14,8 +14,6 @@ public struct ControlsOverlayView: View {
     // The centre play badge flashes on pause and fades, so a study session
     // with pause-after-each-line does not park a black disc on the actor's
     // face while the line is read. It stays at the end of the file.
-    @State private var showsPauseBadge = false
-    @State private var pauseBadgeTask: Task<Void, Never>?
 
     private var canControlPlayback: Bool {
         player.currentFileURL != nil && player.playbackState != .idle && player.playbackState != .loading
@@ -44,8 +42,11 @@ public struct ControlsOverlayView: View {
             
             Spacer()
             
-            // CENTER PLAY BIG ICON (a flash on pause, persistent when finished)
-            if (player.playbackState == .paused && showsPauseBadge) || player.playbackState == .finished {
+            // CENTER PLAY BIG ICON: only at the end of the file, where it says
+            // "over, click to start again". A pause needs no badge — the frozen
+            // picture and the bar's play button show it, and with pause-after-
+            // each-line a badge would flash on the actor's face on every line.
+            if player.playbackState == .finished {
                 Button(action: { player.togglePlayPause() }) {
                     ZStack {
                         Circle()
@@ -76,19 +77,7 @@ public struct ControlsOverlayView: View {
                 .opacity(canControlPlayback ? 1 : 0.42)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onChange(of: player.playbackState) { _, state in
-            pauseBadgeTask?.cancel()
-            guard state == .paused else {
-                showsPauseBadge = false
-                return
-            }
-            withAnimation(.easeOut(duration: 0.15)) { showsPauseBadge = true }
-            pauseBadgeTask = Task { @MainActor in
-                try? await Task.sleep(for: .seconds(1))
-                guard !Task.isCancelled else { return }
-                withAnimation(.easeIn(duration: 0.4)) { showsPauseBadge = false }
-            }
-        }
+        .animation(.easeOut(duration: 0.15), value: player.playbackState == .finished)
     }
     
     private var loopHelp: LocalizedStringKey {
