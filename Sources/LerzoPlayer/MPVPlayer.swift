@@ -1442,10 +1442,16 @@ public final class MPVPlayer: ObservableObject {
                     guard self.playbackState != .finished else { return }
                     self.playbackState = self.isMpvPaused ? .paused : .playing
                 }
-                // Delay track queries slightly to allow video reconfig without any mutex contention
+                // Delay track queries slightly to allow video reconfig without any mutex contention.
+                // Language preferences apply only to a freshly loaded file: PLAYBACK_RESTART
+                // also follows every seek and audio-filter change, and re-applying them there
+                // would override tracks the user picked by hand.
+                let isFileLoaded = ev.pointee.event_id == MPV_EVENT_FILE_LOADED
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
                     self?.refreshTrackList()
-                    self?.autoSelectTracksForLanguages()
+                    if isFileLoaded {
+                        self?.autoSelectTracksForLanguages()
+                    }
                 }
                 
             case MPV_EVENT_END_FILE:
