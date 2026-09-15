@@ -50,7 +50,6 @@ struct LerzoPlayerApp: App {
     var body: some Scene {
         Window("Lerzo Player", id: "main") {
             ContentView()
-                .frame(minWidth: 800, maxWidth: .infinity, minHeight: 480, maxHeight: .infinity)
                 .preferredColorScheme(.dark)
                 .onOpenURL { url in
                     MPVPlayer.shared.open(url: url)

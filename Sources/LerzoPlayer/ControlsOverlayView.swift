@@ -99,6 +99,8 @@ public struct ControlsOverlayView: View {
                     Text("Open")
                 }
                 .font(.system(size: 12, weight: .medium))
+                .lineLimit(1)
+                .fixedSize()
                 .foregroundColor(.white)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
@@ -109,7 +111,8 @@ public struct ControlsOverlayView: View {
             .keyboardShortcut("o", modifiers: .command)
             .help("Open a video file (Cmd + O)")
             
-            // Media Title
+            // Media Title: the one thing in the bar that gives way when the
+            // window is narrow, so the buttons never wrap.
             if !player.mediaTitle.isEmpty {
                 Text(player.mediaTitle)
                     .font(.system(size: 13, weight: .semibold))
@@ -117,6 +120,7 @@ public struct ControlsOverlayView: View {
                     .lineLimit(1)
                     .truncationMode(.middle)
                     .frame(maxWidth: 350, alignment: .leading)
+                    .layoutPriority(-1)
             }
 
             if player.isHDRContent {
@@ -143,6 +147,8 @@ public struct ControlsOverlayView: View {
                         .frame(minWidth: 12)
                 }
                 .font(.system(size: 12, weight: .semibold))
+                .lineLimit(1)
+                .fixedSize()
                 .foregroundColor(.white)
                 .frame(width: 48, height: 26)
                 .background(Color.white.opacity(0.15))
@@ -207,6 +213,8 @@ public struct ControlsOverlayView: View {
                     Text("Subtitles")
                 }
                 .font(.system(size: 12, weight: .medium))
+                .lineLimit(1)
+                .fixedSize()
                 .foregroundColor(.white)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
@@ -240,6 +248,8 @@ public struct ControlsOverlayView: View {
                     Text("Audio")
                 }
                 .font(.system(size: 12, weight: .medium))
+                .lineLimit(1)
+                .fixedSize()
                 .foregroundColor(.white)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
@@ -285,6 +295,8 @@ public struct ControlsOverlayView: View {
                     Text("Video")
                 }
                 .font(.system(size: 12, weight: .medium))
+                .lineLimit(1)
+                .fixedSize()
                 .foregroundColor(isVideoAdjusted ? .yellow : .white)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
@@ -307,6 +319,8 @@ public struct ControlsOverlayView: View {
                         .foregroundColor(.white)
                 }
                 .font(.system(size: 12, weight: .semibold))
+                .lineLimit(1)
+                .fixedSize()
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
                 .background(Color(red: 0.2, green: 0.2, blue: 0.25).opacity(0.85))

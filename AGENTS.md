@@ -60,6 +60,19 @@
   `Color.black.opacity(0.01)`, иначе клики проваливаются сквозь alpha-0 пиксели.
   Поведение окна mpv: `[.fullScreenAuxiliary, .moveToActiveSpace]`, никогда
   `.canJoinAllSpaces` (видео появлялось на других рабочих столах).
+- Форма окна (`MPVPlayer`: `updateVideoAspect`, `fitWindowToVideo`, `applyWindowAspectLock`):
+  при первом кадре файла (и смене crop/дорожки) окно подгоняется под пропорции картинки
+  с сохранением ширины. Настройка «Изменение размера окна»: по умолчанию окно держит
+  пропорции через `NSWindow.aspectRatio` (снимается в полном экране и без видео —
+  сбросом через `resizeIncrements`), в свободном режиме лишняя высота — полосы над и
+  под кадром (`osd-dimensions/mt|mb` → `videoTopMargin`/`videoBottomMargin`), куда
+  `SubtitlesLayer.bandInset` кладёт субтитры, если они помещаются; добавленные полосы
+  переносятся на следующий файл. Минимальный размер окна — `MPVPlayer.windowMinSize`
+  через `.frame(minWidth:minHeight:)` в `ContentView` (SwiftUI перезаписывает
+  `contentMinSize` на каждом проходе, так что задавать его напрямую бесполезно); он
+  согласован с пропорцией, иначе AppKit при замке выводит ширину из минимальной высоты.
+  `updateChildWindowFrame` на главном потоке работает синхронно: во время живого ресайза
+  отложенное обновление оставляло белую полосу вдоль растущих краёв.
 - `LerzoPlayerApp.swift` — `@main`, меню приложения (`CommandMenu`), `AppDelegate`.
 - `ContentView.swift` — корневой экран, приветствие, диалоги открытия, связка колбэков
   `KeyboardMonitor`. `ControlsOverlayView.swift` — панель управления и её меню.

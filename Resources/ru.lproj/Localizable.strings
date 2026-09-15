@@ -466,3 +466,11 @@
 "No cards selected for export." = "Не выбраны карточки для выгрузки.";
 "Could not create the Anki collection: %@" = "Не удалось создать коллекцию Anki: %@";
 "Could not create the Anki package." = "Не удалось создать пакет Anki.";
+
+/* Settings: window */
+"Window" = "Окно";
+"Resizing the window:" = "Изменение размера окна:";
+"Keep the video's proportions" = "По пропорциям видео";
+"Free" = "Свободно";
+"The window always shows the picture edge to edge; it takes the proportions of each video it opens." = "Окно всегда показывает кадр от края до края и принимает пропорции каждого открытого видео.";
+"Any size: extra height becomes bands above and below the picture, and subtitles move into them when they fit." = "Любой размер: лишняя высота становится полосами над и под кадром, и субтитры уходят в них, когда помещаются.";

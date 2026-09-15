@@ -468,3 +468,11 @@
 "No cards selected for export." = "No cards selected for export.";
 "Could not create the Anki collection: %@" = "Could not create the Anki collection: %@";
 "Could not create the Anki package." = "Could not create the Anki package.";
+
+/* Settings: window */
+"Window" = "Window";
+"Resizing the window:" = "Resizing the window:";
+"Keep the video's proportions" = "Keep the video's proportions";
+"Free" = "Free";
+"The window always shows the picture edge to edge; it takes the proportions of each video it opens." = "The window always shows the picture edge to edge; it takes the proportions of each video it opens.";
+"Any size: extra height becomes bands above and below the picture, and subtitles move into them when they fit." = "Any size: extra height becomes bands above and below the picture, and subtitles move into them when they fit.";

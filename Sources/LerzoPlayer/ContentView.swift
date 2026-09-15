@@ -160,7 +160,10 @@ public struct ContentView: View {
                 }
             }
         }
-        .frame(minWidth: 800, maxWidth: .infinity, minHeight: 480, maxHeight: .infinity)
+        // Taller for the welcome screen, low enough for a wide picture at the
+        // minimum width once a video is loaded (see MPVPlayer.windowMinSize).
+        .frame(minWidth: player.windowMinSize.width, maxWidth: .infinity,
+               minHeight: player.windowMinSize.height, maxHeight: .infinity)
         .onPreferenceChange(ControlsBarHeightKey.self) { height in
             // The preference resets to 0 when the overlay leaves the tree.
             if height > 0 { controlsBarHeight = height }

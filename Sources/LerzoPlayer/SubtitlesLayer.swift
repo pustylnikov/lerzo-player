@@ -22,6 +22,10 @@ public struct SubtitlesLayer: View {
     /// Height of the video area, which the font scale is applied to.
     @State private var areaHeight: CGFloat = MPVPlayer.subFontReferenceHeight
     @State private var isHoveringPill: Bool = false
+    /// Heights of the lines placed at each edge, to see whether they fit in
+    /// the letterbox band there.
+    @State private var topBlockHeight: CGFloat = 0
+    @State private var bottomBlockHeight: CGFloat = 0
     
     public init(showExplanation: Binding<Bool>,
                 controlsBarHeight: CGFloat = 0,
@@ -44,9 +48,15 @@ public struct SubtitlesLayer: View {
                 // top-down at the top.
                 VStack(spacing: 0) {
                     blocks(at: .top, availableWidth: geo.size.width)
+                        .background(GeometryReader { block in
+                            Color.clear
+                                .onAppear { topBlockHeight = block.size.height }
+                                .onChange(of: block.size.height) { _, height in topBlockHeight = height }
+                        })
                     Spacer(minLength: 0)
                 }
-                .padding(.top, inset(for: geo.size.height, clearing: topBarHeight))
+                .padding(.top, bandInset(band: player.videoTopMargin, block: topBlockHeight,
+                                         bar: topBarHeight, height: geo.size.height))
                 // Only the "lift while visible" mode ever changes the inset at
                 // runtime; window resizes must not animate.
                 .animation(.easeInOut(duration: 0.2), value: controlsShown)
@@ -54,8 +64,14 @@ public struct SubtitlesLayer: View {
                 VStack(spacing: 0) {
                     Spacer(minLength: 0)
                     blocks(at: .bottom, availableWidth: geo.size.width)
+                        .background(GeometryReader { block in
+                            Color.clear
+                                .onAppear { bottomBlockHeight = block.size.height }
+                                .onChange(of: block.size.height) { _, height in bottomBlockHeight = height }
+                        })
                 }
-                .padding(.bottom, inset(for: geo.size.height, clearing: controlsBarHeight))
+                .padding(.bottom, bandInset(band: player.videoBottomMargin, block: bottomBlockHeight,
+                                            bar: controlsBarHeight, height: geo.size.height))
                 .animation(.easeInOut(duration: 0.2), value: controlsShown)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -88,6 +104,26 @@ public struct SubtitlesLayer: View {
             return max(requested, clearance)
         case .whileControlsVisible:
             return controlsShown ? max(requested, clearance) : requested
+        }
+    }
+
+    /// The lines at an edge go into the letterbox band there when they fit
+    /// (the window is taller than the picture, or the screen is): centred in
+    /// it, off the picture. Otherwise the usual inset. The bar at that edge
+    /// is kept clear the same way in both cases.
+    private func bandInset(band: CGFloat, block: CGFloat, bar: CGFloat, height: CGFloat) -> CGFloat {
+        let gap = SubtitleStyle.controlsClearanceGap
+        guard block > 0, band >= block + 2 * gap else {
+            return inset(for: height, clearing: bar)
+        }
+        let centred = (band - block) / 2
+        guard bar > 0 else { return centred }
+        let clearance = bar + gap
+        switch style.controlsClearance {
+        case .always:
+            return max(centred, clearance)
+        case .whileControlsVisible:
+            return controlsShown ? max(centred, clearance) : centred
         }
     }
 

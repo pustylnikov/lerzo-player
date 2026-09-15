@@ -44,7 +44,38 @@ public final class MPVPlayer: ObservableObject {
     /// window and the overflowing edges are cut off.
     @Published public private(set) var fillsWindow: Bool = false
     /// mpv `video-crop` string ("WxH+X+Y"), empty when nothing is cropped.
-    @Published public private(set) var videoCrop: String = ""
+    @Published public private(set) var videoCrop: String = "" {
+        didSet { if videoCrop != oldValue { updateVideoAspect() } }
+    }
+    /// Display aspect of the picture as shown (after PAR and crop); nil
+    /// until a video is decoded.
+    @Published public private(set) var videoAspect: Double?
+    /// Letterbox bands above and below the picture, in points: the window
+    /// (or screen) is taller than the picture needs. Subtitles move into a
+    /// band when it is tall enough for them.
+    @Published public private(set) var videoTopMargin: CGFloat = 0
+    @Published public private(set) var videoBottomMargin: CGFloat = 0
+    public enum WindowResizeMode: String, CaseIterable, Identifiable {
+        /// The window keeps the picture's proportions while it is resized.
+        case keepAspect
+        /// Any size; extra height becomes bands above and below the
+        /// picture, where subtitles go.
+        case free
+        public var id: String { rawValue }
+    }
+    @Published public var windowResizeMode: WindowResizeMode = .keepAspect {
+        didSet {
+            UserDefaults.standard.set(windowResizeMode.rawValue, forKey: "LerzoPlayer.windowResizeMode")
+            if windowResizeMode == .keepAspect { fitWindowToVideo() }
+            applyWindowAspectLock()
+        }
+    }
+    /// Raw `video-params` for `updateVideoAspect`.
+    private var rawAspect: Double = 0
+    private var rawSize = (w: 0, h: 0)
+    /// The aspect the window was last sized for, to carry the user's extra
+    /// height (a subtitle band) over to the next video.
+    private var lastFittedAspect: Double?
     public static let zoomRange = 0.5...4.0         // as a scale: 50 % … 400 %
     /// One key press changes the scale by this many percentage points.
     public static let zoomStep = 0.02
@@ -294,6 +325,10 @@ public final class MPVPlayer: ObservableObject {
         if let saved = UserDefaults.standard.object(forKey: "LerzoPlayer.hdrOutputEnabled") as? Bool {
             self.hdrOutputEnabled = saved
         }
+        if let raw = UserDefaults.standard.string(forKey: "LerzoPlayer.windowResizeMode"),
+           let mode = WindowResizeMode(rawValue: raw) {
+            self.windowResizeMode = mode
+        }
         if let saved = UserDefaults.standard.object(forKey: "LerzoPlayer.boostDialogue") as? Bool {
             self.boostDialogue = saved
         }
@@ -315,6 +350,7 @@ public final class MPVPlayer: ObservableObject {
         self.targetView = view
         let screen = view.window?.screen ?? NSScreen.main
         self.displaySupportsHDR = (screen?.maximumPotentialExtendedDynamicRangeColorComponentValue ?? 1) > 1
+        applyWindowAspectLock()
         if self.mpv == nil {
             setupMPV()
             NSWorkspace.shared.notificationCenter.addObserver(
@@ -457,6 +493,11 @@ public final class MPVPlayer: ObservableObject {
         mpv_observe_property(handle, 21, "video-pan-y", MPV_FORMAT_DOUBLE)
         mpv_observe_property(handle, 22, "panscan", MPV_FORMAT_DOUBLE)
         mpv_observe_property(handle, 23, "video-crop", MPV_FORMAT_STRING)
+        mpv_observe_property(handle, 24, "video-params/aspect", MPV_FORMAT_DOUBLE)
+        mpv_observe_property(handle, 25, "video-params/w", MPV_FORMAT_INT64)
+        mpv_observe_property(handle, 26, "video-params/h", MPV_FORMAT_INT64)
+        mpv_observe_property(handle, 27, "osd-dimensions/mb", MPV_FORMAT_INT64)
+        mpv_observe_property(handle, 28, "osd-dimensions/mt", MPV_FORMAT_INT64)
     }
     
     // MARK: - Asynchronous Command Helper (Deadlock-free!)
@@ -562,7 +603,10 @@ public final class MPVPlayer: ObservableObject {
     }
     
     public func updateChildWindowFrame() {
-        DispatchQueue.main.async { [weak self] in
+        // Synchronous on the main thread: during a live resize the parent's
+        // didResize arrives inside the drag, and a deferred child update
+        // leaves a strip of bare window along the growing edges for a frame.
+        let apply = { [weak self] in
             guard let self = self,
                   let target = self.targetView,
                   let parent = target.window,
@@ -606,6 +650,11 @@ public final class MPVPlayer: ObservableObject {
                     child.order(.below, relativeTo: parent.windowNumber)
                 }
             }
+        }
+        if Thread.isMainThread {
+            apply()
+        } else {
+            DispatchQueue.main.async(execute: apply)
         }
     }
 
@@ -685,6 +734,8 @@ public final class MPVPlayer: ObservableObject {
     private func updateEmbeddedWindowOrdering(_ child: NSWindow, in parent: NSWindow) {
         let isAttached = parent.childWindows?.contains(child) ?? false
 
+        applyWindowAspectLock()
+
         if parent.styleMask.contains(.fullScreen) {
             // autoHide (not hide): the menu bar and Dock stay out of the way but
             // slide in when the cursor reaches the screen edge, like any native
@@ -758,6 +809,138 @@ public final class MPVPlayer: ObservableObject {
         for layer in [window.contentView?.layer, targetView?.layer].compactMap({ $0 })
         where layer.wantsExtendedDynamicRangeContent != wantsEDR {
             layer.wantsExtendedDynamicRangeContent = wantsEDR
+        }
+    }
+
+    // MARK: - Window shape
+
+    /// Recomputes `videoAspect` from `video-params` and the crop, and fits
+    /// the window when it changes.
+    private func updateVideoAspect() {
+        guard rawAspect > 0, rawSize.w > 0, rawSize.h > 0 else {
+            if videoAspect != nil {
+                videoAspect = nil
+                applyWindowAspectLock()
+            }
+            return
+        }
+        var aspect = rawAspect
+        if let crop = Self.parseCrop(videoCrop) {
+            // The crop is in source pixels; keep the source's pixel aspect.
+            aspect = rawAspect * (Double(crop.width) / Double(crop.height)) / (Double(rawSize.w) / Double(rawSize.h))
+        }
+        guard let current = videoAspect, abs(current - aspect) / aspect < 0.005 else {
+            videoAspect = aspect
+            fitWindowToVideo()
+            return
+        }
+    }
+
+    /// "WxH+X+Y" → (width, height).
+    private static func parseCrop(_ crop: String) -> (width: Int, height: Int)? {
+        guard let size = crop.split(separator: "+").first else { return nil }
+        let parts = size.split(separator: "x").compactMap { Int($0) }
+        guard parts.count == 2, parts[0] > 0, parts[1] > 0 else { return nil }
+        return (parts[0], parts[1])
+    }
+
+    /// Sizes the window to the picture: same width, height for the aspect,
+    /// keeping any height the user had added under the previous picture (a
+    /// subtitle band) and staying on screen. The window keeps its top-left.
+    private func fitWindowToVideo() {
+        guard let aspect = videoAspect, aspect > 0,
+              let window = targetView?.window,
+              !window.styleMask.contains(.fullScreen), !isExitingFullscreen else { return }
+        defer { lastFittedAspect = aspect }
+
+        // The picture covers the whole frame (full-size content view), so
+        // the aspect applies to frame sizes; the minimum sizes are content
+        // sizes and exclude the title bar.
+        let frame = window.frame
+        let chrome = frame.height - window.contentRect(forFrameRect: frame).height
+        let minWidth = window.contentMinSize.width
+        let minHeight = window.contentMinSize.height + chrome
+        let extra = windowResizeMode == .free
+            ? (lastFittedAspect.map { max(0, frame.height - frame.width / $0) } ?? 0)
+            : 0
+
+        var width = frame.width
+        var height = width / aspect + extra
+        // Too small for the minimum size: grow the other side rather than
+        // leaving a bar, then cap to the screen.
+        if height < minHeight {
+            height = minHeight
+            width = (height - extra) * aspect
+        }
+        if width < minWidth {
+            width = minWidth
+            height = width / aspect + extra
+        }
+        if let visible = window.screen?.visibleFrame {
+            if width > visible.width {
+                width = visible.width
+                height = width / aspect + extra
+            }
+            if height > visible.height {
+                let band = min(extra, max(0, visible.height - width / aspect))
+                height = visible.height
+                width = (height - band) * aspect
+            }
+        }
+
+        var target = NSRect(x: frame.minX, y: frame.maxY - height, width: width, height: height)
+        if let visible = window.screen?.visibleFrame {
+            if target.maxX > visible.maxX { target.origin.x = visible.maxX - target.width }
+            if target.minX < visible.minX { target.origin.x = visible.minX }
+            if target.minY < visible.minY { target.origin.y = visible.minY }
+            if target.maxY > visible.maxY { target.origin.y = visible.maxY - target.height }
+        }
+        defer { applyWindowAspectLock() }
+        guard abs(target.width - frame.width) > 1 || abs(target.height - frame.height) > 1 else { return }
+        window.setFrame(target, display: true, animate: true)
+    }
+
+    /// Minimum size of the SwiftUI layout (`ContentView` applies it; the
+    /// window's own `contentMinSize` is overwritten by SwiftUI on every
+    /// layout pass). It must agree with the aspect lock: AppKit keeps one of
+    /// the two and derives the other, so a 16:9 lock with an 800×320
+    /// minimum let the window shrink to 569×320. The welcome screen needs
+    /// 800×480; with a video the width stays 800 unless a narrow picture
+    /// would make that too tall, then the width gives way. SwiftUI lays out
+    /// below the title bar while the picture covers the whole frame, so the
+    /// title bar height comes off the layout minimum.
+    @Published public private(set) var windowMinSize = NSSize(width: 800, height: 480)
+
+    private func updateWindowMinimumSize(for window: NSWindow) {
+        var size = NSSize(width: 800, height: 480)
+        if let aspect = videoAspect {
+            let titleBar = window.frame.height - window.contentLayoutRect.height
+            var frameHeight = max(320, (800 / aspect).rounded())
+            var width: CGFloat = 800
+            if frameHeight > 700 {
+                frameHeight = 700
+                width = (700 * aspect).rounded()
+            }
+            size = NSSize(width: width, height: frameHeight - titleBar)
+        }
+        if windowMinSize != size { windowMinSize = size }
+    }
+
+    /// In "keep proportions" mode the window can only be resized along the
+    /// picture's aspect (AppKit does the constraining, zoom included); the
+    /// lock is lifted for free resizing, without a video, and in fullscreen.
+    private func applyWindowAspectLock() {
+        guard let window = targetView?.window else { return }
+        updateWindowMinimumSize(for: window)
+        let locked = windowResizeMode == .keepAspect && videoAspect != nil
+            && !window.styleMask.contains(.fullScreen) && !isExitingFullscreen
+        if locked, let aspect = videoAspect {
+            let ratio = NSSize(width: aspect, height: 1)
+            if window.aspectRatio != ratio { window.aspectRatio = ratio }
+        } else if window.aspectRatio != .zero {
+            // Resize increments and the aspect ratio share one slot; this
+            // is how the ratio is cleared.
+            window.resizeIncrements = NSSize(width: 1, height: 1)
         }
     }
 
@@ -1651,6 +1834,37 @@ public final class MPVPlayer: ObservableObject {
                     case "video-pan-x": self.videoPanX = value
                     case "video-pan-y": self.videoPanY = value
                     default: self.fillsWindow = value > 0.5
+                    }
+                }
+            }
+
+        case "video-params/aspect", "video-params/w", "video-params/h":
+            // The three arrive as separate events; read them together here
+            // (off the main thread) so the window is never fitted to a
+            // half-updated pair.
+            guard let handle = mpv else { break }
+            var aspect = 0.0, w: Int64 = 0, h: Int64 = 0
+            mpv_get_property(handle, "video-params/aspect", MPV_FORMAT_DOUBLE, &aspect)
+            mpv_get_property(handle, "video-params/w", MPV_FORMAT_INT64, &w)
+            mpv_get_property(handle, "video-params/h", MPV_FORMAT_INT64, &h)
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                self.rawAspect = aspect
+                self.rawSize = (Int(w), Int(h))
+                self.updateVideoAspect()
+            }
+
+        case "osd-dimensions/mb", "osd-dimensions/mt":
+            if let data = prop.data {
+                let pixels = data.assumingMemoryBound(to: Int64.self).pointee
+                DispatchQueue.main.async { [weak self] in
+                    guard let self else { return }
+                    let scale = self.targetView?.window?.backingScaleFactor ?? 2
+                    let margin = max(0, CGFloat(pixels) / scale)
+                    if propName == "osd-dimensions/mb" {
+                        if margin != self.videoBottomMargin { self.videoBottomMargin = margin }
+                    } else if margin != self.videoTopMargin {
+                        self.videoTopMargin = margin
                     }
                 }
             }

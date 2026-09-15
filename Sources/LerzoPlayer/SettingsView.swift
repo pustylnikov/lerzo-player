@@ -473,6 +473,38 @@ public struct SettingsView: View {
                     .background(Color.white.opacity(0.04))
                     .cornerRadius(12)
 
+                    // SECTION 3c: WINDOW
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            Image(systemName: "macwindow")
+                                .foregroundColor(.yellow)
+                            Text("Window")
+                                .font(.system(size: 14, weight: .bold))
+                        }
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Text("Resizing the window:")
+                                    .font(.system(size: 12, weight: .medium))
+                                Spacer()
+                                Picker("", selection: $player.windowResizeMode) {
+                                    Text("Keep the video's proportions").tag(MPVPlayer.WindowResizeMode.keepAspect)
+                                    Text("Free").tag(MPVPlayer.WindowResizeMode.free)
+                                }
+                                .labelsHidden()
+                                .frame(maxWidth: 260, alignment: .trailing)
+                            }
+                            Text(player.windowResizeMode == .keepAspect
+                                 ? "The window always shows the picture edge to edge; it takes the proportions of each video it opens."
+                                 : "Any size: extra height becomes bands above and below the picture, and subtitles move into them when they fit.")
+                                .font(.system(size: 10))
+                                .foregroundColor(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    .padding(14)
+                    .background(Color.white.opacity(0.04))
+                    .cornerRadius(12)
+
                     // SECTION 4: SUBTITLES CUSTOMIZATION
                     VStack(alignment: .leading, spacing: 14) {
                         HStack {
