@@ -1224,17 +1224,76 @@ public final class MPVPlayer: ObservableObject {
         }
     }
 
-    /// The current frame as an image, for the Dock: the app window is
-    /// transparent over mpv's own window, so its miniaturized snapshot would
-    /// show nothing.
-    public func captureCurrentFrameImage(maxDimension: Int = 1024,
-                                         completion: @escaping (NSImage?) -> Void) {
-        guard let handle = mpv, currentFileURL != nil else { completion(nil); return }
+    /// A stand-in for the Dock's snapshot of the app window, which is
+    /// transparent once video plays in mpv's window underneath: the window's
+    /// shape with the current frame where it is actually shown (mpv's
+    /// `osd-dimensions` margins account for zoom, pan and crop), rounded
+    /// corners, and the app icon badge the Dock adds to real snapshots.
+    public func dockTileImage(completion: @escaping (NSImage?) -> Void) {
+        guard let handle = mpv, currentFileURL != nil,
+              let target = targetView, let window = target.window else { completion(nil); return }
+        let scale = window.backingScaleFactor
+        let canvas = window.contentView?.bounds.size ?? window.frame.size
+        let surface = target.convert(target.bounds, to: nil)
+        let radius = window.styleMask.contains(.fullScreen) ? 0 : windowCornerRadius(of: window)
+
         DispatchQueue.global(qos: .userInitiated).async {
-            let image = Self.grabRawFrame(handle).flatMap {
-                Self.cgImage(from: $0, maxDimension: maxDimension)
-            }.map { NSImage(cgImage: $0, size: NSSize(width: $0.width, height: $0.height)) }
-            DispatchQueue.main.async { completion(image) }
+            guard let frame = Self.grabRawFrame(handle),
+                  let picture = Self.cgImage(from: frame, maxDimension: 1024) else {
+                DispatchQueue.main.async { completion(nil) }
+                return
+            }
+            // Margins around the picture, in the VO's pixels.
+            let margins = ["ml", "mr", "mt", "mb"].map { side -> CGFloat in
+                var value: Int64 = 0
+                mpv_get_property(handle, "osd-dimensions/\(side)", MPV_FORMAT_INT64, &value)
+                return CGFloat(value) / scale
+            }
+            let (ml, mr, mt, mb) = (margins[0], margins[1], margins[2], margins[3])
+            let picRect = CGRect(x: surface.minX + ml, y: surface.minY + mb,
+                                 width: surface.width - ml - mr, height: surface.height - mt - mb)
+
+            // Rendered eagerly into a bitmap: the image crosses to the Dock
+            // process, which is not a place for lazy drawing handlers. The
+            // Dock fits the image into a square, so the window sits centred
+            // on a square transparent canvas to keep its proportions.
+            let px = { (v: CGFloat) in v * scale }
+            let side = px(max(canvas.width, canvas.height))
+            guard let context = CGContext(data: nil,
+                                          width: Int(side), height: Int(side),
+                                          bitsPerComponent: 8, bytesPerRow: 0,
+                                          space: CGColorSpaceCreateDeviceRGB(),
+                                          bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else {
+                DispatchQueue.main.async { completion(nil) }
+                return
+            }
+            let windowRect = CGRect(x: (side - px(canvas.width)) / 2, y: (side - px(canvas.height)) / 2,
+                                    width: px(canvas.width), height: px(canvas.height))
+            context.saveGState()
+            context.addPath(CGPath(roundedRect: windowRect, cornerWidth: px(radius), cornerHeight: px(radius), transform: nil))
+            context.clip()
+            context.setFillColor(CGColor.black)
+            context.fill(windowRect)
+            if picRect.width > 0, picRect.height > 0 {
+                context.interpolationQuality = .high
+                context.draw(picture, in: CGRect(x: windowRect.minX + px(picRect.minX),
+                                                 y: windowRect.minY + px(picRect.minY),
+                                                 width: px(picRect.width), height: px(picRect.height)))
+            }
+            context.restoreGState()
+            // The badge the Dock puts on its own snapshots: the app icon in
+            // the bottom-right corner, hanging a little over the edge.
+            let badge = px(canvas.height) * 0.45
+            if let icon = NSApp.applicationIconImage.cgImage(forProposedRect: nil, context: nil, hints: nil) {
+                context.draw(icon, in: CGRect(x: windowRect.maxX - badge, y: max(0, windowRect.minY - badge * 0.2),
+                                              width: badge, height: badge))
+            }
+            guard let composed = context.makeImage() else {
+                DispatchQueue.main.async { completion(nil) }
+                return
+            }
+            let tile = NSImage(cgImage: composed, size: NSSize(width: side / scale, height: side / scale))
+            DispatchQueue.main.async { completion(tile) }
         }
     }
 

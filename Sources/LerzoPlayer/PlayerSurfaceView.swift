@@ -117,7 +117,7 @@ public class DroppableNSView: NSView {
     /// video plays in mpv's window underneath; hand it the current frame.
     @objc private func windowWillMiniaturize(_ notification: Notification) {
         guard let win = window, MPVPlayer.shared.hasVideoSurface else { return }
-        MPVPlayer.shared.captureCurrentFrameImage { image in
+        MPVPlayer.shared.dockTileImage { image in
             if let image { win.miniwindowImage = image }
         }
     }
