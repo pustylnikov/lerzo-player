@@ -235,6 +235,11 @@ public final class MPVPlayer: ObservableObject {
     private var mpv: OpaquePointer?
     private var eventThread: Thread?
     private var isRunning: Bool = false
+    /// Blocking libmpv reads (track list) run here, never on the main thread:
+    /// mpv's macOS window backend dispatches synchronously onto the main
+    /// thread while it (re)configures the video output, and a main-thread
+    /// call waiting on the core at that moment deadlocks the app.
+    private let trackQueue = DispatchQueue(label: "LerzoPlayer.MPVTrackQueue")
     private var targetView: NSView?
     private var embedTimer: Timer?
     private var mpvChildWindow: NSWindow?
@@ -415,6 +420,8 @@ public final class MPVPlayer: ObservableObject {
             self.hasVideoSurface = false
         }
         isRunning = false
+        // Let an in-flight track read finish before the handle goes away.
+        trackQueue.sync {}
         if let handle = mpv {
             self.mpv = nil
             mpv_terminate_destroy(handle)
@@ -1448,9 +1455,10 @@ public final class MPVPlayer: ObservableObject {
                 // would override tracks the user picked by hand.
                 let isFileLoaded = ev.pointee.event_id == MPV_EVENT_FILE_LOADED
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
-                    self?.refreshTrackList()
-                    if isFileLoaded {
-                        self?.autoSelectTracksForLanguages()
+                    self?.refreshTrackList { [weak self] in
+                        if isFileLoaded {
+                            self?.autoSelectTracksForLanguages()
+                        }
                     }
                 }
                 
@@ -1670,18 +1678,38 @@ public final class MPVPlayer: ObservableObject {
     }
     
     // MARK: - Track Management
-    public func refreshTrackList() {
+
+    private struct TrackSnapshot {
+        var audios: [MediaTrack] = []
+        var subs: [MediaTrack] = []
+        var audioID: Int?
+        var primarySubID: Int?
+        var secondarySubID: Int?
+    }
+
+    /// Re-reads mpv's track list off the main thread and publishes it;
+    /// `completion` runs on the main thread once the new list is in place.
+    public func refreshTrackList(completion: (() -> Void)? = nil) {
         guard let handle = mpv else { return }
-        
+        trackQueue.async { [weak self] in
+            guard let self, self.isRunning else { return }
+            let snapshot = Self.readTracks(handle)
+            DispatchQueue.main.async {
+                self.apply(snapshot)
+                completion?()
+            }
+        }
+    }
+
+    private static func readTracks(_ handle: OpaquePointer) -> TrackSnapshot {
         var count: Int64 = 0
         mpv_get_property(handle, "track-list/count", MPV_FORMAT_INT64, &count)
-        
-        var newAudios: [MediaTrack] = []
-        var newSubs: [MediaTrack] = []
-        let selectedAudioID = currentTrackID(handle, property: "current-tracks/audio/id")
-        let selectedPrimarySubID = currentTrackID(handle, property: "current-tracks/sub/id")
-        let selectedSecondarySubID = currentTrackID(handle, property: "current-tracks/sub2/id")
-        
+
+        var snapshot = TrackSnapshot()
+        snapshot.audioID = currentTrackID(handle, property: "current-tracks/audio/id")
+        snapshot.primarySubID = currentTrackID(handle, property: "current-tracks/sub/id")
+        snapshot.secondarySubID = currentTrackID(handle, property: "current-tracks/sub2/id")
+
         for i in 0..<count {
             guard let typeStr = getTrackProp(handle, idx: i, prop: "type") else { continue }
             let idVal: Int64 = getTrackInt(handle, idx: i, prop: "id") ?? Int64(i + 1)
@@ -1693,36 +1721,39 @@ public final class MPVPlayer: ObservableObject {
             let isForced = getTrackFlag(handle, idx: i, prop: "forced")
             let ffIndex = getTrackInt(handle, idx: i, prop: "ff-index").map { Int($0) }
             let externalFilename = isExt ? getTrackProp(handle, idx: i, prop: "external-filename") : nil
-            
+
             if typeStr == "audio" {
-                let isCurrent = selectedAudioID == Int(idVal) || isSel
-                newAudios.append(MediaTrack(id: Int(idVal),
-                                            type: .audio,
-                                            title: title,
-                                            lang: lang,
-                                            isDefault: isDef,
-                                            isSelected: isCurrent,
-                                            isExternal: isExt))
+                let isCurrent = snapshot.audioID == Int(idVal) || isSel
+                snapshot.audios.append(MediaTrack(id: Int(idVal),
+                                                  type: .audio,
+                                                  title: title,
+                                                  lang: lang,
+                                                  isDefault: isDef,
+                                                  isSelected: isCurrent,
+                                                  isExternal: isExt))
             } else if typeStr == "sub" {
-                let isCurrent = selectedPrimarySubID == Int(idVal) || selectedSecondarySubID == Int(idVal) || isSel
-                newSubs.append(MediaTrack(id: Int(idVal),
-                                          type: .sub,
-                                          title: title,
-                                          lang: lang,
-                                          isDefault: isDef,
-                                          isSelected: isCurrent,
-                                          isExternal: isExt,
-                                          isForced: isForced,
-                                          ffIndex: ffIndex,
-                                          externalFilename: externalFilename))
+                let isCurrent = snapshot.primarySubID == Int(idVal) || snapshot.secondarySubID == Int(idVal) || isSel
+                snapshot.subs.append(MediaTrack(id: Int(idVal),
+                                                type: .sub,
+                                                title: title,
+                                                lang: lang,
+                                                isDefault: isDef,
+                                                isSelected: isCurrent,
+                                                isExternal: isExt,
+                                                isForced: isForced,
+                                                ffIndex: ffIndex,
+                                                externalFilename: externalFilename))
             }
         }
-        
-        self.audioTracks = newAudios
-        self.subtitleTracks = newSubs
-        self.currentAudioTrackId = selectedAudioID ?? newAudios.first(where: \.isSelected)?.id
-        self.currentPrimarySubId = selectedPrimarySubID
-        self.currentSecondarySubId = selectedSecondarySubID
+        return snapshot
+    }
+
+    private func apply(_ snapshot: TrackSnapshot) {
+        audioTracks = snapshot.audios
+        subtitleTracks = snapshot.subs
+        currentAudioTrackId = snapshot.audioID ?? snapshot.audios.first(where: \.isSelected)?.id
+        currentPrimarySubId = snapshot.primarySubID
+        currentSecondarySubId = snapshot.secondarySubID
         // The track list may have arrived after the selection did.
         if subtitleTimeline == nil {
             updateSubtitleTimeline()
@@ -1752,28 +1783,28 @@ public final class MPVPlayer: ObservableObject {
         }
     }
     
-    private func getTrackProp(_ handle: OpaquePointer, idx: Int64, prop: String) -> String? {
+    private static func getTrackProp(_ handle: OpaquePointer, idx: Int64, prop: String) -> String? {
         let key = "track-list/\(idx)/\(prop)"
         guard let cStr = mpv_get_property_string(handle, key) else { return nil }
         defer { mpv_free(cStr) }
         return String(cString: cStr)
     }
     
-    private func getTrackInt(_ handle: OpaquePointer, idx: Int64, prop: String) -> Int64? {
+    private static func getTrackInt(_ handle: OpaquePointer, idx: Int64, prop: String) -> Int64? {
         let key = "track-list/\(idx)/\(prop)"
         var val: Int64 = 0
         let status = mpv_get_property(handle, key, MPV_FORMAT_INT64, &val)
         return status >= 0 ? val : nil
     }
 
-    private func getTrackFlag(_ handle: OpaquePointer, idx: Int64, prop: String) -> Bool {
+    private static func getTrackFlag(_ handle: OpaquePointer, idx: Int64, prop: String) -> Bool {
         let key = "track-list/\(idx)/\(prop)"
         var value: Int32 = 0
         let status = mpv_get_property(handle, key, MPV_FORMAT_FLAG, &value)
         return status >= 0 && value != 0
     }
 
-    private func currentTrackID(_ handle: OpaquePointer, property: String) -> Int? {
+    private static func currentTrackID(_ handle: OpaquePointer, property: String) -> Int? {
         var value: Int64 = 0
         let status = mpv_get_property(handle, property, MPV_FORMAT_INT64, &value)
         return status >= 0 && value > 0 ? Int(value) : nil
