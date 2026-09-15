@@ -1224,6 +1224,20 @@ public final class MPVPlayer: ObservableObject {
         }
     }
 
+    /// The current frame as an image, for the Dock: the app window is
+    /// transparent over mpv's own window, so its miniaturized snapshot would
+    /// show nothing.
+    public func captureCurrentFrameImage(maxDimension: Int = 1024,
+                                         completion: @escaping (NSImage?) -> Void) {
+        guard let handle = mpv, currentFileURL != nil else { completion(nil); return }
+        DispatchQueue.global(qos: .userInitiated).async {
+            let image = Self.grabRawFrame(handle).flatMap {
+                Self.cgImage(from: $0, maxDimension: maxDimension)
+            }.map { NSImage(cgImage: $0, size: NSSize(width: $0.width, height: $0.height)) }
+            DispatchQueue.main.async { completion(image) }
+        }
+    }
+
     private struct RawFrame {
         let width: Int, height: Int, stride: Int, format: String
         let pixels: [UInt8]   // bgr0 / bgra, 4 bytes per pixel
@@ -1264,6 +1278,19 @@ public final class MPVPlayer: ObservableObject {
     }
 
     private static func jpegData(from frame: RawFrame, maxDimension: Int, quality: Double) -> Data? {
+        guard let image = cgImage(from: frame, maxDimension: maxDimension) else { return nil }
+        let result = NSMutableData()
+        guard let destination = CGImageDestinationCreateWithData(
+            result, "public.jpeg" as CFString, 1, nil
+        ) else { return nil }
+        let properties = [kCGImageDestinationLossyCompressionQuality: min(max(quality, 0), 1)] as CFDictionary
+        CGImageDestinationAddImage(destination, image, properties)
+        guard CGImageDestinationFinalize(destination) else { return nil }
+        return result as Data
+    }
+
+    /// The frame as an RGB image, scaled down to `maxDimension` on its longest side.
+    private static func cgImage(from frame: RawFrame, maxDimension: Int) -> CGImage? {
         let pixelCount = frame.width * frame.height
         var rgba = [UInt8](repeating: 255, count: pixelCount * 4)
         for y in 0..<frame.height {
@@ -1303,31 +1330,17 @@ public final class MPVPlayer: ObservableObject {
         let scale = longest > maxDimension ? CGFloat(maxDimension) / CGFloat(longest) : 1
         let width = max(1, Int((CGFloat(frame.width) * scale).rounded()))
         let height = max(1, Int((CGFloat(frame.height) * scale).rounded()))
-        let image: CGImage
-        if scale < 1 {
-            guard let context = CGContext(data: nil,
-                                          width: width,
-                                          height: height,
-                                          bitsPerComponent: 8,
-                                          bytesPerRow: width * 4,
-                                          space: colorSpace,
-                                          bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
-            context.interpolationQuality = .high
-            context.draw(source, in: CGRect(x: 0, y: 0, width: width, height: height))
-            guard let scaled = context.makeImage() else { return nil }
-            image = scaled
-        } else {
-            image = source
-        }
-
-        let result = NSMutableData()
-        guard let destination = CGImageDestinationCreateWithData(
-            result, "public.jpeg" as CFString, 1, nil
-        ) else { return nil }
-        let properties = [kCGImageDestinationLossyCompressionQuality: min(max(quality, 0), 1)] as CFDictionary
-        CGImageDestinationAddImage(destination, image, properties)
-        guard CGImageDestinationFinalize(destination) else { return nil }
-        return result as Data
+        guard scale < 1 else { return source }
+        guard let context = CGContext(data: nil,
+                                      width: width,
+                                      height: height,
+                                      bitsPerComponent: 8,
+                                      bytesPerRow: width * 4,
+                                      space: colorSpace,
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return nil }
+        context.interpolationQuality = .high
+        context.draw(source, in: CGRect(x: 0, y: 0, width: width, height: height))
+        return context.makeImage()
     }
 
     /// Bounding box of the non-black picture: a row or column counts as a

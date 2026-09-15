@@ -102,6 +102,10 @@ public class DroppableNSView: NSView {
         for name in notifs {
             NotificationCenter.default.addObserver(self, selector: #selector(windowGeometryChanged), name: name, object: win)
         }
+        NotificationCenter.default.addObserver(self, selector: #selector(windowWillMiniaturize),
+                                               name: NSWindow.willMiniaturizeNotification, object: win)
+        NotificationCenter.default.addObserver(self, selector: #selector(windowDidDeminiaturize),
+                                               name: NSWindow.didDeminiaturizeNotification, object: win)
         // Fires when display settings change, e.g. HDR toggled in System Settings.
         NotificationCenter.default.addObserver(self, selector: #selector(screenParametersChanged),
                                                name: NSApplication.didChangeScreenParametersNotification, object: nil)
@@ -109,6 +113,19 @@ public class DroppableNSView: NSView {
         MPVPlayer.shared.attach(view: self)
     }
     
+    /// The Dock shows a snapshot of this window, which is transparent once
+    /// video plays in mpv's window underneath; hand it the current frame.
+    @objc private func windowWillMiniaturize(_ notification: Notification) {
+        guard let win = window, MPVPlayer.shared.hasVideoSurface else { return }
+        MPVPlayer.shared.captureCurrentFrameImage { image in
+            if let image { win.miniwindowImage = image }
+        }
+    }
+
+    @objc private func windowDidDeminiaturize(_ notification: Notification) {
+        window?.miniwindowImage = nil
+    }
+
     @objc private func screenParametersChanged(_ notification: Notification) {
         MPVPlayer.shared.updateHDROutput()
     }
