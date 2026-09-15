@@ -1281,12 +1281,12 @@ public final class MPVPlayer: ObservableObject {
                                                  width: px(picRect.width), height: px(picRect.height)))
             }
             context.restoreGState()
-            // The badge the Dock puts on its own snapshots: the app icon in
-            // the bottom-right corner, hanging a little over the edge.
-            let badge = px(canvas.height) * 0.45
+            // The badge the Dock puts on its own snapshots: the app icon at a
+            // fixed share of the tile, in the tile's bottom-right corner, so
+            // it overhangs the window's edge the same way whatever its shape.
+            let badge = side * 0.4
             if let icon = NSApp.applicationIconImage.cgImage(forProposedRect: nil, context: nil, hints: nil) {
-                context.draw(icon, in: CGRect(x: windowRect.maxX - badge, y: max(0, windowRect.minY - badge * 0.2),
-                                              width: badge, height: badge))
+                context.draw(icon, in: CGRect(x: side - badge, y: 0, width: badge, height: badge))
             }
             guard let composed = context.makeImage() else {
                 DispatchQueue.main.async { completion(nil) }
