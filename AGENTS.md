@@ -159,4 +159,5 @@ hero снят на реплике 01:58 «You're a fool for traveling alone…»
 - Sparkle: https://sparkle-project.org/documentation/
 - Notarization: https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution
 
-Список оставшихся задач — в `TODO.md` (локальный файл автора, в git не входит).
+Список оставшихся задач — в `TODO.md`, пошаговая процедура релиза и деплоя лендинга —
+в `CLAUDE.local.md` (оба — локальные файлы автора, в git не входят).

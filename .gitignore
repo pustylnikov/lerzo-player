@@ -26,3 +26,6 @@ dist/
 TODO.md
 .claude/launch.json
 test_media/sintel/
+
+# Author's local notes for Claude Code
+CLAUDE.local.md
