@@ -317,6 +317,9 @@ public final class MPVPlayer: ObservableObject {
         self.displaySupportsHDR = (screen?.maximumPotentialExtendedDynamicRangeColorComponentValue ?? 1) > 1
         if self.mpv == nil {
             setupMPV()
+            NSWorkspace.shared.notificationCenter.addObserver(
+                self, selector: #selector(activeSpaceDidChange),
+                name: NSWorkspace.activeSpaceDidChangeNotification, object: nil)
         } else {
             attachMpvChildWindowIfNeeded()
         }
@@ -419,6 +422,7 @@ public final class MPVPlayer: ObservableObject {
             self.mpvChildWindow = nil
             self.hasVideoSurface = false
         }
+        NSWorkspace.shared.notificationCenter.removeObserver(self)
         isRunning = false
         // Let an in-flight track read finish before the handle goes away.
         trackQueue.sync {}
@@ -585,6 +589,9 @@ public final class MPVPlayer: ObservableObject {
             self.updateOverlayEDRFlag()
             let targetFrame = self.embeddedWindowFrame(for: parent)
 
+            // A child NSWindow is constrained to the parent's content layout rect
+            // in native fullscreen, which is 30 pt below the top of this display.
+            // Detach it there and keep it directly below the transparent overlay.
             self.updateEmbeddedWindowOrdering(child, in: parent)
 
             if child.frame != targetFrame {
@@ -595,6 +602,9 @@ public final class MPVPlayer: ObservableObject {
                 // mpv's window can adjust a full frame back to visibleFrame. A
                 // direct origin update after resizing avoids that 30 pt shift.
                 child.setFrameOrigin(targetFrame.origin)
+                if parent.isOnActiveSpace {
+                    child.order(.below, relativeTo: parent.windowNumber)
+                }
             }
         }
     }
@@ -608,8 +618,8 @@ public final class MPVPlayer: ObservableObject {
             self.isExitingFullscreen = true
             NSApp.presentationOptions = []
 
-            // The child relationship must hold while AppKit animates the
-            // parent back to its saved windowed frame.
+            // Restore the child relationship before AppKit animates the parent
+            // back to its saved windowed frame.
             if !(parent.childWindows?.contains(child) ?? false) {
                 parent.addChildWindow(child, ordered: .below)
             }
@@ -662,14 +672,16 @@ public final class MPVPlayer: ObservableObject {
 
     /// The video window must never be on every desktop (`.canJoinAllSpaces`
     /// showed the picture on other Spaces, and everywhere in fullscreen).
-    /// It rides along as a child window, which also keeps it on the parent's
-    /// Space, so it needs no Space behaviour of its own.
-    private static let embeddedWindowBehavior: NSWindow.CollectionBehavior = [.fullScreenAuxiliary]
+    /// It rides along as a child window, and while detached in fullscreen
+    /// `.moveToActiveSpace` lets it be pulled onto the fullscreen Space.
+    private static let embeddedWindowBehavior: NSWindow.CollectionBehavior = [.fullScreenAuxiliary, .moveToActiveSpace]
 
-    /// The video stays a child window in fullscreen too. A window detached
-    /// there and ordered in by hand is left out of the Space-switch animation:
-    /// coming back to the fullscreen Space showed a black frame, then the
-    /// picture fading in. Being a child also keeps the overlay above it.
+    /// Fires when a Space switch has finished, in both directions; the
+    /// fullscreen video level depends on whether our Space is the active one.
+    @objc private func activeSpaceDidChange(_ notification: Notification) {
+        updateChildWindowFrame()
+    }
+
     private func updateEmbeddedWindowOrdering(_ child: NSWindow, in parent: NSWindow) {
         let isAttached = parent.childWindows?.contains(child) ?? false
 
@@ -681,15 +693,34 @@ public final class MPVPlayer: ObservableObject {
             // mpv may bring its own window forward after rendering starts. Keep
             // it on a stable lower level so the transparent SwiftUI window with
             // subtitles and controls always stays above it.
-            child.level = fullscreenVideoWindowLevel
+            // The fullscreen window is the bottom of its Space, so the video
+            // can only sit under the overlay at a level below normal — but a
+            // window down there is left out of the Space switch animation and
+            // faded in afterwards (a black frame on every return). While the
+            // user is on another Space the video therefore rides at the normal
+            // level, and drops back under the overlay once the Space is active.
+            child.level = parent.isOnActiveSpace ? fullscreenVideoWindowLevel : .normal
             parent.level = .normal
+            if isAttached {
+                parent.removeChildWindow(child)
+            }
+            // Only reorder while the fullscreen Space is the active one:
+            // `.moveToActiveSpace` would otherwise drag the video onto
+            // whatever desktop the user swiped to. A detached window left on
+            // another Space is ordered out and back in to relocate it.
+            if parent.isOnActiveSpace {
+                if !child.isOnActiveSpace {
+                    child.orderOut(nil)
+                }
+                child.order(.below, relativeTo: parent.windowNumber)
+            }
         } else {
             NSApp.presentationOptions = []
             child.level = .normal
             parent.level = .normal
-        }
-        if !isAttached {
-            parent.addChildWindow(child, ordered: .below)
+            if !isAttached {
+                parent.addChildWindow(child, ordered: .below)
+            }
         }
     }
     
