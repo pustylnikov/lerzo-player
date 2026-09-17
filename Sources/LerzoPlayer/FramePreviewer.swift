@@ -23,7 +23,10 @@ public final class FramePreviewer: ObservableObject {
         /// Where the frame actually is; behind the request for a keyframe.
         public let time: Double
         public let exact: Bool
-        public let image: CGImage
+        /// Nil when no frame could be taken (a file without video, a
+        /// decoder failure): the card goes dark rather than keeping the
+        /// frame of an earlier position.
+        public let image: CGImage?
         /// Display aspect of the source, for the box the image is drawn in.
         public let aspect: Double
     }
@@ -43,6 +46,12 @@ public final class FramePreviewer: ObservableObject {
     private var loadedURL: URL?
 
     private init() {}
+
+    /// Forgets the last frame, so a later hover starts from a dark card
+    /// instead of a frame from wherever the pointer was before.
+    public func clear() {
+        preview = nil
+    }
 
     /// Asks for the frame at `time` of `url`; an earlier request still
     /// waiting is replaced.
@@ -149,12 +158,13 @@ public final class FramePreviewer: ObservableObject {
     }
 
     private func publish(_ handle: OpaquePointer, url: URL, exact: Bool) {
-        guard let frame = MPVPlayer.grabRawFrame(handle),
-              let image = MPVPlayer.cgImage(from: frame, maxDimension: Int(max(Self.boxSize.width, Self.boxSize.height) * 2)) else { return }
+        let frame = MPVPlayer.grabRawFrame(handle)
+        let image = frame.flatMap { MPVPlayer.cgImage(from: $0, maxDimension: Int(max(Self.boxSize.width, Self.boxSize.height) * 2)) }
         var time = 0.0, aspect = 0.0
         mpv_get_property(handle, "time-pos", MPV_FORMAT_DOUBLE, &time)
         mpv_get_property(handle, "video-params/aspect", MPV_FORMAT_DOUBLE, &aspect)
-        if aspect <= 0 { aspect = Double(frame.width) / Double(frame.height) }
+        if aspect <= 0, let frame { aspect = Double(frame.width) / Double(frame.height) }
+        if aspect <= 0 { aspect = 16 / 9 }
         let preview = Preview(url: url, time: time, exact: exact, image: image, aspect: aspect)
         DispatchQueue.main.async { self.preview = preview }
     }

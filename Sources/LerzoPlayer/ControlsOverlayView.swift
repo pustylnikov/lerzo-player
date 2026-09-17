@@ -15,7 +15,7 @@ public struct ControlsOverlayView: View {
     @State private var seekHoverX: CGFloat? = nil
     /// The last position asked of the previewer: hover events repeat on
     /// every re-render of the bar, and each repeat would seek again.
-    @State private var previewRequestedTime: Double? = nil
+    @State private var previewRequested: (url: URL, time: Double)? = nil
     @State private var seekDraggingValue: Double? = nil
     // The centre play badge flashes on pause and fades, so a study session
     // with pause-after-each-line does not park a black disc on the actor's
@@ -457,6 +457,9 @@ public struct ControlsOverlayView: View {
                         case .ended:
                             withAnimation(.easeInOut(duration: 0.15)) { isHoveringSeeker = false }
                             seekHoverX = nil
+                            // A drag keeps the card while the pointer is off
+                            // the bar; otherwise the next hover starts afresh.
+                            if seekDraggingValue == nil { forgetPreview() }
                         }
                     }
                     .gesture(
@@ -476,6 +479,7 @@ public struct ControlsOverlayView: View {
                                     player.seek(to: target)
                                     seekDraggingValue = nil
                                 }
+                                if seekHoverX == nil { forgetPreview() }
                             }
                     )
                     // Frame preview above the pointer (or the thumb while
@@ -728,9 +732,14 @@ public struct ControlsOverlayView: View {
     private func requestPreview(atX x: CGFloat, width: CGFloat) {
         guard let url = player.currentFileURL, player.duration > 0, width > 0 else { return }
         let time = Self.previewTime(atX: x, width: width, duration: player.duration)
-        guard time != previewRequestedTime else { return }
-        previewRequestedTime = time
+        guard previewRequested?.url != url || previewRequested?.time != time else { return }
+        previewRequested = (url, time)
         previewer.request(url: url, time: time)
+    }
+
+    private func forgetPreview() {
+        previewRequested = nil
+        previewer.clear()
     }
 
     /// The frame at `time` with the line spoken there laid over it the way
