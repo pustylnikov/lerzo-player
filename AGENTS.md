@@ -117,6 +117,28 @@
   через опцию `start=` в `loadfile` (без мелькания первого кадра), OSD «Продолжение с …».
 - `SettingsView.swift` — лист настроек 640 pt; `LanguagePreferences.swift` — автовыбор
   дорожек по языкам; `TrackModels.swift` — модели дорожек.
+- HDR (`MPVPlayer`: `hdrOutputEnabled`, `displaySupportsHDR`, `updateHDROutput`,
+  `updateOverlayEDRFlag`; бейдж — в `ControlsOverlayView`): при включённой настройке и
+  экране с EDR (`maximumPotentialExtendedDynamicRangeColorComponentValue > 1`) ставится
+  `target-colorspace-hint=yes`; gpu-next/macvk через MoltenVK берёт swapchain
+  `A2R10G10B10 + HDR10_ST2084`, переводит Metal-слой в BT.2100 PQ с
+  `wantsExtendedDynamicRangeContent` и `CAEDRMetadata` HDR10 (пик 1000 нит — дефолт
+  libplacebo: дисплей mpv на macOS не опрашивает; подгонку под реальный headroom экрана
+  по этим метаданным делает сам macOS). В логе `VPLAYER_MPV_LOG` это строки `Picked
+  surface configuration … HDR10_ST2084_EXT`, `Metal layer colorspace changed:
+  ITUR_2100_PQ`, `Metal layer HDR active`. Проверено 2026-09-17 (M4, LG HDR 5K):
+  вывод попиксельно совпадает с `mpv --vo=gpu-next --target-colorspace-hint=yes` и в
+  пределах пары процентов — с QuickTime Player. IINA выглядит насыщеннее и контрастнее не
+  потому, что «больше HDR»: он рендерит в CAOpenGLLayer без EDR-метаданных и без
+  гамут-маппинга, и примари BT.2020 клиппятся в чистые 255/0/0. Обнулять `edrMetadata`
+  на слое mpv нельзя — без метаданных macOS показывает PQ пересвеченным и блёклым.
+  Эффект HDR на глаз слабый, когда монитор выставлен ярко (headroom LG при высокой
+  яркости SDR ≈ 1.3 из потенциальных 6) и когда контент сведён темно (у сериалов ATVP
+  пики ≈ 200 нит). Как сравнивать: `screencapture -x` и пиксели одной сцены в Lerzo,
+  голом mpv и QuickTime. ScreenCaptureKit с `captureDynamicRange` для этого не годится:
+  масштаб его значений разный у разных приложений и меняется во времени без изменений
+  на экране; `NSScreen.maximumExtendedDynamicRangeColorComponentValue` у внешнего
+  монитора — константа от яркости SDR, а не индикатор включившегося HDR.
 
 ## Локализация
 
