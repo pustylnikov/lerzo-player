@@ -246,6 +246,22 @@ public final class MPVPlayer: ObservableObject {
         didSet {
             UserDefaults.standard.set(hdrOutputEnabled, forKey: "LerzoPlayer.hdrOutputEnabled")
             updateHDROutput()
+            FramePreviewer.shared.clear()
+        }
+    }
+    public enum HDRPresentation: String, CaseIterable, Identifiable {
+        /// Preserve the source's absolute PQ luminance and scene metadata.
+        case accurate
+        /// Adapt the source to the display and allow up to one stop of
+        /// scene-aware expansion for deliberately dark, low-peak masters.
+        case bright
+        public var id: String { rawValue }
+    }
+    @Published public var hdrPresentation: HDRPresentation = .bright {
+        didSet {
+            UserDefaults.standard.set(hdrPresentation.rawValue, forKey: "LerzoPlayer.hdrPresentation")
+            updateHDROutput()
+            FramePreviewer.shared.clear()
         }
     }
     /// Whether the screen the player window is on can show EDR/HDR content.
@@ -331,6 +347,10 @@ public final class MPVPlayer: ObservableObject {
         }
         if let saved = UserDefaults.standard.object(forKey: "LerzoPlayer.hdrOutputEnabled") as? Bool {
             self.hdrOutputEnabled = saved
+        }
+        if let saved = UserDefaults.standard.string(forKey: "LerzoPlayer.hdrPresentation")
+            .flatMap(HDRPresentation.init(rawValue:)) {
+            self.hdrPresentation = saved
         }
         if let raw = UserDefaults.standard.string(forKey: "LerzoPlayer.windowResizeMode"),
            let mode = WindowResizeMode(rawValue: raw) {
@@ -429,6 +449,11 @@ public final class MPVPlayer: ObservableObject {
         // supports EDR. Without it every HDR file is tone-mapped to SDR.
         mpv_set_option_string(handle, "vo", "gpu-next")
         mpv_set_option_string(handle, "target-colorspace-hint", shouldOutputHDR ? "yes" : "no")
+        let brightHDR = shouldOutputHDR && hdrPresentation == .bright
+        mpv_set_option_string(handle, "target-colorspace-hint-mode", brightHDR ? "target" : "source-dynamic")
+        mpv_set_option_string(handle, "inverse-tone-mapping", brightHDR ? "yes" : "no")
+        mpv_set_option_string(handle, "tone-mapping-max-boost", brightHDR ? "2.0" : "1.0")
+        mpv_set_option_string(handle, "target-peak", brightHDR ? "\(brightHDRTargetPeak)" : "auto")
         
         // 2. High quality video & audio defaults
         mpv_set_option_string(handle, "keep-open", "yes")
@@ -793,6 +818,15 @@ public final class MPVPlayer: ObservableObject {
         hdrOutputEnabled && displaySupportsHDR
     }
 
+    /// mpv cannot query the physical peak of a macOS Vulkan swapchain and
+    /// otherwise assumes 10,000 nits. Convert AppKit's current EDR headroom
+    /// to mpv's 203-nit diffuse-white convention, with a conservative cap.
+    private var brightHDRTargetPeak: Int {
+        let screen = targetView?.window?.screen ?? NSScreen.main
+        let headroom = max(1, screen?.maximumExtendedDynamicRangeColorComponentValue ?? 1)
+        return min(1_000, max(203, Int((203 * headroom).rounded())))
+    }
+
     /// Re-evaluates EDR support for the screen the window is on and pushes
     /// the resulting hint to mpv. Call when the window changes screens.
     public func updateHDROutput() {
@@ -804,6 +838,11 @@ public final class MPVPlayer: ObservableObject {
                 self.displaySupportsHDR = supports
             }
             self.setPropertyAsync("target-colorspace-hint", self.shouldOutputHDR ? "yes" : "no")
+            let brightHDR = self.shouldOutputHDR && self.hdrPresentation == .bright
+            self.setPropertyAsync("target-colorspace-hint-mode", brightHDR ? "target" : "source-dynamic")
+            self.setPropertyAsync("inverse-tone-mapping", brightHDR ? "yes" : "no")
+            self.setPropertyAsync("tone-mapping-max-boost", brightHDR ? "2.0" : "1.0")
+            self.setPropertyAsync("target-peak", brightHDR ? "\(self.brightHDRTargetPeak)" : "auto")
             self.updateOverlayEDRFlag()
         }
         if Thread.isMainThread { apply() } else { DispatchQueue.main.async(execute: apply) }
@@ -1523,13 +1562,15 @@ public final class MPVPlayer: ObservableObject {
 
     struct RawFrame {
         let width: Int, height: Int, stride: Int, format: String
-        let pixels: [UInt8]   // bgr0 / bgra, 4 bytes per pixel
+        let pixels: [UInt8]   // bgr0 / bgra / rgba: 4 bytes per pixel; rgba64: 8
     }
 
-    /// `screenshot-raw video`: the current frame without subtitles or OSD.
-    static func grabRawFrame(_ handle: OpaquePointer) -> RawFrame? {
+    /// `screenshot-raw video`: the current frame without subtitles or OSD,
+    /// in 8-bit `bgr0` unless `format` asks for another of mpv's formats
+    /// (`rgba64` keeps the 16 bits of an HDR frame).
+    static func grabRawFrame(_ handle: OpaquePointer, format wanted: String = "bgr0") -> RawFrame? {
         var result = mpv_node()
-        let args: [String] = ["screenshot-raw", "video"]
+        let args: [String] = ["screenshot-raw", "video", wanted]
         var cArgs: [UnsafePointer<CChar>?] = args.map { UnsafePointer(strdup($0)) }
         cArgs.append(nil)
         defer { for ptr in cArgs where ptr != nil { free(UnsafeMutableRawPointer(mutating: ptr)) } }
@@ -1555,8 +1596,13 @@ public final class MPVPlayer: ObservableObject {
             default: break
             }
         }
-        guard w > 0, h > 0, stride >= w * 4, let pixels = bytes, pixels.count >= stride * h,
-              format == "bgr0" || format == "bgra" || format == "rgba" else { return nil }
+        let bytesPerPixel: Int
+        switch format {
+        case "bgr0", "bgra", "rgba": bytesPerPixel = 4
+        case "rgba64": bytesPerPixel = 8
+        default: return nil
+        }
+        guard w > 0, h > 0, stride >= w * bytesPerPixel, let pixels = bytes, pixels.count >= stride * h else { return nil }
         return RawFrame(width: w, height: h, stride: stride, format: format, pixels: pixels)
     }
 
@@ -1573,7 +1619,9 @@ public final class MPVPlayer: ObservableObject {
     }
 
     /// The frame as an RGB image, scaled down to `maxDimension` on its longest side.
-    static func cgImage(from frame: RawFrame, maxDimension: Int) -> CGImage? {
+    static func cgImage(from frame: RawFrame, maxDimension: Int,
+                        colorSpace: CGColorSpace = CGColorSpaceCreateDeviceRGB()) -> CGImage? {
+        guard frame.format != "rgba64" else { return nil }
         let pixelCount = frame.width * frame.height
         var rgba = [UInt8](repeating: 255, count: pixelCount * 4)
         for y in 0..<frame.height {
@@ -1592,7 +1640,6 @@ public final class MPVPlayer: ObservableObject {
             }
         }
 
-        let colorSpace = CGColorSpaceCreateDeviceRGB()
         let bitmapInfo = CGBitmapInfo.byteOrder32Big.union(
             CGBitmapInfo(rawValue: CGImageAlphaInfo.noneSkipLast.rawValue)
         )

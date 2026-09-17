@@ -402,22 +402,6 @@ public struct SettingsView: View {
                         .toggleStyle(.switch)
                         .controlSize(.small)
 
-                        Toggle(isOn: $player.hdrOutputEnabled) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Output HDR video in HDR")
-                                    .font(.system(size: 12, weight: .medium))
-                                Text(player.displaySupportsHDR
-                                     ? "This display supports HDR. When off, HDR video is tone-mapped to SDR."
-                                     : "This display does not support HDR — video is tone-mapped to SDR. The setting takes effect on an HDR display.")
-                                    .font(.system(size: 11))
-                                    .foregroundColor(.secondary)
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                        .toggleStyle(.switch)
-                        .controlSize(.small)
-
                     }
                     .padding(14)
                     .background(Color.white.opacity(0.04))
@@ -469,6 +453,53 @@ public struct SettingsView: View {
                                 .foregroundColor(.yellow)
                             Text("Picture")
                                 .font(.system(size: 14, weight: .bold))
+                        }
+
+                        Toggle(isOn: $player.hdrOutputEnabled) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Output HDR video in HDR")
+                                    .font(.system(size: 12, weight: .medium))
+                                Text(player.displaySupportsHDR
+                                     ? "This display supports HDR. When off, HDR video is tone-mapped to SDR."
+                                     : "This display does not support HDR — video is tone-mapped to SDR. The setting takes effect on an HDR display.")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .toggleStyle(.switch)
+                        .controlSize(.small)
+
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Text("HDR appearance:")
+                                    .font(.system(size: 12, weight: .medium))
+                                Spacer()
+                                Picker("", selection: $player.hdrPresentation) {
+                                    Text("Accurate").tag(MPVPlayer.HDRPresentation.accurate)
+                                    Text("Bright").tag(MPVPlayer.HDRPresentation.bright)
+                                }
+                                .labelsHidden()
+                                .pickerStyle(.segmented)
+                                .frame(width: 180, alignment: .trailing)
+                            }
+                            .frame(maxWidth: .infinity)
+                            Text(player.hdrPresentation == .accurate
+                                 ? "Preserves the source's scene brightness and dynamic metadata."
+                                 : "Expands dark, low-peak HDR scenes for a brighter image.")
+                                .font(.system(size: 10))
+                                .foregroundColor(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .disabled(!player.hdrOutputEnabled)
+                        .opacity(player.hdrOutputEnabled ? 1 : 0.5)
+
+                        Divider()
+
+                        HStack {
+                            Text("Picture adjustments")
+                                .font(.system(size: 12, weight: .semibold))
                             Spacer()
                             Button("Reset") { player.resetPictureAdjustments() }
                                 .controlSize(.small)
@@ -640,6 +671,7 @@ public struct SettingsView: View {
                             Spacer()
                             positionPicker($style.originalPosition)
                         }
+                        .frame(maxWidth: .infinity)
                         VStack(alignment: .leading, spacing: 6) {
                             HStack {
                                 Text("Translation:")
@@ -647,6 +679,7 @@ public struct SettingsView: View {
                                 Spacer()
                                 positionPicker($style.translationPosition)
                             }
+                            .frame(maxWidth: .infinity)
                             if style.originalPosition == style.translationPosition {
                                 Text("On the same edge the original stays next to the edge and the translation goes on the inner side, so the original never moves when the translation comes and goes.")
                                     .font(.system(size: 10))
@@ -897,7 +930,7 @@ public struct SettingsView: View {
         }
         .labelsHidden()
         .pickerStyle(.segmented)
-        .frame(width: 160)
+        .frame(width: 160, alignment: .trailing)
     }
 
     private func pictureSlider(_ title: LocalizedStringKey, value: Binding<Double>) -> some View {

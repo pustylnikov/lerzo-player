@@ -15,7 +15,7 @@ public struct ControlsOverlayView: View {
     @State private var seekHoverX: CGFloat? = nil
     /// The last position asked of the previewer: hover events repeat on
     /// every re-render of the bar, and each repeat would seek again.
-    @State private var previewRequested: (url: URL, time: Double)? = nil
+    @State private var previewRequested: (url: URL, time: Double, referenceHDR: Bool)? = nil
     @State private var seekDraggingValue: Double? = nil
     // The centre play badge flashes on pause and fades, so a study session
     // with pause-after-each-line does not park a black disc on the actor's
@@ -131,7 +131,7 @@ public struct ControlsOverlayView: View {
 
             if player.isHDRContent {
                 let passthrough = player.hdrOutputEnabled && player.displaySupportsHDR
-                Text("HDR")
+                Text(passthrough && player.hdrPresentation == .bright ? "HDR+" : "HDR")
                     .font(.system(size: 10, weight: .bold))
                     .foregroundColor(passthrough ? .black : .white.opacity(0.7))
                     .padding(.horizontal, 5)
@@ -140,7 +140,9 @@ public struct ControlsOverlayView: View {
                         RoundedRectangle(cornerRadius: 4)
                             .fill(passthrough ? Color.yellow : Color.white.opacity(0.15))
                     )
-                    .help(passthrough ? "HDR video is output in HDR" : "HDR video is tone-mapped to SDR (the display does not support HDR, or HDR output is disabled in Settings)")
+                    .help(passthrough
+                          ? (player.hdrPresentation == .bright ? "HDR video is output in bright HDR mode" : "HDR video is output in accurate HDR mode")
+                          : "HDR video is tone-mapped to SDR (the display does not support HDR, or HDR output is disabled in Settings)")
             }
             
             Spacer()
@@ -470,8 +472,9 @@ public struct ControlsOverlayView: View {
                                 if seekDraggingValue == nil {
                                     player.pause()
                                 }
-                                let fraction = max(0, min(1, value.location.x / geo.size.width))
-                                seekDraggingValue = fraction * player.duration
+                                // The same whole second the preview card
+                                // shows, so the jump lands on that frame.
+                                seekDraggingValue = Self.previewTime(atX: value.location.x, width: geo.size.width, duration: player.duration)
                                 requestPreview(atX: value.location.x, width: geo.size.width)
                             }
                             .onEnded { value in
@@ -725,6 +728,8 @@ public struct ControlsOverlayView: View {
     /// The card shows whole seconds, so it asks for the frame at the start
     /// of the second under the pointer: a pixel is a fraction of a second on
     /// a short file, and the card would flip between frames within one label.
+    /// Clicking the bar seeks to the same second, so the frame previewed is
+    /// the frame reached.
     private static func previewTime(atX x: CGFloat, width: CGFloat, duration: Double) -> Double {
         floor(max(0, min(1, x / width)) * duration)
     }
@@ -732,9 +737,15 @@ public struct ControlsOverlayView: View {
     private func requestPreview(atX x: CGFloat, width: CGFloat) {
         guard let url = player.currentFileURL, player.duration > 0, width > 0 else { return }
         let time = Self.previewTime(atX: x, width: width, duration: player.duration)
-        guard previewRequested?.url != url || previewRequested?.time != time else { return }
-        previewRequested = (url, time)
-        previewer.request(url: url, time: time)
+        let referenceHDR = player.isHDRContent
+            && player.hdrOutputEnabled
+            && player.displaySupportsHDR
+            && player.hdrPresentation == .accurate
+        guard previewRequested?.url != url
+                || previewRequested?.time != time
+                || previewRequested?.referenceHDR != referenceHDR else { return }
+        previewRequested = (url, time, referenceHDR)
+        previewer.request(url: url, time: time, referenceHDR: referenceHDR)
     }
 
     private func forgetPreview() {

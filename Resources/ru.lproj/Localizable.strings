@@ -133,6 +133,14 @@
 "Output HDR video in HDR" = "Выводить HDR-видео в HDR";
 "This display supports HDR. When off, HDR video is tone-mapped to SDR." = "Текущий дисплей поддерживает HDR. Если выключить, HDR-видео будет преобразовано в SDR.";
 "This display does not support HDR — video is tone-mapped to SDR. The setting takes effect on an HDR display." = "Текущий дисплей не поддерживает HDR — видео преобразуется в SDR. Настройка применится на HDR-дисплее.";
+"HDR appearance:" = "Отображение HDR:";
+"Accurate" = "Точный";
+"Bright" = "Яркий";
+"Preserves the source's scene brightness and dynamic metadata." = "Сохраняет яркость сцен и динамические метаданные источника.";
+"Expands dark, low-peak HDR scenes for a brighter image." = "Осветляет тёмные HDR-сцены с невысокими пиками.";
+"HDR video is output in accurate HDR mode" = "HDR-видео выводится в точном режиме";
+"HDR video is output in bright HDR mode" = "HDR-видео выводится в ярком режиме";
+"Picture adjustments" = "Настройки изображения";
 "Subtitle Appearance" = "Отображение субтитров";
 "Subtitle font size:" = "Размер шрифта субтитров:";
 "Relative to the window, so the text grows in fullscreen." = "Относительно окна, поэтому в полноэкранном режиме текст крупнее.";
