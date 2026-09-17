@@ -15,7 +15,8 @@
 - Зависимости из Homebrew: `mpv` (0.41, `vo=gpu-next`, Vulkan через MoltenVK) и его
   дерево, включая ffmpeg. Заголовки и библиотеки берутся из `/opt/homebrew`.
 - Dev-цикл: `./build_app.sh` → `build/Lerzo Player.app` (линкуется с Homebrew,
-  подписывается Developer ID). Запуск для проверки:
+  подписывается Developer ID с hardened runtime и теми же entitlements, что релиз, —
+  иначе ошибки вроде JIT-страниц LuaJIT всплывают только у пользователей). Запуск для проверки:
   `pkill -x LerzoPlayer; sleep 1; open -a "$PWD/build/Lerzo Player.app" "$PWD/test_media/sample_dialogue.mkv"`
 - Иконка: мастер `Resources/AppIcon.svg` (полноформатный квадрат 1024 в цветах Lerzo
   `#0A0A0B`/`#F2F2F4`), `swift scripts/make_icon.swift` вписывает его в сетку macOS

@@ -112,11 +112,22 @@ EOF
 # Sign with a real certificate when one is available. An ad-hoc signature
 # changes on every build, so the keychain would treat each build as a new
 # app and ask for the login password again whenever the Gemini key is read.
+# The hardened runtime and entitlements match scripts/release.sh, so the dev
+# build fails the same way a notarized one would (LuaJIT's executable pages
+# once killed only the release); the Homebrew dylibs load thanks to
+# disable-library-validation.
 IDENTITY="${SIGN_IDENTITY:-$(security find-identity -v -p codesigning 2>/dev/null \
     | grep -o '"Developer ID Application: [^"]*"' | head -1 | tr -d '"')}"
 if [ -n "$IDENTITY" ]; then
     echo "🔏 Signing with: $IDENTITY"
-    codesign --force --deep --sign "$IDENTITY" "$APP_BUNDLE"
+    SPARKLE_B="$APP_BUNDLE/Contents/Frameworks/Sparkle.framework/Versions/B"
+    for item in "$SPARKLE_B/XPCServices/Installer.xpc" "$SPARKLE_B/XPCServices/Downloader.xpc" \
+                "$SPARKLE_B/Autoupdate" "$SPARKLE_B/Updater.app" "$APP_BUNDLE/Contents/Frameworks/Sparkle.framework"; do
+        codesign --force --options runtime --sign "$IDENTITY" "$item" 2>&1 | grep -v "replacing existing signature" || true
+    done
+    codesign --force --options runtime --entitlements "$DIR/scripts/LerzoPlayer.entitlements" \
+        --sign "$IDENTITY" "$APP_BUNDLE"
+    codesign --verify --deep --strict "$APP_BUNDLE"
 else
     echo "⚠️  No Developer ID certificate found — leaving the ad-hoc signature"
 fi
