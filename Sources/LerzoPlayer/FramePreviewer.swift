@@ -122,7 +122,7 @@ public final class FramePreviewer: ObservableObject {
         mpv_set_option_string(handle, "cache", "no")
         mpv_set_option_string(handle, "demuxer-max-bytes", "16MiB")
         mpv_set_option_string(handle, "ytdl", "no")
-        mpv_set_option_string(handle, "load-scripts", "no")
+        MPVPlayer.disableScripts(handle)
         let w = Int(Self.boxSize.width * 2), h = Int(Self.boxSize.height * 2)
         mpv_set_option_string(handle, "vf", "scale=w=\(w):h=\(h):force_original_aspect_ratio=decrease:force_divisible_by=2")
         guard mpv_initialize(handle) >= 0 else {

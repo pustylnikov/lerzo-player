@@ -20,6 +20,18 @@ public final class MPVPlayer: ObservableObject {
     /// Arrow-key volume step, in percent. Fine enough to land on a
     /// comfortable level without overshooting.
     public static let volumeStep = 2.0
+
+    /// Keeps Lua out of an mpv instance. `load-scripts=no` alone is not
+    /// enough: the builtin scripts ignore it, and LuaJIT's generated code gets
+    /// the process killed under the hardened runtime of a signed release build
+    /// (the dev build is signed without it, so it never shows there). Every
+    /// `mpv_create` in the app must call this before `mpv_initialize`.
+    static func disableScripts(_ handle: OpaquePointer) {
+        mpv_set_option_string(handle, "load-scripts", "no")
+        for script in ["osd-console", "select", "positioning", "context-menu", "commands", "stats-overlay", "auto-profiles"] {
+            mpv_set_option_string(handle, "load-\(script)", "no")
+        }
+    }
     @Published public var isMuted: Bool = false
     /// Playback speed multiplier. Not persisted: slowing down is tied to a
     /// hard passage, not a preference, so every file starts at 1x.
@@ -416,13 +428,7 @@ public final class MPVPlayer: ObservableObject {
         // 1. Embedded options to prevent hook hanging and detached separate window
         mpv_set_option_string(handle, "hwdec", "auto")
         mpv_set_option_string(handle, "ytdl", "no")
-        mpv_set_option_string(handle, "load-scripts", "no")
-        // Builtin Lua scripts ignore load-scripts. They are useless here (the UI
-        // is ours) and LuaJIT's generated code gets the process killed under
-        // the hardened runtime of a signed release build.
-        for script in ["osd-console", "select", "positioning", "context-menu", "commands", "stats-overlay", "auto-profiles"] {
-            mpv_set_option_string(handle, "load-\(script)", "no")
-        }
+        Self.disableScripts(handle)
         mpv_set_option_string(handle, "input-media-keys", "no")
         mpv_set_option_string(handle, "input-default-bindings", "no")
         mpv_set_option_string(handle, "input-cursor", "no")
