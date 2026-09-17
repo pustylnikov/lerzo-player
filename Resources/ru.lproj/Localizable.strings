@@ -411,6 +411,9 @@
 "Save Line as Card" = "Сохранить реплику как карточку";
 "Save the current line as a card" = "Сохранить текущую реплику как карточку";
 "Line saved" = "Реплика сохранена";
+"Continue where you left off" = "Продолжать с места остановки";
+"A video reopens at the position where it was stopped. Videos watched to the end start from the beginning." = "Видео открывается с того места, где было остановлено. Досмотренные до конца видео начинаются сначала.";
+"Resumed from %@" = "Продолжение с %@";
 "No subtitle to save" = "Нет реплики для сохранения";
 "Cards" = "Карточки";
 "Cards..." = "Карточки...";

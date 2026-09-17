@@ -413,6 +413,9 @@
 "Save Line as Card" = "Save Line as Card";
 "Save the current line as a card" = "Save the current line as a card";
 "Line saved" = "Line saved";
+"Continue where you left off" = "Continue where you left off";
+"A video reopens at the position where it was stopped. Videos watched to the end start from the beginning." = "A video reopens at the position where it was stopped. Videos watched to the end start from the beginning.";
+"Resumed from %@" = "Resumed from %@";
 "No subtitle to save" = "No subtitle to save";
 "Cards" = "Cards";
 "Cards..." = "Cards...";

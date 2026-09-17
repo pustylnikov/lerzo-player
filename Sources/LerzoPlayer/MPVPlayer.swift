@@ -283,6 +283,13 @@ public final class MPVPlayer: ObservableObject {
     /// to the old position before the seek completes.
     private var isSeekInFlight = false
     private var seekSettleWorkItem: DispatchWorkItem?
+    /// Position the loading file resumes from; reported once it has loaded.
+    private var pendingResumeTime: Double?
+    /// `currentTime` at the last history write, so playback is recorded
+    /// every `historyRecordInterval` seconds (and right after a seek) and a
+    /// crash loses at most that much.
+    private var lastRecordedTime: Double?
+    private static let historyRecordInterval: Double = 30
 
     /// AppKit rounds normal windows, while mpv renders into a separate child window.
     /// Keep the two surfaces visually identical outside fullscreen. Used only when
@@ -336,6 +343,12 @@ public final class MPVPlayer: ObservableObject {
         self.contrast = defaults.double(forKey: "LerzoPlayer.picture.contrast")
         self.saturation = defaults.double(forKey: "LerzoPlayer.picture.saturation")
         self.gamma = defaults.double(forKey: "LerzoPlayer.picture.gamma")
+        NotificationCenter.default.addObserver(
+            forName: NSApplication.willTerminateNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            self?.rememberPlaybackPosition()
+            PlaybackHistory.shared.saveImmediately()
+        }
     }
     
     deinit {
@@ -974,6 +987,10 @@ public final class MPVPlayer: ObservableObject {
             self.playbackState = .idle
             return
         }
+        rememberPlaybackPosition()
+        lastRecordedTime = nil
+        // The old file's length must not be written against the new one.
+        self.duration = 0
         self.currentFileURL = url
         self.mediaTitle = url.deletingPathExtension().lastPathComponent
         self.playbackState = .loading
@@ -998,7 +1015,23 @@ public final class MPVPlayer: ObservableObject {
             setPropertyAsync(stream.property, "0")
         }
         resetVideoGeometry()
-        executeCommand(["loadfile", url.path, "replace"])
+        // Resuming through `start` lands on the remembered frame directly; a
+        // seek after loading would flash the first frame before it.
+        if let resume = PlaybackHistory.shared.resumePosition(for: url) {
+            pendingResumeTime = resume
+            executeCommand(["loadfile", url.path, "replace", "-1", "start=\(resume)"])
+        } else {
+            pendingResumeTime = nil
+            executeCommand(["loadfile", url.path, "replace"])
+        }
+    }
+
+    /// Writes the current file's position to the history: dropped when the
+    /// file is finished or barely started, so those reopen from the start.
+    private func rememberPlaybackPosition() {
+        guard let url = currentFileURL, playbackState != .idle, playbackState != .loading else { return }
+        lastRecordedTime = currentTime
+        PlaybackHistory.shared.record(url: url, position: currentTime, duration: duration)
     }
     
     public func togglePlayPause() {
@@ -1720,11 +1753,17 @@ public final class MPVPlayer: ObservableObject {
                 
             case MPV_EVENT_FILE_LOADED, MPV_EVENT_PLAYBACK_RESTART:
                 attachMpvChildWindowIfNeeded()
+                let isFileLoaded = ev.pointee.event_id == MPV_EVENT_FILE_LOADED
                 // PLAYBACK_RESTART also fires after every seek, so honour the
                 // actual pause flag instead of assuming playback resumed.
                 DispatchQueue.main.async { [weak self] in
                     guard let self else { return }
                     self.endSeek()
+                    if isFileLoaded, let resume = self.pendingResumeTime {
+                        self.pendingResumeTime = nil
+                        self.currentTime = resume
+                        OSDController.shared.show(.resumed(seconds: resume))
+                    }
                     guard self.playbackState != .finished else { return }
                     self.playbackState = self.isMpvPaused ? .paused : .playing
                 }
@@ -1732,7 +1771,6 @@ public final class MPVPlayer: ObservableObject {
                 // Language preferences apply only to a freshly loaded file: PLAYBACK_RESTART
                 // also follows every seek and audio-filter change, and re-applying them there
                 // would override tracks the user picked by hand.
-                let isFileLoaded = ev.pointee.event_id == MPV_EVENT_FILE_LOADED
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
                     self?.refreshTrackList { [weak self] in
                         if isFileLoaded {
@@ -1775,6 +1813,13 @@ public final class MPVPlayer: ObservableObject {
                         self.playbackState = .playing
                     }
                     self.checkLineEnd(at: time)
+                    if let last = self.lastRecordedTime {
+                        if abs(time - last) >= Self.historyRecordInterval {
+                            self.rememberPlaybackPosition()
+                        }
+                    } else {
+                        self.lastRecordedTime = time
+                    }
                 }
             }
             
@@ -1795,6 +1840,9 @@ public final class MPVPlayer: ObservableObject {
                     if self.playbackState != .idle && self.playbackState != .finished {
                         self.playbackState = isPaused ? .paused : .playing
                     }
+                    if isPaused {
+                        self.rememberPlaybackPosition()
+                    }
                     if !isPaused {
                         self.isResumingAfterPeek = false
                     }
@@ -1810,6 +1858,7 @@ public final class MPVPlayer: ObservableObject {
                     guard let self = self, self.playbackState != .idle else { return }
                     if atEOF {
                         self.playbackState = .finished
+                        self.rememberPlaybackPosition()
                     } else if self.playbackState == .finished {
                         self.playbackState = self.isMpvPaused ? .paused : .playing
                     }

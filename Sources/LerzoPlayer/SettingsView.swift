@@ -7,6 +7,7 @@ public struct SettingsView: View {
     @ObservedObject var style = SubtitleStyle.shared
     @ObservedObject var languages = LanguagePreferences.shared
     @ObservedObject var cards = CardStore.shared
+    @ObservedObject var history = PlaybackHistory.shared
     @ObservedObject var wordLookup = DictionaryLookup.shared
     @Binding var isOpen: Bool
 
@@ -359,6 +360,20 @@ public struct SettingsView: View {
                                 .foregroundColor(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
+
+                        Toggle(isOn: $history.resumesPlayback) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Continue where you left off")
+                                    .font(.system(size: 12, weight: .medium))
+                                Text("A video reopens at the position where it was stopped. Videos watched to the end start from the beginning.")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .toggleStyle(.switch)
+                        .controlSize(.small)
 
                         Toggle(isOn: $player.pauseWhilePeeking) {
                             VStack(alignment: .leading, spacing: 2) {
