@@ -623,7 +623,7 @@ public final class MPVPlayer: ObservableObject {
                     window.styleMask = [.borderless]
                     window.hasShadow = false
                     window.ignoresMouseEvents = true
-                    window.collectionBehavior = Self.embeddedWindowBehavior
+                    window.collectionBehavior = self.embeddedWindowBehavior(for: parentWindow)
 
                     self.configureEmbeddedWindow(window, in: parentWindow)
                     window.setFrame(self.embeddedWindowFrame(for: parentWindow), display: true)
@@ -658,8 +658,9 @@ public final class MPVPlayer: ObservableObject {
             if child.styleMask != [.borderless] {
                 child.styleMask = [.borderless]
             }
-            if child.collectionBehavior != Self.embeddedWindowBehavior {
-                child.collectionBehavior = Self.embeddedWindowBehavior
+            let behavior = self.embeddedWindowBehavior(for: parent)
+            if child.collectionBehavior != behavior {
+                child.collectionBehavior = behavior
             }
             child.ignoresMouseEvents = true
             child.hasShadow = false
@@ -759,9 +760,22 @@ public final class MPVPlayer: ObservableObject {
 
     /// The video window must never be on every desktop (`.canJoinAllSpaces`
     /// showed the picture on other Spaces, and everywhere in fullscreen).
-    /// It rides along as a child window, and while detached in fullscreen
-    /// `.moveToActiveSpace` lets it be pulled onto the fullscreen Space.
-    private static let embeddedWindowBehavior: NSWindow.CollectionBehavior = [.fullScreenAuxiliary, .moveToActiveSpace]
+    /// While it is a child in windowed mode, `.moveToActiveSpace` lets it follow
+    /// the parent. In fullscreen it is detached and must stay pinned to that
+    /// Space; otherwise clicking the Dock icon from another desktop pulls only
+    /// the mpv window there, leaving the SwiftUI overlay behind.
+    private static let windowedVideoWindowBehavior: NSWindow.CollectionBehavior = [
+        .fullScreenAuxiliary, .moveToActiveSpace
+    ]
+    private static let fullscreenVideoWindowBehavior: NSWindow.CollectionBehavior = [
+        .fullScreenAuxiliary
+    ]
+
+    private func embeddedWindowBehavior(for parent: NSWindow) -> NSWindow.CollectionBehavior {
+        parent.styleMask.contains(.fullScreen)
+            ? Self.fullscreenVideoWindowBehavior
+            : Self.windowedVideoWindowBehavior
+    }
 
     /// Fires when a Space switch has finished, in both directions; the
     /// fullscreen video level depends on whether our Space is the active one.
@@ -800,8 +814,12 @@ public final class MPVPlayer: ObservableObject {
             if parent.isOnActiveSpace {
                 if !child.isOnActiveSpace {
                     child.orderOut(nil)
+                    child.collectionBehavior = Self.windowedVideoWindowBehavior
+                    child.order(.below, relativeTo: parent.windowNumber)
+                    child.collectionBehavior = Self.fullscreenVideoWindowBehavior
+                } else {
+                    child.order(.below, relativeTo: parent.windowNumber)
                 }
-                child.order(.below, relativeTo: parent.windowNumber)
             }
         } else {
             NSApp.presentationOptions = []
