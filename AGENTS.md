@@ -80,6 +80,8 @@
   физическим keyCode (работают в любой раскладке). Голые клавиши — в
   `if flags.isEmpty { switch keyCode }`, Shift-аккорды — в `if flags == [.shift]`, и
   они должны идти раньше необёрнутых обработчиков стрелок. Ctrl/Option — системе.
+  Клавиши-переключатели (пробел, P, L, M, B, F…) перечислены в `oneShotBareKeys` /
+  `oneShotShiftKeys`: их автоповтор гасится, новую клавишу-переключатель добавлять туда.
 - `SubtitlesLayer.swift`, `SubtitleStyle.swift` — собственная отрисовка субтитров
   (mpv-шные скрыты прозрачным цветом), интерактивные слова, TAB-подглядывание перевода.
 - `SubtitleTimeline.swift` + `MatroskaSubtitleScanner.swift` — все реплики текущей

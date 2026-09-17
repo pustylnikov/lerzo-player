@@ -47,6 +47,34 @@ public final class KeyboardMonitor: ObservableObject {
         }
     }
     
+    /// Keys whose action is a toggle or a one-off. Holding one must fire it
+    /// once, not on every auto-repeat: a held Space kept flipping pause.
+    /// Stepping keys (seek, volume, speed, delays, zoom, line jumps) are
+    /// left repeating on purpose.
+    private static let oneShotBareKeys: Set<UInt16> = [
+        49, // Space
+        4,  // H
+        53, // Esc
+        48, // Tab
+        35, // P
+        37, // L
+        46, // M
+        29, // 0
+        11, // B
+        1,  // S
+        3,  // F
+        51, // Backspace
+    ]
+    private static let oneShotShiftKeys: Set<UInt16> = [48, 37] // ⇧Tab, ⇧L
+
+    private func isRepeatOfOneShotKey(_ event: NSEvent, flags: NSEvent.ModifierFlags) -> Bool {
+        guard event.isARepeat else { return false }
+        if flags.contains(.command) { return true }
+        if flags.isEmpty { return Self.oneShotBareKeys.contains(event.keyCode) }
+        if flags == [.shift] { return Self.oneShotShiftKeys.contains(event.keyCode) }
+        return false
+    }
+
     private func handleEvent(_ event: NSEvent) -> NSEvent? {
         // If a text field has focus (e.g. typing API key), do not intercept typing!
         if let responder = NSApp.keyWindow?.firstResponder, responder is NSTextView {
@@ -90,6 +118,10 @@ public final class KeyboardMonitor: ObservableObject {
         }
         
         if event.type == .keyDown {
+            if isRepeatOfOneShotKey(event, flags: flags) {
+                return nil
+            }
+
             // H (keyCode 4) -> toggle the shortcuts cheat sheet
             if event.keyCode == 4 && flags.isEmpty {
                 onToggleShortcutsRequested?()
