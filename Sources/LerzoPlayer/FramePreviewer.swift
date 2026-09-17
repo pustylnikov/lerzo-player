@@ -12,7 +12,10 @@ import Cmpv
 /// before `screenshot-raw` copies them out; an HDR frame comes out in 16 bits
 /// and is tone-mapped to sRGB here (`HDRThumbnail`). swscale could do that,
 /// but mpv rebuilds the filter graph on every seek and swscale then spends
-/// 300–500 ms on its colour LUT each time.
+/// 300–500 ms on its colour LUT each time. The copy must stay raw PQ: mpv
+/// prefers zimg for screenshots, and zimg converts the frame to sRGB by
+/// itself (a plain clip, no tone mapping), which then went through the PQ
+/// curve here a second time and came out garish. Hence `sws-allow-zimg=no`.
 ///
 /// Requests coalesce: the worker always takes the newest position, showing
 /// the nearest keyframe (tens of milliseconds) while the pointer sweeps and
@@ -123,6 +126,8 @@ public final class FramePreviewer: ObservableObject {
         mpv_set_option_string(handle, "demuxer-max-bytes", "16MiB")
         mpv_set_option_string(handle, "ytdl", "no")
         MPVPlayer.disableScripts(handle)
+        // Keep screenshot-raw colorimetrically raw; see the header comment.
+        mpv_set_option_string(handle, "sws-allow-zimg", "no")
         let w = Int(Self.boxSize.width * 2), h = Int(Self.boxSize.height * 2)
         mpv_set_option_string(handle, "vf", "scale=w=\(w):h=\(h):force_original_aspect_ratio=decrease:force_divisible_by=2")
         guard mpv_initialize(handle) >= 0 else {
