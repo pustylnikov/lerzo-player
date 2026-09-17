@@ -9,7 +9,13 @@ public struct ControlsOverlayView: View {
     @Binding var isShortcutsOpen: Bool
     var onOpenFile: () -> Void
     
+    @ObservedObject var previewer = FramePreviewer.shared
     @State private var isHoveringSeeker: Bool = false
+    /// Pointer position along the seek bar, in points from its left edge.
+    @State private var seekHoverX: CGFloat? = nil
+    /// The last position asked of the previewer: hover events repeat on
+    /// every re-render of the bar, and each repeat would seek again.
+    @State private var previewRequestedTime: Double? = nil
     @State private var seekDraggingValue: Double? = nil
     // The centre play badge flashes on pause and fades, so a study session
     // with pause-after-each-line does not park a black disc on the actor's
@@ -440,9 +446,17 @@ public struct ControlsOverlayView: View {
                     }
                     .frame(height: 16)
                     .contentShape(Rectangle())
-                    .onHover { isHover in
-                        withAnimation(.easeInOut(duration: 0.15)) {
-                            isHoveringSeeker = isHover
+                    .onContinuousHover { phase in
+                        switch phase {
+                        case .active(let point):
+                            if !isHoveringSeeker {
+                                withAnimation(.easeInOut(duration: 0.15)) { isHoveringSeeker = true }
+                            }
+                            seekHoverX = point.x
+                            requestPreview(atX: point.x, width: geo.size.width)
+                        case .ended:
+                            withAnimation(.easeInOut(duration: 0.15)) { isHoveringSeeker = false }
+                            seekHoverX = nil
                         }
                     }
                     .gesture(
@@ -455,6 +469,7 @@ public struct ControlsOverlayView: View {
                                 }
                                 let fraction = max(0, min(1, value.location.x / geo.size.width))
                                 seekDraggingValue = fraction * player.duration
+                                requestPreview(atX: value.location.x, width: geo.size.width)
                             }
                             .onEnded { value in
                                 if let target = seekDraggingValue {
@@ -463,6 +478,24 @@ public struct ControlsOverlayView: View {
                                 }
                             }
                     )
+                    // Frame preview above the pointer (or the thumb while
+                    // scrubbing), kept within the bar's width.
+                    .overlay(alignment: .bottom) {
+                        if let x = seekDraggingValue.map({ CGFloat(player.duration > 0 ? $0 / player.duration : 0) * geo.size.width }) ?? seekHoverX,
+                           player.duration > 0 {
+                            let time = Self.previewTime(atX: x, width: geo.size.width, duration: player.duration)
+                            let half = Self.previewWidth / 2
+                            let centre = max(half, min(geo.size.width - half, x))
+                            // The spacer stands on the bar, so the card
+                            // ends 8 pt above it whatever its height.
+                            VStack(spacing: 0) {
+                                seekPreview(at: time)
+                                Color.clear.frame(height: geo.size.height + 8)
+                            }
+                            .offset(x: centre - geo.size.width / 2)
+                            .allowsHitTesting(false)
+                        }
+                    }
                 }
                 .frame(height: 16)
                 
@@ -681,6 +714,77 @@ public struct ControlsOverlayView: View {
         )
     }
     
+    // MARK: - Seek preview
+
+    private static let previewWidth = FramePreviewer.boxSize.width + 16
+
+    /// The card shows whole seconds, so it asks for the frame at the start
+    /// of the second under the pointer: a pixel is a fraction of a second on
+    /// a short file, and the card would flip between frames within one label.
+    private static func previewTime(atX x: CGFloat, width: CGFloat, duration: Double) -> Double {
+        floor(max(0, min(1, x / width)) * duration)
+    }
+
+    private func requestPreview(atX x: CGFloat, width: CGFloat) {
+        guard let url = player.currentFileURL, player.duration > 0, width > 0 else { return }
+        let time = Self.previewTime(atX: x, width: width, duration: player.duration)
+        guard time != previewRequestedTime else { return }
+        previewRequestedTime = time
+        previewer.request(url: url, time: time)
+    }
+
+    /// The frame at `time` with the line spoken there laid over it the way
+    /// the player shows subtitles, and the timestamp. The box keeps the
+    /// source's proportions so an anamorphic or portrait picture is not
+    /// stretched; before the first frame arrives it is a dark card of the
+    /// player's aspect, so the card does not jump.
+    private func seekPreview(at time: Double) -> some View {
+        let preview = previewer.preview.flatMap { $0.url == player.currentFileURL ? $0 : nil }
+        let aspect = preview?.aspect ?? player.videoAspect ?? 16 / 9
+        let box = FramePreviewer.boxSize
+        let width = min(box.width, box.height * aspect)
+        let style = SubtitleStyle.shared
+        return VStack(spacing: 6) {
+            ZStack(alignment: .bottom) {
+                Color.black
+                if let image = preview?.image {
+                    Image(decorative: image, scale: 1)
+                        .resizable()
+                }
+                if let line = player.subtitleLine(at: time) {
+                    OutlinedText(line,
+                                 font: style.font(size: 9.5, weight: .semibold),
+                                 color: style.textColor,
+                                 outlineColor: style.outlineColor,
+                                 outlineWidth: 1)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(3)
+                        .shadow(color: .black.opacity(0.8), radius: 2, y: 1)
+                        .padding(.horizontal, 6)
+                        .padding(.bottom, 4)
+                }
+            }
+            .frame(width: width, height: width / aspect)
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.white.opacity(0.15), lineWidth: 0.5))
+
+            Text(formatTime(time, hours: player.duration >= 3600))
+                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                .foregroundColor(.white)
+        }
+        .padding(8)
+        .frame(width: Self.previewWidth)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color(red: 0.12, green: 0.12, blue: 0.14).opacity(0.92))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color.white.opacity(0.1), lineWidth: 0.5)
+                )
+        )
+        .shadow(color: .black.opacity(0.35), radius: 8, y: 3)
+    }
+
     /// Volume bar in the seek bar's style — a capsule with a yellow fill —
     /// so it keeps its colour in an inactive window and matches the row.
     private struct VolumeSlider: View {

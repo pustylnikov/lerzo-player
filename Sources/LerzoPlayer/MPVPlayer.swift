@@ -1122,6 +1122,14 @@ public final class MPVPlayer: ObservableObject {
         autoPauseTail = (clamped * 10).rounded() / 10
     }
 
+    /// The line on screen at `time` (video clock), for the seek bar's hover
+    /// preview. Nil between lines or while the track's map is still loading.
+    public func subtitleLine(at time: Double) -> String? {
+        guard let timeline = subtitleTimeline,
+              let index = timeline.index(containing: time - subDelay) else { return nil }
+        return timeline.cues[index].text
+    }
+
     /// Repeat the line on screen (or the last one shown) until turned off.
     /// W/E/R move the loop to the new line; any other seek ends it.
     public func toggleLineLoop() {
@@ -1480,13 +1488,13 @@ public final class MPVPlayer: ObservableObject {
         }
     }
 
-    private struct RawFrame {
+    struct RawFrame {
         let width: Int, height: Int, stride: Int, format: String
         let pixels: [UInt8]   // bgr0 / bgra, 4 bytes per pixel
     }
 
     /// `screenshot-raw video`: the current frame without subtitles or OSD.
-    private static func grabRawFrame(_ handle: OpaquePointer) -> RawFrame? {
+    static func grabRawFrame(_ handle: OpaquePointer) -> RawFrame? {
         var result = mpv_node()
         let args: [String] = ["screenshot-raw", "video"]
         var cArgs: [UnsafePointer<CChar>?] = args.map { UnsafePointer(strdup($0)) }
@@ -1532,7 +1540,7 @@ public final class MPVPlayer: ObservableObject {
     }
 
     /// The frame as an RGB image, scaled down to `maxDimension` on its longest side.
-    private static func cgImage(from frame: RawFrame, maxDimension: Int) -> CGImage? {
+    static func cgImage(from frame: RawFrame, maxDimension: Int) -> CGImage? {
         let pixelCount = frame.width * frame.height
         var rgba = [UInt8](repeating: 255, count: pixelCount * 4)
         for y in 0..<frame.height {
