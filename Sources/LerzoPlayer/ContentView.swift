@@ -19,6 +19,9 @@ public struct ContentView: View {
     /// so the subtitles do not drop when it goes away in the "always" mode.
     @State private var controlsBarHeight: CGFloat = 0
     @State private var topBarHeight: CGFloat = 0
+    /// File whose "no subtitles" prompt the user closed; the prompt comes back
+    /// for the next file that has no tracks either.
+    @State private var dismissedNoSubtitlesURL: URL? = nil
     
     public init() {}
     
@@ -94,8 +97,10 @@ public struct ContentView: View {
 
             // A loaded video with no subtitle tracks needs a different empty
             // state from the welcome screen. Keep it with the controls so it
-            // disappears during uninterrupted watching and returns on hover.
-            if showsVideo && player.subtitleTracks.isEmpty && controlsShown {
+            // disappears during uninterrupted watching and returns on hover,
+            // and let the user close it for good when the file simply has none.
+            let noSubtitlesDismissed = player.currentFileURL != nil && dismissedNoSubtitlesURL == player.currentFileURL
+            if showsVideo && player.subtitleTracks.isEmpty && controlsShown && !noSubtitlesDismissed {
                 VStack {
                     noSubtitlesView
                         .padding(.top, max(topBarHeight + 16, 72))
@@ -354,6 +359,22 @@ public struct ContentView: View {
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 13)
+        .overlay(alignment: .topTrailing) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    dismissedNoSubtitlesURL = player.currentFileURL
+                }
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundColor(.white.opacity(0.7))
+                    .frame(width: 22, height: 22)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help(Text("Close"))
+            .padding(4)
+        }
         .background(
             RoundedRectangle(cornerRadius: 12)
                 .fill(Color.black.opacity(0.82))
