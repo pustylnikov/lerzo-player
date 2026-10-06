@@ -50,8 +50,13 @@ public final class OSDController: ObservableObject {
 public struct OSDView: View {
     @ObservedObject var osd = OSDController.shared
     @ObservedObject var player = MPVPlayer.shared
+    /// Height of the top bar while it is shown (0 when hidden): the OSD sits
+    /// below it instead of under its buttons.
+    var topBarInset: CGFloat
 
-    public init() {}
+    public init(topBarInset: CGFloat = 0) {
+        self.topBarInset = topBarInset
+    }
 
     public var body: some View {
         VStack {
@@ -83,7 +88,11 @@ public struct OSDView: View {
             }
             Spacer()
         }
-        .padding(20)
+        // In line with the top bar's buttons when it is shown.
+        .padding(.horizontal, 16)
+        .padding(.bottom, 20)
+        .padding(.top, topBarInset > 0 ? topBarInset + 10 : 20)
+        .animation(.easeInOut(duration: 0.2), value: topBarInset)
         .allowsHitTesting(false)
     }
 

@@ -56,13 +56,14 @@ public struct ContentView: View {
                 .transition(.opacity)
             }
             
-            // Keyboard feedback (speed, volume, seek) in the top-left corner.
-            OSDView()
-
             // Controls are hidden while peeking the translation: the peek pause
             // would otherwise pop the controls and the big play button over the text.
             let controlsWanted = showControls || player.playbackState == .paused || player.playbackState == .finished || player.playbackState == .idle
             let controlsShown = controlsWanted && !player.isPeekingTranslation && !player.isResumingAfterPeek
+
+            // Keyboard feedback (speed, volume, seek) in the top-left corner,
+            // below the top bar while it is shown.
+            OSDView(topBarInset: controlsShown ? topBarHeight : 0)
 
             // Controls backdrop: under the subtitles so it never dims them.
             if controlsShown {
