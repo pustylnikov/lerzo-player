@@ -313,6 +313,9 @@ public final class MPVPlayer: ObservableObject {
     private var seekSettleWorkItem: DispatchWorkItem?
     /// Position the loading file resumes from; reported once it has loaded.
     private var pendingResumeTime: Double?
+    /// Settings remembered for the loading file (by path), applied once mpv
+    /// has read its tracks.
+    private var loadingFileSettings: (path: String, settings: FileSettings?)?
     /// `currentTime` at the last history write, so playback is recorded
     /// every `historyRecordInterval` seconds (and right after a seek) and a
     /// crash loses at most that much.
@@ -547,12 +550,26 @@ public final class MPVPlayer: ObservableObject {
     // MARK: - Asynchronous Command Helper (Deadlock-free!)
     private func executeCommand(_ args: [String]) {
         guard let handle = mpv else { return }
+        Self.withCArgs(args) { _ = mpv_command_async(handle, 0, &$0) }
+    }
+
+    /// Synchronous, unlike `executeCommand`; never on the main thread (see `trackQueue`).
+    @discardableResult
+    private static func runCommand(_ handle: OpaquePointer, _ args: [String]) -> Bool {
+        withCArgs(args) { mpv_command(handle, &$0) >= 0 }
+    }
+
+    /// Calls `body` with `args` as the NULL-terminated C array mpv's command API takes.
+    private static func withCArgs<Result>(_ args: [String],
+                                          _ body: (inout [UnsafePointer<CChar>?]) -> Result) -> Result {
         var cArgs: [UnsafePointer<CChar>?] = args.map { UnsafePointer(strdup($0)) }
         cArgs.append(nil)
-        _ = mpv_command_async(handle, 0, &cArgs)
-        for ptr in cArgs where ptr != nil {
-            free(UnsafeMutableRawPointer(mutating: ptr))
+        defer {
+            for ptr in cArgs where ptr != nil {
+                free(UnsafeMutableRawPointer(mutating: ptr))
+            }
         }
+        return body(&cArgs)
     }
     
     private func setPropertyAsync(_ name: String, _ val: String) {
@@ -1074,8 +1091,12 @@ public final class MPVPlayer: ObservableObject {
         
         setPropertyAsync("pause", "no")
         setPropertyAsync("speed", "1")
+        // Delays are global in mpv, so each file gets its own (or none) before it starts.
+        let settings = FileSettingsStore.shared.settings(for: url)
+        loadingFileSettings = (url.path, settings)
+        let delays = settings?.delays ?? [:]
         for stream in DelayStream.allCases {
-            setPropertyAsync(stream.property, "0")
+            setPropertyAsync(stream.property, String(format: "%.3f", delays[stream.property] ?? 0))
         }
         resetVideoGeometry()
         // Resuming through `start` lands on the remembered frame directly; a
@@ -1393,9 +1414,13 @@ public final class MPVPlayer: ObservableObject {
 
     public func setDelay(_ value: Double, of stream: DelayStream) {
         let clamped = min(max(value, Self.delayRange.lowerBound), Self.delayRange.upperBound)
-        // Snap to the step grid so repeated +/- presses do not drift (0.30000001).
-        let snapped = (clamped / Self.delayStep).rounded() * Self.delayStep
+        // Snap to the step grid so repeated +/- presses do not drift, then to
+        // milliseconds: 3 × 0.1 is 0.30000000000000004, which would be saved as is.
+        let snapped = ((clamped / Self.delayStep).rounded() * Self.delayStep * 1000).rounded() / 1000
         setPropertyAsync(stream.property, String(format: "%.3f", snapped))
+        if let url = currentFileURL {
+            FileSettingsStore.shared.update(url) { $0.setDelay(snapped, for: stream.property) }
+        }
     }
 
     public func adjustDelay(of stream: DelayStream, by delta: Double) {
@@ -1769,22 +1794,74 @@ public final class MPVPlayer: ObservableObject {
         }
     }
     
+    // MARK: - Tracks
+    /// A track the user can pick; `property` is mpv's selection property.
+    public enum TrackRole: CaseIterable {
+        case audio, primarySubtitle, secondarySubtitle
+
+        var property: String {
+            switch self {
+            case .audio: return "aid"
+            case .primarySubtitle: return "sid"
+            case .secondarySubtitle: return "secondary-sid"
+            }
+        }
+    }
+
+    /// The menu entry points: a choice made by hand is remembered for the file.
     public func setPrimarySubtitle(trackId: Int?) {
-        let val = trackId != nil ? "\(trackId!)" : "no"
-        setPropertyAsync("sid", val)
-        self.currentPrimarySubId = trackId
+        pickTrack(trackId, for: .primarySubtitle)
     }
-    
+
     public func setSecondarySubtitle(trackId: Int?) {
-        let val = trackId != nil ? "\(trackId!)" : "no"
-        setPropertyAsync("secondary-sid", val)
-        self.currentSecondarySubId = trackId
+        pickTrack(trackId, for: .secondarySubtitle)
     }
-    
+
     public func setAudioTrack(trackId: Int?) {
-        let val = trackId != nil ? "\(trackId!)" : "no"
-        setPropertyAsync("aid", val)
-        self.currentAudioTrackId = trackId
+        pickTrack(trackId, for: .audio)
+    }
+
+    /// Applies a choice made by hand and remembers it once mpv has taken it:
+    /// mpv refuses a track already shown in the other subtitle role, and then
+    /// the re-read list puts the menu back as it was.
+    private func pickTrack(_ trackId: Int?, for role: TrackRole) {
+        selectTrack(trackId, for: role)
+        guard let url = currentFileURL else { return }
+        // Read after the selection: libmpv runs requests in the order they come.
+        refreshTrackList { [weak self] in
+            guard let self, self.currentFileURL == url, self.currentTrackID(for: role) == trackId else { return }
+            self.rememberTrack(trackId, for: role)
+        }
+    }
+
+    private func selectTrack(_ trackId: Int?, for role: TrackRole) {
+        setPropertyAsync(role.property, trackId.map(String.init) ?? "no")
+        switch role {
+        case .audio: currentAudioTrackId = trackId
+        case .primarySubtitle: currentPrimarySubId = trackId
+        case .secondarySubtitle: currentSecondarySubId = trackId
+        }
+    }
+
+    private func currentTrackID(for role: TrackRole) -> Int? {
+        switch role {
+        case .audio: return currentAudioTrackId
+        case .primarySubtitle: return currentPrimarySubId
+        case .secondarySubtitle: return currentSecondarySubId
+        }
+    }
+
+    private func rememberTrack(_ trackId: Int?, for role: TrackRole) {
+        guard let url = currentFileURL else { return }
+        let choice: RememberedTrack
+        if let trackId {
+            let tracks = role == .audio ? audioTracks : subtitleTracks
+            guard let track = tracks.first(where: { $0.id == trackId }) else { return }
+            choice = RememberedTrack(track)
+        } else {
+            choice = .off
+        }
+        FileSettingsStore.shared.update(url) { $0.setTrack(choice, for: role.property) }
     }
     
     /// File extensions treated as subtitle files when opened or dropped.
@@ -1800,11 +1877,14 @@ public final class MPVPlayer: ObservableObject {
     }
 
     public func loadExternalSubtitle(fileURL: URL) {
-        guard currentFileURL != nil else { return }
+        guard let videoURL = currentFileURL else { return }
         _ = fileURL.startAccessingSecurityScopedResource()
-        executeCommand(["sub-add", fileURL.path, "cached", fileURL.lastPathComponent])
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-            self?.refreshTrackList()
+        // The file becomes the primary track, so that is the choice
+        // remembered along with the file itself, if mpv could load it.
+        refreshTrackList(addingSubtitles: [fileURL.path], select: true) { [weak self] added in
+            guard let self, !added.isEmpty, self.currentFileURL == videoURL else { return }
+            FileSettingsStore.shared.update(videoURL) { $0.addExternalSubtitle(fileURL.path) }
+            self.rememberTrack(self.currentPrimarySubId, for: .primarySubtitle)
         }
     }
     
@@ -1825,6 +1905,9 @@ public final class MPVPlayer: ObservableObject {
             case MPV_EVENT_FILE_LOADED, MPV_EVENT_PLAYBACK_RESTART:
                 attachMpvChildWindowIfNeeded()
                 let isFileLoaded = ev.pointee.event_id == MPV_EVENT_FILE_LOADED
+                // Which file this is: by the time the main thread looks, the
+                // user may already have asked for the next one.
+                let loadedPath = isFileLoaded ? Self.stringProperty(handle, "path") : nil
                 // PLAYBACK_RESTART also fires after every seek, so honour the
                 // actual pause flag instead of assuming playback resumed.
                 DispatchQueue.main.async { [weak self] in
@@ -1839,14 +1922,21 @@ public final class MPVPlayer: ObservableObject {
                     self.playbackState = self.isMpvPaused ? .paused : .playing
                 }
                 // Delay track queries slightly to allow video reconfig without any mutex contention.
-                // Language preferences apply only to a freshly loaded file: PLAYBACK_RESTART
-                // also follows every seek and audio-filter change, and re-applying them there
+                // Tracks are chosen only for a freshly loaded file: PLAYBACK_RESTART also
+                // follows every seek and audio-filter change, and choosing them there
                 // would override tracks the user picked by hand.
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
-                    self?.refreshTrackList { [weak self] in
-                        if isFileLoaded {
-                            self?.autoSelectTracksForLanguages()
-                        }
+                    guard let self else { return }
+                    // A file already being replaced gets no choices: the next
+                    // FILE_LOADED belongs to the one the user opened.
+                    guard isFileLoaded, let loadedPath, loadedPath == self.currentFileURL?.path else {
+                        self.refreshTrackList()
+                        return
+                    }
+                    let settings = self.loadingFileSettings?.path == loadedPath ? self.loadingFileSettings?.settings : nil
+                    self.loadingFileSettings = nil
+                    self.refreshTrackList(addingSubtitles: settings?.externalSubtitles ?? [], select: false) { [weak self] _ in
+                        self?.selectInitialTracks(remembered: settings?.tracks ?? [:])
                     }
                 }
                 
@@ -2120,13 +2210,36 @@ public final class MPVPlayer: ObservableObject {
     /// Re-reads mpv's track list off the main thread and publishes it;
     /// `completion` runs on the main thread once the new list is in place.
     public func refreshTrackList(completion: (() -> Void)? = nil) {
+        refreshTrackList(addingSubtitles: [], select: false) { _ in completion?() }
+    }
+
+    /// The same, adding subtitle files first. With `select` each becomes the
+    /// primary track (an already loaded copy is selected rather than loaded
+    /// twice); without it, missing and already loaded files (by `sub-auto`,
+    /// say) are skipped. `completion` gets the files mpv took.
+    private func refreshTrackList(addingSubtitles subtitles: [String], select: Bool,
+                                  completion: @escaping (_ added: [String]) -> Void) {
         guard let handle = mpv else { return }
         trackQueue.async { [weak self] in
             guard let self, self.isRunning else { return }
-            let snapshot = Self.readTracks(handle)
+            var snapshot = Self.readTracks(handle)
+            var added: [String] = []
+            if !subtitles.isEmpty {
+                let loaded = Set(snapshot.subs.compactMap { $0.externalFilename.map(RememberedTrack.normalized) })
+                for path in subtitles where FileManager.default.fileExists(atPath: path) {
+                    guard select || !loaded.contains(RememberedTrack.normalized(path)) else { continue }
+                    let title = URL(fileURLWithPath: path).lastPathComponent
+                    if Self.runCommand(handle, ["sub-add", path, select ? "cached" : "auto", title]) {
+                        added.append(path)
+                    }
+                }
+                if !added.isEmpty {
+                    snapshot = Self.readTracks(handle)
+                }
+            }
             DispatchQueue.main.async {
                 self.apply(snapshot)
-                completion?()
+                completion(added)
             }
         }
     }
@@ -2190,29 +2303,53 @@ public final class MPVPlayer: ObservableObject {
         }
     }
     
-    /// Applies the language preferences to the freshly loaded file: audio and
-    /// primary subtitles in the learning language, secondary subtitles in the
-    /// native language. Roles without a matching track keep mpv's defaults.
-    public func autoSelectTracksForLanguages() {
+    /// Chooses the tracks for a freshly loaded file. Those picked by hand the
+    /// last time it was open come back if they are still there; the rest follow
+    /// the language preferences: audio and primary subtitles in the learning
+    /// language, secondary subtitles in the native one. Roles with neither keep
+    /// mpv's defaults.
+    private func selectInitialTracks(remembered: [String: RememberedTrack]) {
+        enum Pick {
+            case off, track(Int)
+            var id: Int? { if case let .track(id) = self { return id } else { return nil } }
+        }
+        func rememberedPick(_ role: TrackRole, in tracks: [MediaTrack]) -> Pick? {
+            switch remembered[role.property] {
+            case nil: return nil
+            case .off: return .off
+            case let choice?: return tracks.first(where: choice.matches).map { .track($0.id) }
+            }
+        }
+        // mpv cannot show one track in both subtitle roles.
+        func bestPick(in tracks: [MediaTrack], matching code: String?, besides other: Pick?) -> Pick? {
+            guard let code else { return nil }
+            let candidates = tracks.filter { $0.id != other?.id }
+            return LanguagePreferences.bestTrack(in: candidates, matching: code).map { .track($0.id) }
+        }
         let prefs = LanguagePreferences.shared
 
-        var primary: MediaTrack?
-        if let learning = prefs.resolvedLearningCode {
-            if let audio = LanguagePreferences.bestTrack(in: audioTracks, matching: learning) {
-                setAudioTrack(trackId: audio.id)
-            }
-            primary = LanguagePreferences.bestTrack(in: subtitleTracks, matching: learning)
-            if let primary {
-                setPrimarySubtitle(trackId: primary.id)
-            }
+        let audio = rememberedPick(.audio, in: audioTracks)
+            ?? bestPick(in: audioTracks, matching: prefs.resolvedLearningCode, besides: nil)
+        var primary = rememberedPick(.primarySubtitle, in: subtitleTracks)
+        var secondary = rememberedPick(.secondarySubtitle, in: subtitleTracks)
+        if primary == nil {
+            primary = bestPick(in: subtitleTracks, matching: prefs.resolvedLearningCode, besides: secondary)
+        }
+        if secondary == nil {
+            secondary = bestPick(in: subtitleTracks, matching: prefs.resolvedNativeCode, besides: primary)
         }
 
-        if let native = prefs.resolvedNativeCode,
-           let secondary = LanguagePreferences.bestTrack(in: subtitleTracks.filter { $0.id != primary?.id }, matching: native) {
-            setSecondarySubtitle(trackId: secondary.id)
+        for (pick, role) in [(audio, TrackRole.audio), (primary, .primarySubtitle), (secondary, .secondarySubtitle)] {
+            if let pick { selectTrack(pick.id, for: role) }
         }
     }
-    
+
+    private static func stringProperty(_ handle: OpaquePointer, _ name: String) -> String? {
+        guard let cStr = mpv_get_property_string(handle, name) else { return nil }
+        defer { mpv_free(cStr) }
+        return String(cString: cStr)
+    }
+
     private static func getTrackProp(_ handle: OpaquePointer, idx: Int64, prop: String) -> String? {
         let key = "track-list/\(idx)/\(prop)"
         guard let cStr = mpv_get_property_string(handle, key) else { return nil }
