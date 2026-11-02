@@ -1,235 +1,236 @@
-# Lerzo Player — заметки для агентов и разработчиков
+# Lerzo Player — notes for agents and developers
 
-Нативный macOS-видеоплеер для изучения языков: SwiftUI-интерфейс поверх libmpv,
-разбор реплик через Gemini. Общение с автором — на русском; код, комментарии и
-сообщения коммитов — на английском.
+A native macOS video player for language learners: a SwiftUI interface on top of
+libmpv, with subtitle lines explained by Gemini. Code, comments and commit messages
+are in English.
 
-## Стек и сборка
+## Stack and build
 
-- Имя продукта — «Lerzo Player» (бандл `Lerzo Player.app`, bundle id `com.lerzo.player`),
-  исполняемый файл и SwiftPM-таргет — `LerzoPlayer`; папка репозитория историческая
-  (`vplayer`). Общий бренд с мобильным приложением Lerzo — только имя и домен, ни кода,
-  ни подписки общих нет.
-- SwiftPM, один executable-таргет `LerzoPlayer` + системные модули `Cmpv` (libmpv) и
-  `Cavformat` (libavformat/libavcodec/libavutil). Xcode-проекта нет. macOS 14+.
-- Зависимости из Homebrew: `mpv` (0.41, `vo=gpu-next`, Vulkan через MoltenVK) и его
-  дерево, включая ffmpeg. Заголовки и библиотеки берутся из `/opt/homebrew`.
-- Dev-цикл: `./build_app.sh` → `build/Lerzo Player.app` (линкуется с Homebrew,
-  подписывается Developer ID с hardened runtime и теми же entitlements, что релиз, —
-  иначе ошибки вроде JIT-страниц LuaJIT всплывают только у пользователей). Запуск для проверки:
+- The product name is "Lerzo Player" (bundle `Lerzo Player.app`, bundle id
+  `com.lerzo.player`); the executable and the SwiftPM target are `LerzoPlayer`. It shares
+  only the name and the domain with the Lerzo mobile app — no code, no subscription.
+- SwiftPM, one executable target `LerzoPlayer` plus the system modules `Cmpv` (libmpv)
+  and `Cavformat` (libavformat/libavcodec/libavutil). No Xcode project. macOS 14+.
+- Dependencies come from Homebrew: `mpv` (0.41, `vo=gpu-next`, Vulkan via MoltenVK) and
+  its tree, including ffmpeg. Headers and libraries are taken from `/opt/homebrew`.
+- Dev loop: `./build_app.sh` → `build/Lerzo Player.app` (linked against Homebrew). When
+  a Developer ID certificate is available, the dev build is signed with the hardened
+  runtime and the same entitlements as the release, otherwise errors such as LuaJIT's JIT
+  pages only show up for users; without one it keeps an ad-hoc signature. To run it:
   `pkill -x LerzoPlayer; sleep 1; open -a "$PWD/build/Lerzo Player.app" "$PWD/test_media/sample_dialogue.mkv"`
-- Иконка: мастер `Resources/AppIcon.svg` (полноформатный квадрат 1024 в цветах Lerzo
-  `#0A0A0B`/`#F2F2F4`), `swift scripts/make_icon.swift` вписывает его в сетку macOS
-  (824 pt в холсте 1024) и собирает `Resources/AppIcon.icns`; оба файла в репозитории.
-- Релиз: `scripts/release.sh` копирует libmpv и все dylib в бандл, переписывает
-  install names, подписывает, ноутаризует, собирает DMG с папкой «Source code», затем
-  подписывает DMG ключом Sparkle и пишет `dist/appcast.xml`; с `PUBLISH=1` создаёт релиз
-  `v<версия>` на GitHub (`pustylnikov/lerzo-player`, через `gh`) с DMG. Appcast лежит на
-  лендинге Lerzo (`https://lerzowords.com/player/appcast.xml`), а `enclosure url` в нём
-  ведёт на GitHub Releases (см. шапку скрипта). Лендинг — отдельный репозиторий
-  `/Volumes/MacDrive/Projects/anvilapp/projects/corewords/landing` (Next.js, статический
-  экспорт, Firebase Hosting): страница `/player` берёт версию, размер и ссылку на DMG
-  из `public/player/appcast.xml` через `yarn sync:player`; порядок публикации описан в
-  разделе «Lerzo Player page» его README.
-- Статистика: `scripts/downloads.sh` — загрузки каждого DMG с GitHub Releases (включая
-  Sparkle-обновления) и трафик репозитория за 14 дней, через `gh`.
-- Обновления: Sparkle 2 через SwiftPM (binary artifact в `.build/artifacts/sparkle`, там же
-  `bin/generate_keys`, `sign_update`, `generate_appcast`). Фид
-  `https://lerzowords.com/player/appcast.xml`, публичный ключ EdDSA — в шаблоне Info.plist
-  в `build_app.sh`, приватный — в keychain автора. `UpdaterController.swift` — обёртка над
-  `SPUStandardUpdaterController`. Оба скрипта кладут `Sparkle.framework` в
-  `Contents/Frameworks`; в релизе его вложенные XPC/Autoupdate подписываются отдельно.
-- Отладка mpv: `VPLAYER_MPV_LOG=/path/log open -a "build/Lerzo Player.app" file.mkv` —
-  подробный лог mpv (команды, `Set property: …`). Stderr приложения:
+- Icon: the master is `Resources/AppIcon.svg` (a full-bleed 1024 square in the Lerzo
+  colours `#0A0A0B`/`#F2F2F4`); `swift scripts/make_icon.swift` fits it into the macOS
+  grid (824 pt in a 1024 canvas) and builds `Resources/AppIcon.icns`. Both files are in
+  the repository.
+- Release: `scripts/release.sh` copies libmpv and every dylib into the bundle, rewrites
+  install names, signs, notarizes, builds a DMG with a "Source code" folder, then signs
+  the DMG with the Sparkle key and writes `dist/appcast.xml`; with `PUBLISH=1` it creates
+  the `v<version>` release on GitHub (`pustylnikov/lerzo-player`, via `gh`) with the DMG.
+  The appcast is served from the Lerzo website (`https://lerzowords.com/player/appcast.xml`),
+  and its `enclosure url` points at GitHub Releases (see the script header).
+- Statistics: `scripts/downloads.sh` — downloads of every DMG from GitHub Releases
+  (including Sparkle updates) and repository traffic for the last 14 days, via `gh`.
+- Updates: Sparkle 2 through SwiftPM (binary artifact in `.build/artifacts/sparkle`,
+  together with `bin/generate_keys`, `sign_update`, `generate_appcast`). The feed is
+  `https://lerzowords.com/player/appcast.xml`; the public EdDSA key is in the Info.plist
+  template in `build_app.sh`, the private key is kept outside the repository.
+  `UpdaterController.swift` wraps `SPUStandardUpdaterController`. Both scripts put
+  `Sparkle.framework` into `Contents/Frameworks`; in the release its nested XPC services
+  and Autoupdate are signed separately.
+- Debugging mpv: `VPLAYER_MPV_LOG=/path/log open -a "build/Lerzo Player.app" file.mkv`
+  writes a verbose mpv log (commands, `Set property: …`). The app's stderr:
   `open --stderr /path/log -a "build/Lerzo Player.app" file.mkv`.
 
-## Архитектура (Sources/LerzoPlayer)
+## Architecture (Sources/LerzoPlayer)
 
-- `MPVPlayer.swift` — синглтон над libmpv: свойства через `mpv_observe_property`
-  (id 1–23), команды, дорожки, задержки, геометрия картинки (zoom/pan/crop), фильтры
-  звука, настройки картинки, карта субтитров. Публикует состояние для SwiftUI.
-- `PlayerSurfaceView.swift` — NSView под окно mpv; mpv рисует в собственном NSWindow,
-  который в оконном режиме прикреплён как child window, а в полноэкранном отделён и
-  идёт на уровне `normal-1`. Иначе нельзя: полноэкранное окно — «дно» своего Space,
-  всё на уровне 0 (в том числе child-окна, которым `addChildWindow` навязывает уровень
-  родителя) оказывается поверх оверлея; поднять родителя на уровень выше тоже нельзя —
-  такое окно не выходит из полного экрана и теряет сохранённый кадр. Но окно ниже
-  уровня 0 не попадает в анимацию переключения Spaces и после возврата «вплывает» из
-  чёрного кадра, поэтому по `NSWorkspace.activeSpaceDidChange` оно держится на
-  `normal`, пока наш Space не активен, и опускается на `normal-1` по возвращении.
-  SwiftUI-оверлей — прозрачное окно поверх; при показе видео фон
-  `Color.black.opacity(0.01)`, иначе клики проваливаются сквозь alpha-0 пиксели.
-  Поведение окна mpv: `[.fullScreenAuxiliary, .moveToActiveSpace]`, никогда
-  `.canJoinAllSpaces` (видео появлялось на других рабочих столах).
-- Форма окна (`MPVPlayer`: `updateVideoAspect`, `fitWindowToVideo`, `applyWindowAspectLock`):
-  при первом кадре файла (и смене crop/дорожки) окно подгоняется под пропорции картинки
-  с сохранением ширины. Настройка «Изменение размера окна»: по умолчанию окно держит
-  пропорции через `NSWindow.aspectRatio` (снимается в полном экране и без видео —
-  сбросом через `resizeIncrements`), в свободном режиме лишняя высота — полосы над и
-  под кадром (`osd-dimensions/mt|mb` → `videoTopMargin`/`videoBottomMargin`), куда
-  `SubtitlesLayer.bandInset` кладёт субтитры, если они помещаются; добавленные полосы
-  переносятся на следующий файл. Минимальный размер окна — `MPVPlayer.windowMinSize`
-  через `.frame(minWidth:minHeight:)` в `ContentView` (SwiftUI перезаписывает
-  `contentMinSize` на каждом проходе, так что задавать его напрямую бесполезно); он
-  согласован с пропорцией, иначе AppKit при замке выводит ширину из минимальной высоты.
-  `updateChildWindowFrame` на главном потоке работает синхронно: во время живого ресайза
-  отложенное обновление оставляло белую полосу вдоль растущих краёв.
-- `LerzoPlayerApp.swift` — `@main`, меню приложения (`CommandMenu`), `AppDelegate`.
-- `ContentView.swift` — корневой экран, приветствие, диалоги открытия, связка колбэков
-  `KeyboardMonitor`. `ControlsOverlayView.swift` — панель управления и её меню.
-- `KeyboardMonitor.swift` — глобальный локальный монитор NSEvent. Клавиши матчатся по
-  физическим keyCode (работают в любой раскладке). Голые клавиши — в
-  `if flags.isEmpty { switch keyCode }`, Shift-аккорды — в `if flags == [.shift]`, и
-  они должны идти раньше необёрнутых обработчиков стрелок. Ctrl/Option — системе.
-  Клавиши-переключатели (пробел, P, L, M, B, F…) перечислены в `oneShotBareKeys` /
-  `oneShotShiftKeys`: их автоповтор гасится, новую клавишу-переключатель добавлять туда.
-- `SubtitlesLayer.swift`, `SubtitleStyle.swift` — собственная отрисовка субтитров
-  (mpv-шные скрыты прозрачным цветом), интерактивные слова, TAB-подглядывание перевода.
-- `SubtitleTimeline.swift` + `MatroskaSubtitleScanner.swift` — все реплики текущей
-  дорожки для точного сикинга W/E/R. mpv-шный `sub-seek` видит только уже показанные
-  события, поэтому не годится. Для MKV читается индекс Cues и только блоки субтитров
-  (0.1–3 с на 20 ГБ); иначе libavformat (медленно — читает весь файл). Дорожка mpv ↔
-  поток libavformat через `ff-index`; для MKV дорожка ищется как k-я субтитровая в
-  Tracks с проверкой CodecID.
-- `FramePreviewer.swift` — превью кадра при наведении на шкалу времени: второй,
-  безоконный экземпляр libmpv (`vo=null`, без звука и субтитров, софтверное
-  декодирование — для одного кадра на сик hwdec только медленнее) с фильтром `scale`
-  до размера превью; кадр забирается через `screenshot-raw`. HDR-источники (PQ/HLG)
-  забираются 16-битным `rgba64` и переводятся в sRGB в Swift (`HDRThumbnail`: EOTF →
-  BT.2390 на яркости к белому 203 нит → BT.2020→709 → sRGB; в «Точном» HDR-режиме
-  картинка чуть приглушается под абсолютный PQ). Через swscale нельзя: mpv пересоздаёт
-  граф фильтров на каждом сике, и любое цветовое преобразование (`out_transfer`,
-  `intent`, `tonemap`) добавляет 300–500 мс на построение LUT; чистый `scale` — 25–60 мс.
-  У этого экземпляра `sws-allow-zimg=no`: по умолчанию mpv делает скриншоты через zimg,
-  а тот сам переводит PQ/BT.2020 в sRGB (клиппинг без тонмаппинга), и `HDRThumbnail`
-  применял PQ-кривую к уже sRGB-данным — превью выходило кислотно-насыщенным.
-  Пока курсор движется — сик по keyframe (25–45 мс на 1080p), когда остановился —
-  точный; запрос и клик по шкале округляются вниз до целой секунды, показанной в
-  карточке, чтобы переход попадал в тот же кадр. Через 20 с без запросов экземпляр
-  уничтожается. Карточка рисуется в `ControlsOverlayView` (`seekPreview`): кадр с
-  наложенной репликой из `SubtitleTimeline` и время.
-- `OSDView.swift` — всплывающая подсказка после нажатия клавиши; `OSDItem` перечисляет
-  все виды. `ShortcutsOverlayView.swift` — `ShortcutsReference` — единый источник списка
-  клавиш для шпаргалки (H) и настроек: новая клавиша добавляется туда.
+- `MPVPlayer.swift` — a singleton over libmpv: properties via `mpv_observe_property`
+  (ids 1–23), commands, tracks, delays, picture geometry (zoom/pan/crop), audio filters,
+  picture settings, the subtitle map. Publishes state for SwiftUI.
+- `PlayerSurfaceView.swift` — the NSView under the mpv window. mpv draws into its own
+  NSWindow, which in windowed mode is attached as a child window and in full screen is
+  detached and runs at level `normal-1`. There is no other way: a full-screen window is
+  the "floor" of its Space, and everything at level 0 (including child windows, which
+  `addChildWindow` forces to the parent's level) ends up above the overlay; raising the
+  parent a level higher does not work either — such a window cannot leave full screen and
+  loses its saved frame. But a window below level 0 is left out of the Space-switch
+  animation and "floats in" from a black frame on return, so on
+  `NSWorkspace.activeSpaceDidChange` it stays at `normal` while our Space is inactive and
+  drops to `normal-1` when we come back. The SwiftUI overlay is a transparent window on
+  top; while video is shown its background is `Color.black.opacity(0.01)`, otherwise
+  clicks fall through alpha-0 pixels. mpv window behaviour:
+  `[.fullScreenAuxiliary, .moveToActiveSpace]`, never `.canJoinAllSpaces` (the video
+  showed up on other desktops).
+- Window shape (`MPVPlayer`: `updateVideoAspect`, `fitWindowToVideo`,
+  `applyWindowAspectLock`): on a file's first frame (and on crop/track changes) the
+  window is fitted to the picture's proportions, keeping its width. The "Resizing the
+  window" setting: by default the window keeps the proportions through
+  `NSWindow.aspectRatio` (dropped in full screen and without video — reset through
+  `resizeIncrements`); in free mode extra height becomes bands above and below the
+  picture (`osd-dimensions/mt|mb` → `videoTopMargin`/`videoBottomMargin`), where
+  `SubtitlesLayer.bandInset` places subtitles when they fit; added bands carry over to
+  the next file. The minimum window size is `MPVPlayer.windowMinSize`, applied through
+  `.frame(minWidth:minHeight:)` in `ContentView` (SwiftUI overwrites `contentMinSize` on
+  every pass, so setting it directly is useless); it is kept consistent with the aspect
+  ratio, otherwise AppKit derives the width from the minimum height while locked.
+  `updateChildWindowFrame` runs synchronously on the main thread: during live resize a
+  deferred update left a white strip along the growing edges.
+- `LerzoPlayerApp.swift` — `@main`, the app menu (`CommandMenu`), `AppDelegate`.
+- `ContentView.swift` — the root screen, welcome screen, open dialogs, wiring of
+  `KeyboardMonitor` callbacks. `ControlsOverlayView.swift` — the control bar and its menus.
+- `KeyboardMonitor.swift` — a global local NSEvent monitor. Keys are matched by physical
+  keyCode (they work in any keyboard layout). Bare keys go in
+  `if flags.isEmpty { switch keyCode }`, Shift chords in `if flags == [.shift]`, and
+  those must come before the unwrapped arrow handlers. Ctrl/Option belong to the system.
+  Toggle keys (Space, P, L, M, B, F…) are listed in `oneShotBareKeys` /
+  `oneShotShiftKeys`, which suppress their auto-repeat; add any new toggle key there.
+- `SubtitlesLayer.swift`, `SubtitleStyle.swift` — our own subtitle rendering (mpv's are
+  hidden with a transparent colour), interactive words, TAB to peek at the translation.
+- `SubtitleTimeline.swift` + `MatroskaSubtitleScanner.swift` — every line of the current
+  track, for precise W/E/R seeking. mpv's `sub-seek` only sees events already shown, so it
+  does not work for this. For MKV the Cues index is read and only subtitle blocks are
+  loaded (0.1–3 s for 20 GB); otherwise libavformat is used (slow — it reads the whole
+  file). mpv track ↔ libavformat stream through `ff-index`; for MKV the track is found as
+  the k-th subtitle track in Tracks, checking the CodecID.
+- `FramePreviewer.swift` — the frame preview when hovering over the timeline: a second,
+  windowless libmpv instance (`vo=null`, no audio or subtitles, software decoding — for a
+  single frame per seek hwdec is only slower) with a `scale` filter down to the preview
+  size; the frame is taken with `screenshot-raw`. HDR sources (PQ/HLG) are taken as 16-bit
+  `rgba64` and converted to sRGB in Swift (`HDRThumbnail`: EOTF → BT.2390 at 203-nit
+  reference white → BT.2020→709 → sRGB; in the "Accurate" HDR mode the picture is dimmed a
+  little to match absolute PQ). swscale cannot do it: mpv rebuilds the filter graph on
+  every seek, and any colour conversion (`out_transfer`, `intent`, `tonemap`) adds
+  300–500 ms to build the LUT; a plain `scale` takes 25–60 ms. This instance has
+  `sws-allow-zimg=no`: by default mpv takes screenshots through zimg, which converts
+  PQ/BT.2020 to sRGB itself (clipping, no tone mapping), and `HDRThumbnail` then applied
+  the PQ curve to data that was already sRGB — the preview came out garishly saturated.
+  While the cursor moves, seeks go to keyframes (25–45 ms on 1080p); once it stops, the
+  seek is exact. The request and a click on the timeline are rounded down to the whole
+  second shown on the card, so the jump lands on the same frame. After 20 s without
+  requests the instance is destroyed. The card is drawn in `ControlsOverlayView`
+  (`seekPreview`): the frame with the line from `SubtitleTimeline` and the time.
+- `OSDView.swift` — the hint shown after a key press; `OSDItem` lists all kinds.
+  `ShortcutsOverlayView.swift` — `ShortcutsReference` is the single source of the key
+  list for the cheat sheet (H) and Settings: add new keys there.
 - `GeminiService.swift`, `GeminiError.swift`, `KeychainStore.swift`,
-  `ExplanationPopoverView.swift` — разбор реплики через Gemini; ключ в keychain.
-- `DictionaryLookup.swift` — словарь по клику на слово: `DCSCopyTextDefinition` отдаёт статью
-  плоским текстом, `SystemDictionary.lines(from:)` эвристически режет её на части речи,
-  значения (только по порядку 1, 2, 3…), подзначения «•» и примеры «▸». Какой словарь
-  отвечает первым, DCS выбирает по языку интерфейса приложения (русский UI → Oxford Russian,
-  английский → NOAD), поэтому в CLI-пробах передавать `-AppleLanguages "(ru)"`.
-- `AboutView.swift` — окно About (отдельная `Window`-сцена `about`): версия, текст GPLv3 из
-  `Resources/LICENSE`, список библиотек из `THIRD-PARTY-SOURCES.md` (есть только в релизной
-  сборке), ссылки `AboutInfo`. Пока оно ключевое, `KeyboardMonitor` не перехватывает клавиши.
-- `FileRecordStore.swift` — общее хранилище записей «по файлу» (JSON-массив в Application
-  Support рядом с `cards.json`, ключ — путь, до 500 записей, запись чужого файла с тем же
-  именем отбрасывается по размеру, отложенная запись и сброс на выходе).
-- `PlaybackHistory.swift` — позиции недосмотренных файлов (`playback-positions.json`; формат
-  не менять — его читают прежние версии). `MPVPlayer` пишет позицию при смене файла, паузе,
-  выходе и каждые 30 с воспроизведения; файл считается досмотренным при ≥ 95 % или < 30 с
-  до конца, не начатым — при < 10 с (запись удаляется). Восстановление — через опцию
-  `start=` в `loadfile` (без мелькания первого кадра), OSD «Продолжение с …».
-- `FileSettings.swift` — настройки файла в отдельном `file-settings.json` (остаются и после
-  досмотра): ненулевые задержки (`delays`, ключ — свойство mpv; выставляются до `loadfile`,
-  т. к. в mpv они глобальные), вручную загруженные субтитры (`externalSubtitles`,
-  `sub-add … auto` после FILE_LOADED) и дорожки, выбранные в меню (`tracks`:
-  `aid`/`sid`/`secondary-sid` → `RememberedTrack`: выключена, встроенная по id + язык +
-  название или внешняя по пути). Пишется только выбор пользователя и только если mpv его
-  принял (`pickTrack` перечитывает дорожки; mpv не даёт одну дорожку обеим ролям), не
-  автовыбор: остальные роли при открытии берутся из языков (`selectInitialTracks`).
-  Настройки применяются, только если FILE_LOADED пришёл для того файла, что открыт сейчас
-  (свойство `path`), — иначе при быстрой смене файлов они попали бы на предыдущий.
-- `SettingsView.swift` — лист настроек 640 pt; `LanguagePreferences.swift` — автовыбор
-  дорожек по языкам; `TrackModels.swift` — модели дорожек. HDR-переключатель и выбор
-  режима находятся в разделе «Изображение», рядом с глобальными коррекциями картинки.
+  `ExplanationPopoverView.swift` — line breakdowns through Gemini; the key lives in the
+  keychain.
+- `DictionaryLookup.swift` — dictionary on word click: `DCSCopyTextDefinition` returns the
+  entry as plain text, and `SystemDictionary.lines(from:)` heuristically splits it into
+  parts of speech, senses (numbered 1, 2, 3… only), sub-senses "•" and examples "▸".
+  Which dictionary answers first depends on the app's UI language (Russian UI → Oxford
+  Russian, English → NOAD), so pass `-AppleLanguages "(ru)"` in CLI probes.
+- `AboutView.swift` — the About window (a separate `Window` scene `about`): version, the
+  GPLv3 text from `Resources/LICENSE`, the library list from `THIRD-PARTY-SOURCES.md`
+  (present only in the release build), `AboutInfo` links. While it is key,
+  `KeyboardMonitor` does not intercept keys.
+- `FileRecordStore.swift` — shared storage for per-file records (a JSON array in
+  Application Support next to `cards.json`, keyed by path, up to 500 records; a record for
+  a different file with the same name is dropped by size; deferred writes, flushed on quit).
+- `PlaybackHistory.swift` — positions of unfinished files (`playback-positions.json`; do
+  not change the format — earlier versions read it). `MPVPlayer` writes the position on
+  file change, pause, quit and every 30 s of playback; a file counts as finished at ≥ 95 %
+  or < 30 s before the end, and as not started at < 10 s (the record is removed). Resuming
+  goes through the `start=` option of `loadfile` (no flash of the first frame), with the
+  OSD "Resuming from …".
+- `FileSettings.swift` — per-file settings in a separate `file-settings.json` (kept after
+  a file is finished): non-zero delays (`delays`, keyed by mpv property; set before
+  `loadfile`, since mpv delays are global), manually loaded subtitles
+  (`externalSubtitles`, `sub-add … auto` after FILE_LOADED) and tracks chosen in the menu
+  (`tracks`: `aid`/`sid`/`secondary-sid` → `RememberedTrack`: off, embedded by id +
+  language + title, or external by path). Only the user's choice is written, and only if
+  mpv accepted it (`pickTrack` re-reads the tracks; mpv does not give one track both
+  roles) — never the automatic selection: the other roles are picked from the languages
+  on open (`selectInitialTracks`). Settings are applied only if FILE_LOADED arrived for the
+  file that is open now (the `path` property) — otherwise, when switching files quickly,
+  they would land on the previous one.
+- `SettingsView.swift` — the 640 pt settings sheet; `LanguagePreferences.swift` —
+  automatic track selection by language; `TrackModels.swift` — track models. The HDR
+  toggle and mode picker live in the "Picture" section, next to the global picture
+  adjustments.
 - HDR (`MPVPlayer`: `hdrOutputEnabled`, `displaySupportsHDR`, `updateHDROutput`,
-  `updateOverlayEDRFlag`; бейдж — в `ControlsOverlayView`): при включённой настройке и
-  экране с EDR (`maximumPotentialExtendedDynamicRangeColorComponentValue > 1`) ставится
-  `target-colorspace-hint=yes`. Настройка отображения имеет два режима: «Точный» —
-  `target-colorspace-hint-mode=source-dynamic`, без расширения яркости; «Яркий» (по
-  умолчанию) — режим `target` с `inverse-tone-mapping=yes` и
-  `tone-mapping-max-boost=2.0`, то есть адаптация к дисплею и максимум один стоп
-  дополнительной яркости для низкопиковых сцен. Поскольку mpv/macvk иначе считает
-  неизвестный дисплей 10 000-нитным, `target-peak` вычисляется как текущий
-  `maximumExtendedDynamicRangeColorComponentValue × 203` нит (с потолком 1000).
-  При выключенном HDR расширение отключается, чтобы не менять обычный
-  HDR→SDR-тонмаппинг.
-  gpu-next/macvk через MoltenVK берёт swapchain
-  `A2R10G10B10 + HDR10_ST2084`, переводит Metal-слой в BT.2100 PQ с
-  `wantsExtendedDynamicRangeContent` и `CAEDRMetadata` HDR10. Режим `source-dynamic`
-  берёт яркость сцены из Dolby Vision, затем HDR10+, с откатом к статическим данным;
-  macOS адаптирует изображение к экрану по этим метаданным. Это экспериментальный
-  режим mpv: передаётся яркость сцены через HDR10, а не полный Dolby Vision/HDR10+.
-  В логе `VPLAYER_MPV_LOG` это строки `Picked
+  `updateOverlayEDRFlag`; the badge is in `ControlsOverlayView`): with the setting on and
+  an EDR screen (`maximumPotentialExtendedDynamicRangeColorComponentValue > 1`),
+  `target-colorspace-hint=yes` is set. The setting has two modes: "Accurate" —
+  `target-colorspace-hint-mode=source-dynamic`, no brightness expansion; "Vivid" (the
+  default) — `target` mode with `inverse-tone-mapping=yes` and
+  `tone-mapping-max-boost=2.0`, i.e. adaptation to the display and at most one extra stop
+  of brightness for low-peak scenes. Because mpv/macvk otherwise treats an unknown display
+  as 10,000 nits, `target-peak` is computed as the current
+  `maximumExtendedDynamicRangeColorComponentValue × 203` nits (capped at 1000). With HDR
+  off the expansion is disabled so the ordinary HDR→SDR tone mapping is unchanged.
+  gpu-next/macvk through MoltenVK takes an `A2R10G10B10 + HDR10_ST2084` swapchain and
+  switches the Metal layer to BT.2100 PQ with `wantsExtendedDynamicRangeContent` and
+  HDR10 `CAEDRMetadata`. `source-dynamic` takes the scene brightness from Dolby Vision,
+  then HDR10+, falling back to static metadata; macOS adapts the picture to the screen
+  from that metadata. This is an experimental mpv mode: scene brightness is passed through
+  HDR10, not full Dolby Vision/HDR10+. In a `VPLAYER_MPV_LOG` log it shows as `Picked
   surface configuration … HDR10_ST2084_EXT`, `Metal layer colorspace changed:
   ITUR_2100_PQ`, `Metal layer HDR active`, `Metal layer HDR metadata changed`.
-  Проверка 2026-09-17 (M4, LG HDR 5K, Dark Matter S02E01 24:26.215): декодер
-  VideoToolbox сохраняет динамические метаданные, но прежний режим `target` передавал
-  статический пик 1000,6 нит. В `source-dynamic` Metal получает пик сцены 184,9 нит,
-  и изображение приближается к QuickTime. Для HDR10+-варианта без Dolby Vision
-  остаются различия: точное совпадение для любых файлов не гарантируется.
-  Прежний вывод «HDR уже совпадает с QuickTime» на основании цветных полос был неверен.
-  `test_media/hdr_sample.mp4` не годится как эталон яркости: заявляет MaxCLL 1000 нит,
-  но первый кадр содержит PQ-значения яркости до ≈9400 нит. Проверять на реальных
-  сценах и корректно закодированных серых ступенях, вне градиента панели управления.
-  Значения пикселей захвата не равны физической яркости дисплея; белое насыщение в
-  захвате IINA само по себе не доказывает клиппинг на экране. Обнулять `edrMetadata`
-  на слое mpv нельзя — без метаданных macOS показывает PQ пересвеченным и блёклым.
-  Эффект HDR на глаз слабый, когда монитор выставлен ярко (headroom LG при высокой
-  яркости SDR ≈ 1.3 из потенциальных 6) и когда контент сведён темно (у сериалов ATVP
-  пики ≈ 200 нит). Как сравнивать: `screencapture -x` и пиксели одной сцены в Lerzo,
-  голом mpv и QuickTime. ScreenCaptureKit с `captureDynamicRange` для этого не годится:
-  масштаб его значений разный у разных приложений и меняется во времени без изменений
-  на экране; `NSScreen.maximumExtendedDynamicRangeColorComponentValue` у внешнего
-  монитора — константа от яркости SDR, а не индикатор включившегося HDR.
+  The VideoToolbox decoder keeps dynamic metadata, but the `target` mode passes only the
+  static peak (≈ 1000 nits), while in `source-dynamic` Metal receives the per-scene peak
+  and the picture gets close to QuickTime. HDR10+ files without Dolby Vision still differ,
+  so an exact match for every file is not guaranteed. Colour bars alone do not prove that
+  HDR matches QuickTime.
+  `test_media/hdr_sample.mp4` is no brightness reference: it declares MaxCLL 1000 nits,
+  but its first frame has PQ values up to ≈ 9400 nits. Check on real scenes and correctly
+  encoded grey steps, away from the control bar gradient. Pixel values in a capture are
+  not the display's physical brightness; white saturation in an IINA capture does not by
+  itself prove clipping on screen. Do not clear `edrMetadata` on mpv's layer — without
+  metadata macOS shows PQ blown out and washed out. The HDR effect looks weak when the
+  monitor's SDR brightness is set high (little EDR headroom left) and when the content is
+  mastered dark (some streaming series peak around 200 nits). How to compare:
+  `screencapture -x` and the pixels of one scene in Lerzo, bare mpv and QuickTime.
+  ScreenCaptureKit with `captureDynamicRange` does not work for this: the scale of its
+  values differs between apps and drifts over time with nothing changing on screen;
+  `NSScreen.maximumExtendedDynamicRangeColorComponentValue` of an external monitor is a
+  constant derived from SDR brightness, not an indicator that HDR has kicked in.
 
-## Локализация
+## Localization
 
-`Resources/{en,ru}.lproj/Localizable.strings`, английский текст — ключ. Для `String`
-контекстов — `String(localized:)`. В ключах `.strings` процент экранируется `%%`, в
-Swift-интерполяциях — одиночный `%`. Проверка: `plutil -lint Resources/*/Localizable.strings`.
-Меню в рантайме у автора на русском (важно для osascript-тестов).
+`Resources/{en,ru}.lproj/Localizable.strings`, the English text is the key. For `String`
+contexts use `String(localized:)`. In `.strings` keys a percent sign is escaped as `%%`,
+in Swift interpolations it is a single `%`. Check: `plutil -lint Resources/*/Localizable.strings`.
 
-## Известные грабли
+## Known pitfalls
 
-- Вложенные `Menu` внутри меню панели управления пересоздаются на каждом обновлении
-  `time-pos` и не открываются во время воспроизведения — пункты меню панели держать
-  плоскими. В `CommandMenu` (меню приложения) подменю работают.
-- `Toggle` в `CommandMenu` даёт галочку; заголовки пунктов зависят от
-  `@ObservedObject player` в `LerzoPlayerApp`.
-- Открытие файлов из Finder/`open` приходит в SwiftUI `.onOpenURL`, а не только в
-  `AppDelegate`; все пути ведут в `MPVPlayer.open(url:)` (видео или субтитры по расширению).
-- `screenshot-raw` работает с videotoolbox hwdec, `cropdetect` — нет (используется для
-  «Убрать чёрные полосы»).
-- Не запрашивать и не выводить app-specific пароль Apple и ключ Gemini; не читать ключ
-  из keychain в командах.
+- Nested `Menu`s inside control bar menus are rebuilt on every `time-pos` update and do
+  not open during playback — keep control bar menu items flat. Submenus work in
+  `CommandMenu` (the app menu).
+- A `Toggle` in a `CommandMenu` gives a checkmark; menu item titles depend on
+  `@ObservedObject player` in `LerzoPlayerApp`.
+- Files opened from Finder/`open` arrive in SwiftUI `.onOpenURL`, not only in
+  `AppDelegate`; every path leads to `MPVPlayer.open(url:)` (video or subtitles by
+  extension).
+- `screenshot-raw` works with videotoolbox hwdec, `cropdetect` does not (it is used for
+  "Remove black bars").
+- Never ask for or print the Gemini key, and do not read it from the keychain in commands.
 
-## Лицензия и распространение
+## License and distribution
 
-- Homebrew-сборки mpv и ffmpeg — GPL (ffmpeg — GPLv3+ из-за `--enable-version3`), поэтому
-  плеер распространяется под GPLv3, а исходники кладутся в DMG рядом с приложением
-  (GPLv3 §6(a)) и линкуются из About. Мобильного приложения Lerzo это не касается.
-- Mac App Store с GPL-сборкой невозможен; при необходимости — своя LGPL-сборка mpv
-  (`-Dgpl=false`) и ffmpeg (без `--enable-gpl`): функциональность плеера не теряется,
-  меняются только скрипты сборки.
+- Homebrew builds of mpv and ffmpeg are GPL (ffmpeg is GPLv3+ because of
+  `--enable-version3`), so the player is distributed under GPLv3, and the source is shipped
+  in the DMG next to the app (GPLv3 §6(a)) and linked from About. This does not concern
+  the Lerzo mobile app.
+- The Mac App Store is impossible with a GPL build; if ever needed — a custom LGPL build
+  of mpv (`-Dgpl=false`) and ffmpeg (without `--enable-gpl`): the player loses no
+  functionality, only the build scripts change.
 
-## Тестовые файлы
+## Test files
 
-`test_media/sample_dialogue.mkv` (2 дорожки субтитров, en/ru), `letterboxed.mkv`
-(чёрные полосы, ожидаемый crop `1280x720+60+100`), `hdr_sample.mp4`, `en.srt`, `ru.srt`.
-`test_media/sintel/` (в `.gitignore`, 1,2 ГБ) — официальный Sintel 1080p с
-download.blender.org (CC BY 3.0, встроенные en/ru субтитры) для скриншотов лендинга;
-hero снят на реплике 01:58 «You're a fool for traveling alone…» в окне 1440×900 pt.
+`test_media/sample_dialogue.mkv` (2 subtitle tracks, en/ru), `letterboxed.mkv` (black
+bars, expected crop `1280x720+60+100`), `hdr_sample.mp4`, `en.srt`, `ru.srt`.
+`test_media/sintel/` (in `.gitignore`, 1.2 GB) — the official Sintel 1080p from
+download.blender.org (CC BY 3.0, embedded en/ru subtitles).
 
-## Документация
+## Documentation
 
-- libmpv API: https://mpv.io/manual/master/#embedding-into-other-programs-libmpv и
+- libmpv API: https://mpv.io/manual/master/#embedding-into-other-programs-libmpv and
   https://github.com/mpv-player/mpv/blob/master/include/mpv/client.h
-- Свойства и команды mpv: https://mpv.io/manual/master/#properties ,
+- mpv properties and commands: https://mpv.io/manual/master/#properties ,
   https://mpv.io/manual/master/#list-of-input-commands (`sub-seek`, `video-zoom`,
   `video-pan-x/y`, `panscan`, `video-crop`, `sub-delay`, `secondary-sub-delay`,
   `audio-delay`, `af`, `screenshot-raw`)
-- ffmpeg-фильтры для Boost dialogue: https://ffmpeg.org/ffmpeg-filters.html#pan ,
+- ffmpeg filters for Boost dialogue: https://ffmpeg.org/ffmpeg-filters.html#pan ,
   https://ffmpeg.org/ffmpeg-filters.html#dynaudnorm
 - libavformat: https://ffmpeg.org/doxygen/trunk/group__lavf__decoding.html
 - Matroska/EBML: https://www.matroska.org/technical/elements.html ,
@@ -237,6 +238,3 @@ hero снят на реплике 01:58 «You're a fool for traveling alone…»
 - Gemini API: https://ai.google.dev/api
 - Sparkle: https://sparkle-project.org/documentation/
 - Notarization: https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution
-
-Список оставшихся задач — в `TODO.md`, пошаговая процедура релиза и деплоя лендинга —
-в `CLAUDE.local.md` (оба — локальные файлы автора, в git не входят).
