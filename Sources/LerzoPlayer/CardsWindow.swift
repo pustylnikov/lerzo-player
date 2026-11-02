@@ -207,10 +207,11 @@ struct CardsWindow: View {
                         .font(.system(size: 14, weight: .bold))
                         .textFieldStyle(.plain)
                 }
-                TextField("Sentence", text: textBinding(for: card.id, keyPath: \.sentence))
+                // Vertical axis wraps long lines instead of scrolling them sideways.
+                TextField("Sentence", text: textBinding(for: card.id, keyPath: \.sentence), axis: .vertical)
                     .font(.system(size: 13, weight: .medium))
                     .textFieldStyle(.plain)
-                TextField("Translation", text: optionalTextBinding(for: card.id, keyPath: \.translation))
+                TextField("Translation", text: optionalTextBinding(for: card.id, keyPath: \.translation), axis: .vertical)
                     .font(.system(size: 12))
                     .foregroundColor(.secondary)
                     .textFieldStyle(.plain)
