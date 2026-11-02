@@ -22,8 +22,8 @@ DerivedData/
 .vscode/
 dist/
 
-# Author's private task list
-TODO.md
+# Author's private backlog and design notes
+docs/
 .claude/launch.json
 test_media/sintel/
 
