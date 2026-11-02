@@ -160,8 +160,21 @@ struct CardsWindow: View {
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.1), lineWidth: 1))
     }
 
+    /// Cards shown in the group: exported ones only while their list is expanded,
+    /// so the group checkbox never selects cards the user cannot see.
+    private func visibleCards(in group: VideoGroup) -> [Card] {
+        expandedExportedGroups.contains(group.id) ? group.cards : group.newCards
+    }
+
     private func groupHeader(_ group: VideoGroup) -> some View {
         HStack(spacing: 10) {
+            let visible = visibleCards(in: group)
+            // Mixed state when only some of the visible cards are selected.
+            Toggle(sources: visible.map { selectionBinding(for: $0.id) }, isOn: \.self) { EmptyView() }
+                .labelsHidden()
+                .toggleStyle(.checkbox)
+                .disabled(visible.isEmpty)
+                .help("Select All Cards from This Video")
             VStack(alignment: .leading, spacing: 2) {
                 Text(group.title)
                     .font(.system(size: 14, weight: .semibold))
