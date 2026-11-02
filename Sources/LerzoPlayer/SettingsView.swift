@@ -340,6 +340,27 @@ public struct SettingsView: View {
                                 .font(.system(size: 14, weight: .bold))
                         }
 
+                        // Original subtitles visibility
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Text("Subtitles (primary track):")
+                                    .font(.system(size: 12, weight: .medium))
+                                Spacer()
+                                Picker("", selection: $player.originalMode) {
+                                    Text("Always show").tag(MPVPlayer.SubtitleVisibility.always)
+                                    Text("Show while TAB is held").tag(MPVPlayer.SubtitleVisibility.peek)
+                                }
+                                .labelsHidden()
+                                .frame(maxWidth: 260, alignment: .trailing)
+                            }
+                            Text(player.originalMode == .always
+                                 ? "The subtitles are on screen all the time. V hides them until TAB is held — for listening practice."
+                                 : "Listening practice: the subtitles appear only while TAB is held. Line jumps, auto-pause and cards keep working. V shows them again.")
+                                .font(.system(size: 10))
+                                .foregroundColor(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
                         // Translation mode
                         VStack(alignment: .leading, spacing: 6) {
                             HStack {
@@ -347,8 +368,8 @@ public struct SettingsView: View {
                                     .font(.system(size: 12, weight: .medium))
                                 Spacer()
                                 Picker("", selection: $player.translationMode) {
-                                    Text("Show while TAB is held").tag(MPVPlayer.TranslationMode.peek)
-                                    Text("Always show").tag(MPVPlayer.TranslationMode.always)
+                                    Text("Show while TAB is held").tag(MPVPlayer.SubtitleVisibility.peek)
+                                    Text("Always show").tag(MPVPlayer.SubtitleVisibility.always)
                                 }
                                 .labelsHidden()
                                 .frame(maxWidth: 260, alignment: .trailing)
@@ -377,9 +398,9 @@ public struct SettingsView: View {
 
                         Toggle(isOn: $player.pauseWhilePeeking) {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("Pause while peeking at the translation (TAB)")
+                                Text("Pause while peeking with TAB")
                                     .font(.system(size: 12, weight: .medium))
-                                Text("While TAB is held the video pauses; it resumes when released.")
+                                Text("While TAB shows hidden subtitles or the translation, the video pauses; it resumes when released.")
                                     .font(.system(size: 11))
                                     .foregroundColor(.secondary)
                             }

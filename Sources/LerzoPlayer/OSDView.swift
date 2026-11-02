@@ -16,6 +16,7 @@ public enum OSDItem: Equatable {
     case crop(MPVPlayer.CropResult)
     case boostDialogue
     case translationMode
+    case originalMode
     case autoPause
     case autoPauseTail
     case loop
@@ -115,6 +116,7 @@ public struct OSDView: View {
                 return "exclamationmark.bubble"
             }
             return player.translationMode == .always ? "captions.bubble.fill" : "captions.bubble"
+        case .originalMode: return player.originalMode == .always ? "captions.bubble.fill" : "eye.slash"
         case .autoPause: return player.autoPauseAfterLine ? "pause.circle.fill" : "pause.circle"
         case .autoPauseTail: return "pause.circle"
         case .loop: return "repeat"
@@ -171,6 +173,10 @@ public struct OSDView: View {
             return player.translationMode == .always
                 ? String(localized: "Translation always shown")
                 : String(localized: "Translation shown while TAB is held")
+        case .originalMode:
+            return player.originalMode == .always
+                ? String(localized: "Subtitles always shown")
+                : String(localized: "Subtitles shown while TAB is held")
         case .autoPause:
             return player.autoPauseAfterLine
                 ? String(localized: "Pause after each line on")

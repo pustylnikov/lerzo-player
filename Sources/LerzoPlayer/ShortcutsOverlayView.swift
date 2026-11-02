@@ -21,8 +21,9 @@ struct ShortcutGroup: Identifiable {
 enum ShortcutsReference {
     static let groups: [ShortcutGroup] = [
         ShortcutGroup(title: "Language learning", icon: "graduationcap.fill", entries: [
-            ShortcutEntry(keys: "TAB", action: "Hold: instantly peek at the translation (second subtitle track)"),
+            ShortcutEntry(keys: "TAB", action: "Hold: peek at hidden subtitles and the translation (second subtitle track)"),
             ShortcutEntry(keys: "⇧ + TAB", action: "Keep the translation on screen on / off"),
+            ShortcutEntry(keys: "V", action: "Hide the subtitles until TAB is held on / off"),
             ShortcutEntry(keys: "R", action: "Replay the current line from the start"),
             ShortcutEntry(keys: "W  /  E", action: "Previous / next line of dialogue"),
             ShortcutEntry(keys: "P", action: "Pause at the end of every line on / off (R, W, E play on)"),

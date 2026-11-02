@@ -63,6 +63,7 @@ public final class KeyboardMonitor: ObservableObject {
         11, // B
         1,  // S
         3,  // F
+        9,  // V
         51, // Backspace
     ]
     private static let oneShotShiftKeys: Set<UInt16> = [48, 37] // ⇧Tab, ⇧L
@@ -188,6 +189,8 @@ public final class KeyboardMonitor: ObservableObject {
                     player.adjustSpeed(by: MPVPlayer.speedStep); osd.show(.speed); return nil
                 case 51: // Backspace -> 1x
                     player.resetSpeed(); osd.show(.speed); return nil
+                case 9: // V -> original subtitles always shown / only while TAB is held
+                    player.toggleOriginalMode(); osd.show(.originalMode); return nil
                 case 35: // P -> pause after each line
                     player.autoPauseAfterLine.toggle(); osd.show(.autoPause); return nil
                 case 37: // L -> repeat the current line (mpv's loop key)

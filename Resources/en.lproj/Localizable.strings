@@ -131,8 +131,8 @@
 "Always show" = "Always show";
 "The translation appears only while TAB is held, so the original is not spoiled. ⇧TAB switches to dual subtitles." = "The translation appears only while TAB is held, so the original is not spoiled. ⇧TAB switches to dual subtitles.";
 "Dual subtitles: the original and the translation are on screen together. ⇧TAB switches back to peeking with TAB." = "Dual subtitles: the original and the translation are on screen together. ⇧TAB switches back to peeking with TAB.";
-"Pause while peeking at the translation (TAB)" = "Pause while peeking at the translation (TAB)";
-"While TAB is held the video pauses; it resumes when released." = "While TAB is held the video pauses; it resumes when released.";
+"Pause while peeking with TAB" = "Pause while peeking with TAB";
+"While TAB shows hidden subtitles or the translation, the video pauses; it resumes when released." = "While TAB shows hidden subtitles or the translation, the video pauses; it resumes when released.";
 "Output HDR video in HDR" = "Output HDR video in HDR";
 "This display supports HDR. When off, HDR video is tone-mapped to SDR." = "This display supports HDR. When off, HDR video is tone-mapped to SDR.";
 "This display does not support HDR — video is tone-mapped to SDR. The setting takes effect on an HDR display." = "This display does not support HDR — video is tone-mapped to SDR. The setting takes effect on an HDR display.";
@@ -175,7 +175,7 @@
 "On-screen preview:" = "On-screen preview:";
 "Reset style" = "Reset style";
 "Keyboard Shortcuts" = "Keyboard Shortcuts";
-"Hold: instantly peek at the translation (second subtitle track)" = "Hold: instantly peek at the translation (second subtitle track)";
+"Hold: peek at hidden subtitles and the translation (second subtitle track)" = "Hold: peek at hidden subtitles and the translation (second subtitle track)";
 "Keep the translation on screen on / off" = "Keep the translation on screen on / off";
 "Replay the current line from the start" = "Replay the current line from the start";
 "Previous / next line of dialogue" = "Previous / next line of dialogue";
@@ -495,3 +495,17 @@
 "Free" = "Free";
 "The window always shows the picture edge to edge; it takes the proportions of each video it opens." = "The window always shows the picture edge to edge; it takes the proportions of each video it opens.";
 "Any size: extra height becomes bands above and below the picture, and subtitles move into them when they fit." = "Any size: extra height becomes bands above and below the picture, and subtitles move into them when they fit.";
+
+/* Original subtitles visibility */
+"✓ Always show  (V)" = "✓ Always show  (V)";
+"Always show  (V)" = "Always show  (V)";
+"Always Show Subtitles" = "Always Show Subtitles";
+"Subtitles always shown" = "Subtitles always shown";
+"Subtitles shown while TAB is held" = "Subtitles shown while TAB is held";
+"Subtitles hidden" = "Subtitles hidden";
+"Subtitles are hidden and shown while TAB is held. Click or press V to keep them on screen" = "Subtitles are hidden and shown while TAB is held. Click or press V to keep them on screen";
+"Subtitles (primary track):" = "Subtitles (primary track):";
+"The subtitles are on screen all the time. V hides them until TAB is held — for listening practice." = "The subtitles are on screen all the time. V hides them until TAB is held — for listening practice.";
+"Listening practice: the subtitles appear only while TAB is held. Line jumps, auto-pause and cards keep working. V shows them again." = "Listening practice: the subtitles appear only while TAB is held. Line jumps, auto-pause and cards keep working. V shows them again.";
+"V" = "V";
+"Hide the subtitles until TAB is held on / off" = "Hide the subtitles until TAB is held on / off";

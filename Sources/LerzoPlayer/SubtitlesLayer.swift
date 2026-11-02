@@ -86,9 +86,11 @@ public struct SubtitlesLayer: View {
         }
         .onChange(of: lookup.word) { previous, current in
             if previous != nil && current == nil { resetWordHoverRegions() }
+            if previous == nil && current != nil { player.keepPausedAfterPeek() }
         }
         .onChange(of: showExplanation) { wasOpen, isOpen in
             if wasOpen && !isOpen { resetWordHoverRegions() }
+            if !wasOpen && isOpen { player.keepPausedAfterPeek() }
         }
     }
 
@@ -164,9 +166,11 @@ public struct SubtitlesLayer: View {
             .shadow(color: .black.opacity(0.5 * boxOpacity), radius: 6, x: 0, y: 3)
             .transition(.opacity.combined(with: .scale(scale: 0.96)))
             .animation(.easeInOut(duration: 0.15), value: player.isPeekingTranslation)
-        } else if player.isPeekingTranslation, let reason = player.translationUnavailableReason {
+        } else if player.isPeekingTranslation && player.originalMode == .always,
+                  let reason = player.translationUnavailableReason {
             // TAB pressed with nothing to reveal: say why, where the
             // translation would have appeared, for as long as TAB is held.
+            // Not when TAB is revealing the hidden original instead.
             Text(Self.unavailableMessage(for: reason))
                 .font(.system(size: max(12, primaryFontSize * 0.6), weight: .medium, design: .rounded))
                 .italic()
@@ -195,7 +199,10 @@ public struct SubtitlesLayer: View {
 
     @ViewBuilder
     private func originalBlock(availableWidth: CGFloat) -> some View {
-        if !player.subTextOnScreen.isEmpty {
+        // A hidden original stays while its word card or breakdown is open,
+        // so the line they belong to doesn't vanish when TAB is released.
+        let isShown = player.isOriginalShown || lookup.isOpen || showExplanation
+        if isShown && !player.subTextOnScreen.isEmpty {
             let lines = player.subTextOnScreen
                 .components(separatedBy: .newlines)
                 .map { $0.trimmingCharacters(in: .whitespaces) }
@@ -238,6 +245,8 @@ public struct SubtitlesLayer: View {
                     isHoveringPill = isHover
                 }
             }
+            .transition(.opacity)
+            .animation(.easeInOut(duration: 0.15), value: player.isPeekingTranslation)
         }
     }
 

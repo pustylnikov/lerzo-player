@@ -114,25 +114,37 @@ public final class MPVPlayer: ObservableObject {
     
     @Published public var currentSubText: String = ""
     @Published public var currentSecondarySubText: String = ""
-    /// True while TAB is held. Only meaningful in the `.peek` translation mode,
-    /// but tracked in both so the "nothing to show" hint can react to TAB.
+    /// True while TAB is held. TAB reveals whichever lines are set to `.peek`,
+    /// but it is tracked in any mode so the "nothing to show" hint can react to it.
     @Published public var isPeekingTranslation: Bool = false
 
-    /// How the second (translation) subtitle track is shown: only while TAB is
-    /// held, or permanently as dual subtitles.
-    public enum TranslationMode: String, CaseIterable, Identifiable {
+    /// How a subtitle line is shown: only while TAB is held, or permanently.
+    public enum SubtitleVisibility: String, CaseIterable, Identifiable {
         case peek, always
         public var id: String { rawValue }
     }
-    @Published public var translationMode: TranslationMode = .peek {
+    /// The second (translation) track: peeked at by default, dual subtitles when pinned.
+    @Published public var translationMode: SubtitleVisibility = .peek {
         didSet { UserDefaults.standard.set(translationMode.rawValue, forKey: "LerzoPlayer.translationMode") }
+    }
+    /// The primary track. Hiding it keeps the track selected, so line seeking,
+    /// auto-pause, cards and Gemini keep working; turning it off is a track choice.
+    @Published public var originalMode: SubtitleVisibility = .always {
+        didSet { UserDefaults.standard.set(originalMode.rawValue, forKey: "LerzoPlayer.originalMode") }
     }
     /// Whether the translation line is on screen right now (given it has text).
     public var isTranslationShown: Bool {
         translationMode == .always || isPeekingTranslation
     }
+    /// Whether the original line is on screen right now (given it has text).
+    public var isOriginalShown: Bool {
+        originalMode == .always || isPeekingTranslation
+    }
     public func toggleTranslationMode() {
         translationMode = translationMode == .peek ? .always : .peek
+    }
+    public func toggleOriginalMode() {
+        originalMode = originalMode == .peek ? .always : .peek
     }
 
     /// Why the translation cannot be shown for the loaded file, if it cannot.
@@ -354,8 +366,12 @@ public final class MPVPlayer: ObservableObject {
             defaults.removeObject(forKey: Self.legacySubFontSizeKey)
         }
         if let saved = UserDefaults.standard.string(forKey: "LerzoPlayer.translationMode")
-            .flatMap(TranslationMode.init(rawValue:)) {
+            .flatMap(SubtitleVisibility.init(rawValue:)) {
             self.translationMode = saved
+        }
+        if let saved = UserDefaults.standard.string(forKey: "LerzoPlayer.originalMode")
+            .flatMap(SubtitleVisibility.init(rawValue:)) {
+            self.originalMode = saved
         }
         if let saved = UserDefaults.standard.object(forKey: "LerzoPlayer.pauseWhilePeeking") as? Bool {
             self.pauseWhilePeeking = saved
@@ -1766,15 +1782,23 @@ public final class MPVPlayer: ObservableObject {
     /// The translation text comes from mpv's `secondary-sub-text` no matter
     /// what `secondary-sub-visibility` says (that only affects mpv's own,
     /// hidden rendering), so showing it is purely a SwiftUI concern.
+    /// A word card or line breakdown opened while TAB was held: stay paused on
+    /// release, or resuming would close it under the reader.
+    public func keepPausedAfterPeek() {
+        didPauseForPeek = false
+    }
+
     public func setPeekingTranslation(_ isPeeking: Bool) {
         // Tab auto-repeats while held; only react to actual transitions.
         guard isPeeking != isPeekingTranslation else { return }
         self.isPeekingTranslation = isPeeking
 
         if isPeeking {
-            // With the translation already pinned, TAB has nothing to reveal;
-            // and pausing for a "no translation track" hint would only annoy.
-            let peekReveals = translationMode == .peek && translationUnavailableReason == nil
+            // TAB pauses only when it reveals something: a pinned line is already
+            // on screen, and pausing for a "no translation track" hint would only annoy.
+            let revealsTranslation = translationMode == .peek && translationUnavailableReason == nil
+            let revealsOriginal = originalMode == .peek && currentPrimarySubId != nil
+            let peekReveals = revealsTranslation || revealsOriginal
             if peekReveals && pauseWhilePeeking && playbackState == .playing {
                 didPauseForPeek = true
                 pause()

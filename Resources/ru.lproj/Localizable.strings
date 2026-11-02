@@ -129,8 +129,8 @@
 "Always show" = "Показывать всегда";
 "The translation appears only while TAB is held, so the original is not spoiled. ⇧TAB switches to dual subtitles." = "Перевод появляется только пока зажат TAB, и не подсказывает раньше времени. ⇧TAB включает двойные субтитры.";
 "Dual subtitles: the original and the translation are on screen together. ⇧TAB switches back to peeking with TAB." = "Двойные субтитры: оригинал и перевод на экране одновременно. ⇧TAB возвращает подглядывание по TAB.";
-"Pause while peeking at the translation (TAB)" = "Пауза при подглядывании перевода (TAB)";
-"While TAB is held the video pauses; it resumes when released." = "Пока TAB зажат, видео стоит; после отпускания продолжает играть.";
+"Pause while peeking with TAB" = "Пауза при подглядывании по TAB";
+"While TAB shows hidden subtitles or the translation, the video pauses; it resumes when released." = "Пока TAB показывает скрытые субтитры или перевод, видео стоит; после отпускания продолжает играть.";
 "Output HDR video in HDR" = "Выводить HDR-видео в HDR";
 "This display supports HDR. When off, HDR video is tone-mapped to SDR." = "Текущий дисплей поддерживает HDR. Если выключить, HDR-видео будет преобразовано в SDR.";
 "This display does not support HDR — video is tone-mapped to SDR. The setting takes effect on an HDR display." = "Текущий дисплей не поддерживает HDR — видео преобразуется в SDR. Настройка применится на HDR-дисплее.";
@@ -173,7 +173,7 @@
 "On-screen preview:" = "Предпросмотр на экране:";
 "Reset style" = "Сбросить стиль";
 "Keyboard Shortcuts" = "Горячие клавиши";
-"Hold: instantly peek at the translation (second subtitle track)" = "Зажать: мгновенно подглядеть перевод (вторая дорожка субтитров)";
+"Hold: peek at hidden subtitles and the translation (second subtitle track)" = "Зажать: подглядеть скрытые субтитры и перевод (вторая дорожка субтитров)";
 "Keep the translation on screen on / off" = "Закрепить перевод на экране: вкл / выкл";
 "Replay the current line from the start" = "Повторить текущую реплику сначала";
 "Previous / next line of dialogue" = "Предыдущая / следующая реплика диалога";
@@ -493,3 +493,17 @@
 "Free" = "Свободно";
 "The window always shows the picture edge to edge; it takes the proportions of each video it opens." = "Окно всегда показывает кадр от края до края и принимает пропорции каждого открытого видео.";
 "Any size: extra height becomes bands above and below the picture, and subtitles move into them when they fit." = "Любой размер: лишняя высота становится полосами над и под кадром, и субтитры уходят в них, когда помещаются.";
+
+/* Original subtitles visibility */
+"✓ Always show  (V)" = "✓ Показывать всегда  (V)";
+"Always show  (V)" = "Показывать всегда  (V)";
+"Always Show Subtitles" = "Всегда показывать субтитры";
+"Subtitles always shown" = "Субтитры показываются всегда";
+"Subtitles shown while TAB is held" = "Субтитры показываются, пока зажат TAB";
+"Subtitles hidden" = "Субтитры скрыты";
+"Subtitles are hidden and shown while TAB is held. Click or press V to keep them on screen" = "Субтитры скрыты и показываются, пока зажат TAB. Нажмите сюда или V, чтобы они были на экране всегда";
+"Subtitles (primary track):" = "Субтитры (основная дорожка):";
+"The subtitles are on screen all the time. V hides them until TAB is held — for listening practice." = "Субтитры на экране всё время. V скрывает их до нажатия TAB — для тренировки на слух.";
+"Listening practice: the subtitles appear only while TAB is held. Line jumps, auto-pause and cards keep working. V shows them again." = "Тренировка на слух: субтитры появляются, только пока зажат TAB. Переходы по репликам, автопауза и карточки продолжают работать. V снова показывает их.";
+"V" = "V";
+"Hide the subtitles until TAB is held on / off" = "Скрывать субтитры до нажатия TAB вкл. / выкл.";

@@ -181,6 +181,17 @@ public struct ControlsOverlayView: View {
                     }
                 }
                 Divider()
+                // Hiding keeps the track selected, unlike "Turn off": line
+                // seeking, auto-pause and cards still follow it.
+                Button(player.originalMode == .peek ? "✓ Show while TAB is held" : "Show while TAB is held") {
+                    player.originalMode = .peek
+                    OSDController.shared.show(.originalMode)
+                }
+                Button(player.originalMode == .always ? "✓ Always show  (V)" : "Always show  (V)") {
+                    player.originalMode = .always
+                    OSDController.shared.show(.originalMode)
+                }
+                Divider()
                 delayMenu(for: .subtitle)
                 
                 Divider()
@@ -674,6 +685,22 @@ public struct ControlsOverlayView: View {
                 }
                 Spacer()
                 
+                // Hidden original: only shown then, so the usual state adds
+                // nothing to the bar. A click shows the subtitles again.
+                if player.originalMode == .peek {
+                    Button(action: {
+                        player.toggleOriginalMode()
+                        OSDController.shared.show(.originalMode)
+                    }) {
+                        ViewThatFits(in: .horizontal) {
+                            hiddenOriginalPill(showsTitle: true)
+                            hiddenOriginalPill(showsTitle: false)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .help("Subtitles are hidden and shown while TAB is held. Click or press V to keep them on screen")
+                }
+
                 // Translation mode: a TAB hint that doubles as the pin toggle.
                 // In a narrow window the wording goes first, the badge stays.
                 let pinned = player.translationMode == .always
@@ -873,6 +900,29 @@ public struct ControlsOverlayView: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .background(pinned ? Color.yellow.opacity(0.18) : Color.white.opacity(0.1))
+        .cornerRadius(6)
+        .fixedSize()
+    }
+
+    private func hiddenOriginalPill(showsTitle: Bool) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: "eye.slash")
+                .font(.system(size: 11))
+            Text("V")
+                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                .padding(.horizontal, 4)
+                .padding(.vertical, 2)
+                .background(Color.white.opacity(0.2))
+                .cornerRadius(4)
+            if showsTitle {
+                Text("Subtitles hidden")
+                    .font(.system(size: 11, weight: .medium))
+            }
+        }
+        .foregroundColor(.white.opacity(0.8))
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(Color.white.opacity(0.1))
         .cornerRadius(6)
         .fixedSize()
     }
