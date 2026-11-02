@@ -6,7 +6,12 @@ struct CardsWindow: View {
     static let windowID = "cards"
 
     @ObservedObject private var store = CardStore.shared
+    @ObservedObject private var gemini = GeminiService.shared
     @State private var selection = Set<UUID>()
+    @State private var fetchingGemini = Set<UUID>()
+    @State private var geminiErrors: [UUID: String] = [:]
+    @State private var batchTask: Task<Void, Never>?
+    @State private var batchProgress = (done: 0, total: 0)
     @State private var expandedExportedGroups = Set<String>()
     @State private var pendingUndo: [Card] = []
     @State private var undoWorkItem: DispatchWorkItem?
@@ -58,7 +63,10 @@ struct CardsWindow: View {
             guard !selection.isEmpty else { return }
             removeWithUndo(selection)
         }
-        .onDisappear { finishPendingUndo() }
+        .onDisappear {
+            finishPendingUndo()
+            batchTask?.cancel()
+        }
         .sheet(isPresented: $showExport) {
             CardsExportView(selectedIDs: selection) { exportedIDs in
                 selection.subtract(exportedIDs)
@@ -79,6 +87,24 @@ struct CardsWindow: View {
                     .foregroundColor(.secondary)
             }
             Spacer()
+            if batchTask != nil {
+                ProgressView()
+                    .controlSize(.small)
+                Text("Gemini: \(batchProgress.done) of \(batchProgress.total)")
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary)
+                    .monospacedDigit()
+                Button("Stop") { batchTask?.cancel() }
+                    .controlSize(.small)
+            } else if !selectedCardsWithoutGemini.isEmpty {
+                Button {
+                    fillSelectedWithGemini()
+                } label: {
+                    Label("Get Gemini Answers (\(selectedCardsWithoutGemini.count))", systemImage: "sparkles")
+                }
+                .disabled(!gemini.hasApiKey)
+                .help(gemini.hasApiKey ? "" : String(localized: "AI explanations need a free Gemini key — set it up in Settings"))
+            }
             Button("Export…") { showExport = true }
                 .buttonStyle(.borderedProminent)
                 .disabled(store.cards.isEmpty)
@@ -228,32 +254,29 @@ struct CardsWindow: View {
                     .font(.system(size: 12))
                     .foregroundColor(.secondary)
                     .textFieldStyle(.plain)
-                TextField("Definition", text: optionalTextBinding(for: card.id, keyPath: \.definition), axis: .vertical)
-                    .font(.system(size: 12))
-                    .foregroundColor(.secondary)
-                    .textFieldStyle(.plain)
-                    .lineLimit(1...4)
+                // Phrase cards rarely get a dictionary definition; an empty
+                // field there read like a caption.
+                if card.kind == .word || card.definition?.isEmpty == false {
+                    TextField("Definition", text: optionalTextBinding(for: card.id, keyPath: \.definition), axis: .vertical)
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                        .textFieldStyle(.plain)
+                        .lineLimit(1...4)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 if let info = card.contextualWordInfo {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Label("Gemini word meaning", systemImage: "sparkles")
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundColor(.yellow)
-                        Text(info.plainText)
-                            .font(.system(size: 11))
-                            .foregroundColor(.secondary)
-                            .lineLimit(5)
-                    }
+                    geminiSection("Gemini word meaning", text: info.plainText, lineLimit: 5)
+                }
+                if let explanation = card.explanation {
+                    geminiSection("Gemini breakdown", text: explanationSummary(explanation), lineLimit: 6)
+                }
+                if needsGemini(card) {
+                    geminiFillRow(card)
                 }
                 TextField("Note", text: optionalTextBinding(for: card.id, keyPath: \.notes), axis: .vertical)
                     .font(.system(size: 12))
                     .textFieldStyle(.roundedBorder)
                     .lineLimit(1...3)
-                if let explanation = card.explanation {
-                    Text(explanationSummary(explanation))
-                        .font(.system(size: 11))
-                        .foregroundColor(.secondary)
-                        .lineLimit(3)
-                }
                 Text("\(OSDView.formatTime(card.time)) · \(card.kind == .word ? String(localized: "Word card") : String(localized: "Phrase card"))")
                     .font(.system(size: 10))
                     .foregroundColor(.secondary.opacity(0.7))
@@ -288,6 +311,49 @@ struct CardsWindow: View {
         }
     }
 
+    private func geminiSection(_ title: LocalizedStringKey, text: String, lineLimit: Int) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Label(title, systemImage: "sparkles")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundColor(.yellow)
+            Text(text)
+                .font(.system(size: 11))
+                .foregroundColor(.secondary)
+                .lineLimit(lineLimit)
+                // Without it the lazy list sizes the text a few lines short of the limit.
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    @ViewBuilder
+    private func geminiFillRow(_ card: Card) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            if fetchingGemini.contains(card.id) {
+                HStack(spacing: 6) {
+                    ProgressView()
+                        .controlSize(.mini)
+                    Text("Asking Gemini…")
+                }
+                .foregroundColor(.secondary)
+            } else {
+                Button {
+                    Task { await fillWithGemini(card.id) }
+                } label: {
+                    Label("Get Gemini Answer", systemImage: "sparkles")
+                }
+                .buttonStyle(.plain)
+                .foregroundColor(gemini.hasApiKey ? .yellow : .secondary)
+                .disabled(!gemini.hasApiKey || batchTask != nil)
+                .help(gemini.hasApiKey ? "" : String(localized: "AI explanations need a free Gemini key — set it up in Settings"))
+            }
+            if let error = geminiErrors[card.id] {
+                Text(error)
+                    .foregroundColor(.orange)
+            }
+        }
+        .font(.system(size: 11, weight: .medium))
+    }
+
     private var undoBanner: some View {
         HStack(spacing: 10) {
             Text(pendingUndo.count == 1 ? "Card deleted" : "\(pendingUndo.count) cards deleted")
@@ -312,7 +378,9 @@ struct CardsWindow: View {
 
     private func textBinding(for id: UUID, keyPath: WritableKeyPath<Card, String>) -> Binding<String> {
         Binding(get: { store.card(withID: id)?[keyPath: keyPath] ?? "" }, set: { value in
-            guard var card = store.card(withID: id) else { return }
+            // A focused field writes its text back unchanged; updating then
+            // would bump lastUsedAt and move the video to the top of the list.
+            guard var card = store.card(withID: id), card[keyPath: keyPath] != value else { return }
             card[keyPath: keyPath] = value
             store.update(card)
         })
@@ -320,7 +388,7 @@ struct CardsWindow: View {
 
     private func optionalTextBinding(for id: UUID, keyPath: WritableKeyPath<Card, String?>) -> Binding<String> {
         Binding(get: { store.card(withID: id)?[keyPath: keyPath] ?? "" }, set: { value in
-            guard var card = store.card(withID: id) else { return }
+            guard var card = store.card(withID: id), (card[keyPath: keyPath] ?? "") != value else { return }
             card[keyPath: keyPath] = value.isEmpty ? nil : value
             store.update(card)
         })
@@ -334,6 +402,76 @@ struct CardsWindow: View {
         if let note = explanation.contextNote, !note.isEmpty { parts.append(note) }
         parts.append(contentsOf: (explanation.customSections ?? []).map { "\($0.title): \($0.content)" })
         return parts.filter { !$0.isEmpty }.joined(separator: " · ")
+    }
+
+    /// Cards saved with S or before a Gemini request finished have neither
+    /// a word meaning nor a phrase breakdown.
+    private func needsGemini(_ card: Card) -> Bool {
+        card.contextualWordInfo == nil && card.explanation == nil
+    }
+
+    /// Selected cards still missing a Gemini answer, in the order they are listed.
+    private var selectedCardsWithoutGemini: [UUID] {
+        groups.flatMap { $0.newCards + $0.exportedCards }
+            .filter { selection.contains($0.id) && needsGemini($0) }
+            .map(\.id)
+    }
+
+    /// Asks Gemini for the card's missing answer from the card's current text:
+    /// a word meaning for word cards, a phrase breakdown for phrase cards.
+    /// Earlier dialogue lines are not stored, so the breakdown has no context.
+    @MainActor
+    @discardableResult
+    private func fillWithGemini(_ id: UUID) async -> GeminiError? {
+        guard let card = store.card(withID: id), needsGemini(card),
+              !fetchingGemini.contains(id) else { return nil }
+        fetchingGemini.insert(id)
+        geminiErrors[id] = nil
+        defer { fetchingGemini.remove(id) }
+        do {
+            if card.kind == .word, let word = card.word {
+                let response = try await gemini.translateWord(word, in: card.sentence,
+                                                              subtitleTranslation: card.translation)
+                guard var current = store.card(withID: id) else { return nil }
+                current.contextualWordInfo = response.info
+                store.update(current)
+            } else {
+                let explanation = try await gemini.explain(subText: card.sentence,
+                                                           translationPeekText: card.translation)
+                guard var current = store.card(withID: id) else { return nil }
+                current.explanation = explanation
+                store.update(current)
+            }
+            return nil
+        } catch {
+            if Task.isCancelled { return nil }
+            let geminiError = GeminiError.from(transport: error)
+            geminiErrors[id] = geminiError.localizedDescription
+            return geminiError
+        }
+    }
+
+    /// One request at a time keeps the free tier's per-minute limit happy.
+    /// Errors that would fail every remaining card stop the batch.
+    private func fillSelectedWithGemini() {
+        let ids = selectedCardsWithoutGemini
+        guard !ids.isEmpty else { return }
+        batchProgress = (0, ids.count)
+        batchTask = Task { @MainActor in
+            for id in ids {
+                if Task.isCancelled { break }
+                let error = await fillWithGemini(id)
+                batchProgress.done += 1
+                switch error {
+                case .missingKey, .invalidKey, .accessDenied, .quotaExceeded, .offline:
+                    batchTask = nil
+                    return
+                default:
+                    break
+                }
+            }
+            batchTask = nil
+        }
     }
 
     private func removeWithUndo(_ ids: Set<UUID>) {

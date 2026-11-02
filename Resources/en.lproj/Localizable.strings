@@ -439,11 +439,17 @@
 "Delete Exported" = "Delete Exported";
 "Delete All Cards from This Video" = "Delete All Cards from This Video";
 "Select All Cards from This Video" = "Select All Cards from This Video";
+"Get Gemini Answer" = "Get Gemini Answer";
+"Get Gemini Answers (%lld)" = "Get Gemini Answers (%lld)";
+"Asking Gemini…" = "Asking Gemini…";
+"Gemini: %lld of %lld" = "Gemini: %lld of %lld";
+"Stop" = "Stop";
 "Word" = "Word";
 "Sentence" = "Sentence";
 "Translation" = "Translation";
 "Definition" = "Definition";
 "Gemini word meaning" = "Gemini word meaning";
+"Gemini breakdown" = "Gemini breakdown";
 "Note" = "Note";
 "Word card" = "Word card";
 "Phrase card" = "Phrase card";

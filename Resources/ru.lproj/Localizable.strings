@@ -437,11 +437,17 @@
 "Delete Exported" = "Удалить выгруженные";
 "Delete All Cards from This Video" = "Удалить все карточки этого видео";
 "Select All Cards from This Video" = "Выбрать все карточки этого видео";
+"Get Gemini Answer" = "Получить ответ Gemini";
+"Get Gemini Answers (%lld)" = "Получить ответы Gemini (%lld)";
+"Asking Gemini…" = "Запрос к Gemini…";
+"Gemini: %lld of %lld" = "Gemini: %lld из %lld";
+"Stop" = "Остановить";
 "Word" = "Слово";
 "Sentence" = "Реплика";
 "Translation" = "Перевод";
 "Definition" = "Значение";
 "Gemini word meaning" = "Значение от Gemini";
+"Gemini breakdown" = "Разбор от Gemini";
 "Note" = "Заметка";
 "Word card" = "Карточка слова";
 "Phrase card" = "Карточка реплики";
